@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberWeb | 科技网站设计公司</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary-color: #00f3ff;
+            --secondary-color: #6c00ff;
+            --dark-color: #0a0a1a;
+            --light-color: #f0f8ff;
+            --accent-color: #ff00aa;
+            --gray-color: #1a1a2e;
+        }
+        
+        body {
+            font-family: 'Exo 2', sans-serif;
+            background-color: var(--dark-color);
+            color: var(--light-color);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+        
+        h1, h2, h3, h4 {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+        }
+        
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        /* 头部样式 */
+        header {
+            padding: 20px 0;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            background-color: rgba(10, 10, 26, 0.9);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(0, 243, 255, 0.2);
+        }
+        
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 28px;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-decoration: none;
+            letter-spacing: 2px;
+        }
+        
+        .logo span {
+            color: var(--accent-color);
+        }
+        
+        .nav-links {
+            display: flex;
+            list-style: none;
+        }
+        
+        .nav-links li {
+            margin-left: 30px;
+        }
+        
+        .nav-links a {
+            color: var(--light-color);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 18px;
+            transition: color 0.3s;
+            position: relative;
+        }
+        
+        .nav-links a:hover {
+            color: var(--primary-color);
+        }
+        
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -5px;
+            left: 0;
+            background: var(--primary-color);
+            transition: width 0.3s;
+        }
+        
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+        
+        .mobile-toggle {
+            display: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--primary-color);
+        }
+        
+        /* 英雄区域 */
+        .hero {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            padding-top: 80px;
+        }
+        
+        .hero-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 30% 20%, rgba(108, 0, 255, 0.2) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 80%, rgba(0, 243, 255, 0.1) 0%, transparent 50%);
+            z-index: -1;
+        }
+        
+        .hero-content {
+            max-width: 800px;
+            z-index: 10;
+        }
+        
+        .hero h1 {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            line-height: 1.1;
+        }
+        
+        .hero h1 span {
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .hero p {
+            font-size: 1.5rem;
+            margin-bottom: 30px;
+            color: #b0b0d0;
+            max-width: 600px;
+        }
+        
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+            color: var(--dark-color);
+            padding: 15px 40px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 1.2rem;
+            letter-spacing: 1px;
+            transition: transform 0.3s, box-shadow 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 243, 255, 0.3);
+        }
+        
+        /* 服务区域 */
+        .services {
+            padding: 100px 0;
+            background-color: var(--gray-color);
+        }
+        
+        .section-title {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+        
+        .section-title h2 {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            position: relative;
+            display: inline-block;
+        }
+        
+        .section-title h2::after {
+            content: '';
+            position: absolute;
+            width: 100px;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .section-title p {
+            font-size: 1.2rem;
+            color: #b0b0d0;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+        
+        .service-card {
+            background-color: rgba(26, 26, 46, 0.8);
+            border-radius: 15px;
+            padding: 40px 30px;
+            text-align: center;
+            transition: transform 0.3s, box-shadow 0.3s;
+            border: 1px solid rgba(0, 243, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .service-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+        }
+        
+        .service-card:hover {
+            transform: translateY(-15px);
+            box-shadow: 0 15px 30px rgba(0, 243, 255, 0.1);
+        }
+        
+        .service-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            color: var(--primary-color);
+        }
+        
+        .service-card h3 {
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+        }
+        
+        /* 作品集区域 */
+        .portfolio {
+            padding: 100px 0;
+        }
+        
+        .portfolio-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 30px;
+        }
+        
+        .portfolio-item {
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+            height: 300px;
+        }
+        
+        .portfolio-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s;
+        }
+        
+        .portfolio-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 10, 26, 0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.5s;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .portfolio-item:hover .portfolio-overlay {
+            opacity: 1;
+        }
+        
+        .portfolio-item:hover .portfolio-img {
+            transform: scale(1.1);
+        }
+        
+        /* 联系区域 */
+        .contact {
+            padding: 100px 0;
+            background-color: var(--gray-color);
+        }
+        
+        .contact-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 50px;
+        }
+        
+        .contact-info h3 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+        }
+        
+        .contact-info p {
+            margin-bottom: 30px;
+            color: #b0b0d0;
+        }
+        
+        .contact-details {
+            list-style: none;
+        }
+        
+        .contact-details li {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .contact-details i {
+            font-size: 1.2rem;
+            color: var(--primary-color);
+            margin-right: 15px;
+            width: 30px;
+        }
+        
+        .contact-form input,
+        .contact-form textarea {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 20px;
+            background-color: rgba(26, 26, 46, 0.8);
+            border: 1px solid rgba(0, 243, 255, 0.2);
+            border-radius: 5px;
+            color: var(--light-color);
+            font-family: 'Exo 2', sans-serif;
+            font-size: 1rem;
+        }
+        
+        .contact-form textarea {
+            height: 150px;
+            resize: vertical;
+        }
+        
+        /* 页脚 */
+        footer {
+            padding: 50px 0 30px;
+            text-align: center;
+            border-top: 1px solid rgba(0, 243, 255, 0.1);
+        }
+        
+        .footer-logo {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 2rem;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+        
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            list-style: none;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .footer-links li {
+            margin: 0 15px;
+        }
+        
+        .footer-links a {
+            color: var(--light-color);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        
+        .footer-links a:hover {
+            color: var(--primary-color);
+        }
+        
+        .social-icons {
+            display: flex;
+            justify-content: center;
+            list-style: none;
+            margin-bottom: 30px;
+        }
+        
+        .social-icons li {
+            margin: 0 10px;
+        }
+        
+        .social-icons a {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background-color: var(--gray-color);
+            color: var(--light-color);
+            font-size: 1.2rem;
+            transition: all 0.3s;
+        }
+        
+        .social-icons a:hover {
+            background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+            transform: translateY(-5px);
+        }
+        
+        .copyright {
+            color: #b0b0d0;
+            font-size: 0.9rem;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 992px) {
+            .hero h1 {
+                font-size: 3rem;
+            }
+            
+            .section-title h2 {
+                font-size: 2.5rem;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .mobile-toggle {
+                display: block;
+            }
+            
+            .nav-links {
+                position: fixed;
+                top: 80px;
+                left: 0;
+                width: 100%;
+                background-color: var(--dark-color);
+                flex-direction: column;
+                align-items: center;
+                padding: 20px 0;
+                transform: translateY(-100%);
+                opacity: 0;
+                transition: transform 0.5s, opacity 0.5s;
+                z-index: 999;
+                border-bottom: 1px solid rgba(0, 243, 255, 0.2);
+            }
+            
+            .nav-links.active {
+                transform: translateY(0);
+                opacity: 1;
+            }
+            
+            .nav-links li {
+                margin: 15px 0;
+            }
+            
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .hero p {
+                font-size: 1.2rem;
+            }
+            
+            .services-grid,
+            .portfolio-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* 科技感动画元素 */
+        .floating-element {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            opacity: 0.5;
+            animation: float 15s infinite linear;
+            z-index: -1;
+        }
+        
+        @keyframes float {
+            0% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+            25% {
+                transform: translate(50px, 50px) rotate(90deg);
+            }
+            50% {
+                transform: translate(100px, 0) rotate(180deg);
+            }
+            75% {
+                transform: translate(50px, -50px) rotate(270deg);
+            }
+            100% {
+                transform: translate(0, 0) rotate(360deg);
+            }
+        }
+        
+        .pulse {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background-color: var(--accent-color);
+            border-radius: 50%;
+            margin-left: 10px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% {
+                transform: scale(0.8);
+                box-shadow: 0 0 0 0 rgba(255, 0, 170, 0.7);
+            }
+            70% {
+                transform: scale(1.2);
+                box-shadow: 0 0 0 10px rgba(255, 0, 170, 0);
+            }
+            100% {
+                transform: scale(0.8);
+                box-shadow: 0 0 0 0 rgba(255, 0, 170, 0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 头部导航 -->
+    <header>
+        <div class="container header-container">
+            <a href="#" class="logo">CYBER<span>WEB</span></a>
+            
+            <div class="mobile-toggle">
+                <i class="fas fa-bars"></i>
+            </div>
+            
+            <ul class="nav-links">
+                <li><a href="#home">首页</a></li>
+                <li><a href="#services">服务</a></li>
+                <li><a href="#portfolio">作品集</a></li>
+                <li><a href="#contact">联系我们</a></li>
+            </ul>
+        </div>
+    </header>
+    
+    <!-- 英雄区域 -->
+    <section class="hero" id="home">
+        <div class="hero-bg"></div>
+        <div class="container">
+            <div class="hero-content">
+                <h1>构建未来的<span>数字体验</span></h1>
+                <p>我们是一家专注于高端科技网站设计的公司，将前沿技术与创意设计相结合，为您的品牌打造卓越的在线形象。</p>
+                <a href="#contact" class="cta-button">开启项目 <i class="fas fa-arrow-right"></i></a>
+            </div>
+        </div>
+        
+        <!-- 浮动科技元素 -->
+        <div class="floating-element" style="top: 20%; left: 10%;"></div>
+        <div class="floating-element" style="top: 60%; left: 80%; width: 30px; height: 30px; background-color: var(--accent-color);"></div>
+        <div class="floating-element" style="top: 30%; left: 85%; width: 15px; height: 15px; background-color: var(--secondary-color);"></div>
+    </section>
+    
+    <!-- 服务区域 -->
+    <section class="services" id="services">
+        <div class="container">
+            <div class="section-title">
+                <h2>我们的服务</h2>
+                <p>我们提供全方位的数字解决方案，帮助您的业务在数字时代脱颖而出</p>
+            </div>
+            
+            <div class="services-grid">
+                <div class="service-card">
+                    <div class="service-icon">
+                        <i class="fas fa-code"></i>
+                    </div>
+                    <h3>网站开发</h3>
+                    <p>使用最新技术构建响应式、高性能的网站，提供卓越的用户体验和搜索引擎优化。</p>
+                </div>
+                
+                <div class="service-card">
+                    <div class="service-icon">
+                        <i class="fas fa-paint-brush"></i>
+                    </div>
+                    <h3>UI/UX设计</h3>
+                    <p>创建直观、美观的用户界面和用户体验设计，提高用户参与度和转化率。</p>
+                </div>
+                
+                <div class="service-card">
+                    <div class="service-icon">
+                        <i class="fas fa-shopping-cart"></i>
+                    </div>
+                    <h3>电子商务</h3>
+                    <p>构建功能强大的电子商务平台，集成安全支付和库存管理系统。</p>
+                </div>
+                
+                <div class="service-card">
+                    <div class="service-icon">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <h3>移动端应用</h3>
+                    <p>开发跨平台移动应用程序，确保您的品牌在移动设备上同样出色。</p>
+                </div>
+                
+                <div class="service-card">
+                    <div class="service-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h3>数字营销</h3>
+                    <p>通过SEO、社交媒体和内容营销策略，提高您的在线可见性和品牌影响力。</p>
+                </div>
+                
+                <div class="service-card">
+                    <div class="service-icon">
+                        <i class="fas fa-headset"></i>
+                    </div>
+                    <h3>技术支持</h3>
+                    <p>提供持续的维护和支持服务，确保您的网站始终保持最佳状态。</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- 作品集区域 -->
+    <section class="portfolio" id="portfolio">
+        <div class="container">
+            <div class="section-title">
+                <h2>作品展示</h2>
+                <p>探索我们为全球客户打造的创新数字解决方案</p>
+            </div>
+            
+            <div class="portfolio-grid">
+                <div class="portfolio-item">
+                    <img src="https://images.unsplash.com/photo-1551650975-87deedd944c3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="金融科技网站" class="portfolio-img">
+                    <div class="portfolio-overlay">
+                        <h3>金融科技平台</h3>
+                        <p>为一家金融科技初创公司设计的现代响应式网站，提高了用户参与度45%。</p>
+                    </div>
+                </div>
+                
+                <div class="portfolio-item">
+                    <img src="https://images.unsplash.com/photo-1551434678-e076c223a692?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="健康科技应用" class="portfolio-img">
+                    <div class="portfolio-overlay">
+                        <h3>健康科技应用</h3>
+                        <p>开发的全功能健康监测应用，拥有直观的用户界面和数据分析功能。</p>
+                    </div>
+                </div>
+                
+                <div class="portfolio-item">
+                    <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&auto=format&fit=crop&w-800&q=80" alt="数据分析平台" class="portfolio-img">
+                    <div class="portfolio-overlay">
+                        <h3>数据分析仪表板</h3>
+                        <p>为企业客户创建的实时数据分析平台，提供深入的业务洞察。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- 联系区域 -->
+    <section class="contact" id="contact">
+        <div class="container">
+            <div class="section-title">
+                <h2>联系我们</h2>
+                <p>准备好将您的数字愿景变为现实了吗？立即联系我们，开始您的项目</p>
+            </div>
+            
+            <div class="contact-container">
+                <div class="contact-info">
+                    <h3>让我们开始合作<span class="pulse"></span></h3>
+                    <p>我们的团队随时准备帮助您解决任何数字挑战。请填写表格或直接通过以下方式联系我们。</p>
+                    
+                    <ul class="contact-details">
+                        <li><i class="fas fa-map-marker-alt"></i> 北京市海淀区科技园区创新路123号</li>
+                        <li><i class="fas fa-phone"></i> +86 10 1234 5678</li>
+                        <li><i class="fas fa-envelope"></i> info@cyberweb.com</li>
+                        <li><i class="fas fa-clock"></i> 周一至周五 9:00 - 18:00</li>
+                    </ul>
+                </div>
+                
+                <div class="contact-form">
+                    <form id="contactForm">
+                        <input type="text" placeholder="您的姓名" required>
+                        <input type="email" placeholder="电子邮箱" required>
+                        <input type="text" placeholder="项目主题" required>
+                        <textarea placeholder="项目描述..."></textarea>
+                        <button type="submit" class="cta-button">发送消息 <i class="fas fa-paper-plane"></i></button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- 页脚 -->
+    <footer>
+        <div class="container">
+            <a href="#" class="footer-logo">CYBER<span>WEB</span></a>
+            
+            <ul class="footer-links">
+                <li><a href="#home">首页</a></li>
+                <li><a href="#services">服务</a></li>
+                <li><a href="#portfolio">作品集</a></li>
+                <li><a href="#contact">联系我们</a></li>
+                <li><a href="#">隐私政策</a></li>
+                <li><a href="#">使用条款</a></li>
+            </ul>
+            
+            <ul class="social-icons">
+                <li><a href="#"><i class="fab fa-weixin"></i></a></li>
+                <li><a href="#"><i class="fab fa-weibo"></i></a></li>
+                <li><a href="#"><i class="fab fa-github"></i></a></li>
+                <li><a href="#"><i class="fab fa-linkedin-in"></i></a></li>
+                <li><a href="#"><i class="fab fa-twitter"></i></a></li>
+            </ul>
+            
+            <p class="copyright">&copy; 2023 CyberWeb 科技有限公司。保留所有权利。</p>
+        </div>
+    </footer>
+    
+    <script>
+        // 移动端菜单切换
+        const mobileToggle = document.querySelector('.mobile-toggle');
+        const navLinks = document.querySelector('.nav-links');
+        
+        mobileToggle.addEventListener('click', () => {
+            navLinks.classList.toggle('active');
+            mobileToggle.querySelector('i').classList.toggle('fa-bars');
+            mobileToggle.querySelector('i').classList.toggle('fa-times');
+        });
+        
+        // 平滑滚动
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                if(this.getAttribute('href') === '#') return;
+                
+                const targetId = this.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+                
+                if(targetElement) {
+                    // 如果是移动端，先关闭菜单
+                    if(window.innerWidth <= 768) {
+                        navLinks.classList.remove('active');
+                        mobileToggle.querySelector('i').classList.remove('fa-times');
+                        mobileToggle.querySelector('i').classList.add('fa-bars');
+                    }
+                    
+                    window.scrollTo({
+                        top: targetElement.offsetTop - 80,
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+        
+        // 表单提交
+        const contactForm = document.getElementById('contactForm');
+        contactForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // 获取表单数据
+            const formData = new FormData(this);
+            const formValues = Object.fromEntries(formData);
+            
+            // 这里通常会将数据发送到服务器
+            // 现在我们先显示一个成功消息
+            alert('感谢您的咨询！我们将尽快与您联系。');
+            this.reset();
+        });
+        
+        // 创建浮动元素
+        function createFloatingElements() {
+            const heroSection = document.querySelector('.hero');
+            
+            for(let i = 0; i < 8; i++) {
+                const element = document.createElement('div');
+                element.classList.add('floating-element');
+                
+                // 随机大小和位置
+                const size = Math.random() * 20 + 10;
+                const left = Math.random() * 100;
+                const top = Math.random() * 100;
+                
+                // 随机颜色
+                const colors = ['#00f3ff', '#6c00ff', '#ff00aa'];
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                
+                element.style.width = `${size}px`;
+                element.style.height = `${size}px`;
+                element.style.left = `${left}%`;
+                element.style.top = `${top}%`;
+                element.style.backgroundColor = color;
+                element.style.opacity = Math.random() * 0.5 + 0.2;
+                
+                // 随机动画时长
+                const duration = Math.random() * 30 + 20;
+                element.style.animationDuration = `${duration}s`;
+                
+                heroSection.appendChild(element);
+            }
+        }
+        
+        // 页面加载完成后执行
+        window.addEventListener('DOMContentLoaded', () => {
+            createFloatingElements();
+        });
+    </script>
+</body>
+</html>

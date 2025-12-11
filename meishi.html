@@ -71,7 +71,7 @@
             <!-- Header -->
             <header class="text-center mb-8">
                 <h1 class="text-3xl font-bold text-gray-800 mb-2">⭐⭐ 好评文案自动生成器 ⭐⭐</h1>
-                <p class="text-gray-600">输入关键词，快速生成高赞好评文案，一键复制！</p>
+                <p class="text-gray-600">输入关键词，快速生成高赞好评文案，**无需 API 调用！**</p>
             </header>
 
             <!-- Input Section -->
@@ -86,26 +86,25 @@
                 <!-- Generation Options (Flexible UI for future integration) -->
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label for="modelSelect" class="block text-sm font-medium text-gray-700 mb-1">AI 模型 (当前使用 Gemini)</label>
+                        <label for="modelSelect" class="block text-sm font-medium text-gray-700 mb-1">文案生成方式</label>
                         <select id="modelSelect" class="w-full p-3 border border-gray-300 bg-gray-100 rounded-lg cursor-not-allowed" disabled>
-                            <option value="gemini">Gemini (已启用)</option>
-                            <option value="placeholder1" disabled>DeepSeek (预留)</option>
-                            <option value="placeholder2" disabled>Doubao (预留)</option>
+                            <option value="local">本地模板生成 (无需API)</option>
+                            <option value="placeholder1" disabled>API调用 (已禁用)</option>
                         </select>
                     </div>
                     <div>
-                        <label for="reviewLength" class="block text-sm font-medium text-gray-700 mb-1">文案长度要求 (字数)</label>
+                        <label for="reviewLength" class="block text-sm font-medium text-gray-700 mb-1">文案长度要求</label>
                         <select id="reviewLength" class="w-full p-3 border border-gray-300 bg-white rounded-lg focus:ring-blue-600 focus:border-blue-600 transition duration-150">
-                            <option value="short">简短有力 (约30-50字)</option>
-                            <option value="medium" selected>详细高赞 (约60-120字)</option>
-                            <option value="long">超长篇幅 (150字以上)</option>
+                            <option value="short">简短有力 (约50字)</option>
+                            <option value="medium" selected>详细高赞 (约100字)</option>
+                            <option value="long">超长篇幅 (约150字)</option>
                         </select>
                     </div>
                 </div>
 
                 <!-- Action Button -->
                 <button onclick="handleGenerateClick()" id="generateBtn" class="w-full flex items-center justify-center py-3 px-4 border border-transparent text-lg font-bold rounded-lg text-white bg-red-500 hover:bg-red-600 focus:ring-4 focus:ring-red-500 focus:ring-opacity-50 transition duration-150 shadow-lg hover:shadow-xl transform hover:scale-[1.01]">
-                    <span id="btnText">🚀 自动生成好评文案</span>
+                    <span id="btnText">✨ 自动生成好评文案 (本地)</span>
                     <svg id="loadingSpinner" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -140,9 +139,8 @@
     </div>
 
     <script>
-        // Canvas Global Variables Check
+        // Canvas Global Variables Check (Not used anymore, but kept for context)
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const apiKey = "" // API Key placeholder for fetch call
 
         // DOM Elements
         const keywordsInput = document.getElementById('keywords');
@@ -186,91 +184,80 @@
         function setGenerating(isGenerating) {
             generateBtn.disabled = isGenerating;
             // 只有当不在生成中，且输出内容不是占位符时，才启用复制按钮
-            copyBtn.disabled = isGenerating || reviewOutput.textContent.trim() === "请在上方输入关键词后，点击按钮生成好评。" || reviewOutput.textContent.trim().includes("生成好评失败");
+            copyBtn.disabled = isGenerating || reviewOutput.textContent.trim() === "请在上方输入关键词后，点击按钮生成好评。";
             if (isGenerating) {
-                btnText.textContent = '生成中，请稍候...';
+                btnText.textContent = '生成中...';
                 loadingSpinner.classList.remove('hidden');
-                reviewOutput.innerHTML = '<p class="text-center text-red-500 font-semibold">AI正在努力创作中...</p>';
+                // Since this is local generation, the "loading" is very fast, but we show it briefly
+                reviewOutput.innerHTML = '<p class="text-center text-red-500 font-semibold">正在为您生成文案...</p>';
             } else {
-                btnText.textContent = '🚀 自动生成好评文案';
+                btnText.textContent = '✨ 自动生成好评文案 (本地)';
                 loadingSpinner.classList.add('hidden');
             }
         }
 
-        // --- Core AI Generation Function ---
-
-        function getLengthRange(lengthKey) {
-            switch (lengthKey) {
-                case 'short': return "30到50个字符";
-                case 'medium': return "60到120个字符";
-                case 'long': return "150个字符以上";
-                default: return "60到120个字符";
-            }
-        }
+        // --- Core Local Generation Function ---
         
-        async function generateReview(userKeywords, lengthKey) {
-            const lengthRequirement = getLengthRange(lengthKey);
+        // 核心模板库
+        const baseTemplates = [
+            "味道超赞，简直是舌尖上的享受！",
+            "服务态度超级棒，店员都很亲切热情。",
+            "环境很干净很舒适，装修风格也很喜欢。",
+            "性价比很高，量大实惠，值得推荐！",
+            "这次的体验非常满意，下次还会再来的！",
+            "菜品份量足，食材新鲜，看得出店家用心了。",
+            "家人朋友都说好，已经推荐给身边所有人啦！",
+            "出乎意料的好，完全超出了预期，必须五星。",
+        ];
 
-            // System instruction to guide the model's persona and output format
-            const systemPrompt = `你是一位专注于为餐厅、美食产品或服务撰写高质量、充满热情的客户好评文案的专家。请根据用户提供的关键词，创作一段自然、真实且具有吸引力的中文好评。评论内容必须详细、积极，并确保文本长度在${lengthRequirement}之间。请直接输出好评文案，不要包含任何额外的引导语、标题或总结。`;
+        // 连接词和情绪词库
+        const connectors = ["，而且", "，另外", "；尤其是", "！最棒的是"];
+        const emotions = ["超开心", "太满足了", "非常惊喜", "非常地道"];
+        
+        function generateLocalReview(userKeywords, lengthKey) {
+            const keywordsArray = userKeywords.split(/[，,、\s]+/).filter(k => k.trim().length > 0);
+            if (keywordsArray.length === 0) return "请输入有效的关键词，如菜品名或服务评价。";
 
-            // User query using the provided keywords
-            const userQuery = `根据以下关键词生成好评文案：${userKeywords}`;
-            
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-
-            const payload = {
-                contents: [{ parts: [{ text: userQuery }] }],
-                systemInstruction: {
-                    parts: [{ text: systemPrompt }]
-                },
-                // Optional: Ensure response is grounded for genuine-sounding details
-                tools: [{ "google_search": {} }], 
-            };
-            
-            let lastError = null;
-            const maxRetries = 3;
-            for (let i = 0; i < maxRetries; i++) {
-                try {
-                    const response = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-
-                    if (!response.ok) {
-                        lastError = `API Request failed with status: ${response.status} ${response.statusText}`;
-                        if (response.status === 429) { // Rate limit or transient error
-                             throw new Error("Rate limit or server error, retrying...");
-                        } else {
-                            // Non-retryable error, stop
-                            break;
-                        }
-                    }
-
-                    const result = await response.json();
-                    const candidate = result.candidates?.[0];
-
-                    if (candidate && candidate.content?.parts?.[0]?.text) {
-                        const text = candidate.content.parts[0].text.trim();
-                        return text;
-                    } else {
-                        lastError = "API response was valid but contained no generated text.";
-                        break;
-                    }
-
-                } catch (error) {
-                    lastError = error.message;
-                    // Exponential backoff
-                    if (i < maxRetries - 1) {
-                        const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
-                        await new Promise(resolve => setTimeout(resolve, delay));
-                    }
+            // 1. 提取随机关键词
+            const keyword1 = keywordsArray[Math.floor(Math.random() * keywordsArray.length)];
+            let keyword2 = null;
+            if (keywordsArray.length > 1) {
+                // 确保第二个关键词和第一个不同
+                let index2 = Math.floor(Math.random() * keywordsArray.length);
+                if (keywordsArray[index2] === keyword1) {
+                     index2 = (index2 + 1) % keywordsArray.length;
                 }
+                keyword2 = keywordsArray[index2];
             }
             
-            // Fallback error message
-            return `生成好评失败。请检查您的关键词或稍后再试。错误信息: ${lastError || "未知错误"}`;
+            // 2. 初始核心文案
+            let review = `这家店真是宝藏！${keyword1}做得特别好，味道棒极了，吃得我${emotions[Math.floor(Math.random() * emotions.length)]}。`;
+
+            // 3. 注入第二个关键词和连接词
+            if (keyword2) {
+                review += `${connectors[Math.floor(Math.random() * connectors.length)]}${keyword2}也让人印象深刻。`;
+            } else {
+                 review += baseTemplates[Math.floor(Math.random() * baseTemplates.length)];
+            }
+            
+            // 4. 根据长度要求填充模板
+            let targetLength = 100; // Medium default
+            if (lengthKey === 'short') targetLength = 50;
+            if (lengthKey === 'long') targetLength = 150;
+
+            let loopCount = 0;
+            while (review.length < targetLength && loopCount < 3) { // 最多额外填充3次
+                const filler = baseTemplates[Math.floor(Math.random() * baseTemplates.length)];
+                if (!review.includes(filler.substring(0, 5))) { // 避免短时间内重复太多
+                    review += " " + filler;
+                }
+                loopCount++;
+            }
+            
+            // 5. 结尾总结
+            review += " 总之，是一次非常愉快的体验，强烈推荐大家去尝试！⭐⭐⭐⭐⭐";
+
+            return review.trim();
         }
 
 
@@ -278,7 +265,6 @@
 
         async function handleGenerateClick() {
             const keywords = keywordsInput.value.trim();
-            const lengthKey = reviewLengthSelect.value;
 
             if (!keywords) {
                 reviewOutput.innerHTML = '<p class="text-center text-red-500 font-semibold">请先输入您的关键词，描述一下您的体验！</p>';
@@ -286,25 +272,24 @@
                 return;
             }
 
-            setGenerating(true);
-            try {
-                const generatedText = await generateReview(keywords, lengthKey);
-                
-                // Update output and ensure text is displayed correctly
-                if (generatedText.includes("生成好评失败")) {
-                    reviewOutput.innerHTML = `<p class="text-center text-red-500 font-semibold">${generatedText}</p>`;
-                } else {
-                    reviewOutput.textContent = generatedText;
-                }
-                
-                // Update copy button state
-                setGenerating(false);
+            // 本地生成速度快，设置短暂的加载状态
+            setGenerating(true); 
+            
+            // 模拟短暂延迟，让用户看到加载动画 (可选，但体验更好)
+            await new Promise(resolve => setTimeout(resolve, 300)); 
 
-            } catch (error) {
-                console.error("Critical error during generation:", error);
-                reviewOutput.innerHTML = `<p class="text-center text-red-500 font-semibold">发生意外错误，请检查控制台信息或网络连接。</p>`;
-                setGenerating(false); // Should set false here to re-enable generate button
+            const lengthKey = reviewLengthSelect.value;
+            const generatedText = generateLocalReview(keywords, lengthKey);
+            
+            // 更新输出
+            if (generatedText.includes("请输入有效的关键词")) {
+                 reviewOutput.innerHTML = `<p class="text-center text-red-500 font-semibold">${generatedText}</p>`;
+            } else {
+                 reviewOutput.textContent = generatedText;
             }
+
+            // 结束加载状态
+            setGenerating(false);
         }
         
         // Initial state update to ensure copy button is disabled on load

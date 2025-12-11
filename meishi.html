@@ -11,7 +11,8 @@
         body {
             font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif;
             background-color: #2c2c2c; /* Fallback dark color */
-            overflow: hidden; /* Hide animation overflow */
+            /* 允许页面垂直滚动 */
+            overflow-y: auto; 
             position: relative; /* Context for background overlay */
         }
 
@@ -123,11 +124,7 @@
                     <p class="text-gray-400">请在上方输入关键词后，点击按钮生成好评。</p>
                 </div>
 
-                <div class="mt-4 flex justify-end">
-                    <button onclick="copyToClipboard()" id="copyBtn" class="px-4 py-2 text-sm font-medium rounded-lg text-white bg-green-500 hover:bg-green-600 focus:ring-4 focus:ring-green-500 focus:ring-opacity-50 transition duration-150 disabled:bg-gray-400 shadow-md">
-                        一键复制文案
-                    </button>
-                </div>
+                <!-- 移除了原有的复制按钮 -->
             </section>
 
             <!-- Toast Notification -->
@@ -149,7 +146,6 @@
         const btnText = document.getElementById('btnText');
         const loadingSpinner = document.getElementById('loadingSpinner');
         const reviewOutput = document.getElementById('reviewOutput');
-        const copyBtn = document.getElementById('copyBtn');
         const toast = document.getElementById('toast');
         
         // --- Utility Functions ---
@@ -161,34 +157,37 @@
                 toast.style.opacity = '0';
             }, 2000);
         }
-
-        async function copyToClipboard() {
-            const text = reviewOutput.textContent.trim();
-            if (text && text !== "请在上方输入关键词后，点击按钮生成好评。") {
-                try {
-                    // Use execCommand('copy') for compatibility in some embedded environments
-                    const textarea = document.createElement('textarea');
-                    textarea.value = text;
-                    document.body.appendChild(textarea);
-                    textarea.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(textarea);
-                    showToast('好评文案已成功复制！');
-                } catch (err) {
-                    showToast('复制失败，请手动复制。');
-                    console.error('Copy failed:', err);
-                }
+        
+        // 核心复制函数
+        function performCopy(textToCopy) {
+            // 检查内容是否是占位符或错误信息
+            if (!textToCopy || textToCopy.includes("请输入有效的关键词")) {
+                 return false;
+            }
+            try {
+                // 使用 execCommand('copy') 实现跨环境复制
+                const textarea = document.createElement('textarea');
+                textarea.value = textToCopy;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                showToast('好评文案已自动复制成功！');
+                return true;
+            } catch (err) {
+                showToast('自动复制失败，请手动复制。');
+                console.error('Auto copy failed:', err);
+                return false;
             }
         }
 
         function setGenerating(isGenerating) {
             generateBtn.disabled = isGenerating;
-            // 只有当不在生成中，且输出内容不是占位符时，才启用复制按钮
-            copyBtn.disabled = isGenerating || reviewOutput.textContent.trim() === "请在上方输入关键词后，点击按钮生成好评。";
+            
+            // 移除了 copyBtn 相关的逻辑
             if (isGenerating) {
                 btnText.textContent = '生成中...';
                 loadingSpinner.classList.remove('hidden');
-                // Since this is local generation, the "loading" is very fast, but we show it briefly
                 reviewOutput.innerHTML = '<p class="text-center text-red-500 font-semibold">正在为您生成文案...</p>';
             } else {
                 btnText.textContent = '✨ 自动生成好评文案 (本地)';
@@ -268,7 +267,8 @@
 
             if (!keywords) {
                 reviewOutput.innerHTML = '<p class="text-center text-red-500 font-semibold">请先输入您的关键词，描述一下您的体验！</p>';
-                copyBtn.disabled = true;
+                // 确保复制动作不会执行
+                performCopy(null); 
                 return;
             }
 
@@ -286,6 +286,8 @@
                  reviewOutput.innerHTML = `<p class="text-center text-red-500 font-semibold">${generatedText}</p>`;
             } else {
                  reviewOutput.textContent = generatedText;
+                 // 自动复制文案
+                 performCopy(generatedText);
             }
 
             // 结束加载状态
@@ -296,7 +298,6 @@
         window.onload = () => {
              // Set initial output content to placeholder text in case browser state persists
             reviewOutput.innerHTML = '<p class="text-gray-400">请在上方输入关键词后，点击按钮生成好评。</p>';
-            copyBtn.disabled = true;
         }
 
     </script>

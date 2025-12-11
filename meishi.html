@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>好评文案自动生成器 - 快速复制</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Base font and styling */
+        body {
+            font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background-color: #2c2c2c; /* Fallback dark color */
+            overflow: hidden; /* Hide animation overflow */
+            position: relative; /* Context for background overlay */
+        }
+
+        /* 动画美食背景容器 */
+        .food-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            /* 使用一张高分辨率的美食集合图片 */
+            background-image: url('https://images.unsplash.com/photo-1546069901-ba9599a7e63c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1920&q=80');
+            background-size: cover;
+            background-position: center center;
+            z-index: -2; /* 确保它在最底层 */
+            animation: slowZoomPan 35s ease-in-out infinite alternate; /* 慢速缩放平移动画 */
+        }
+        
+        /* 增加一个半透明的黑色遮罩层，保证文字在美食背景上清晰可见 */
+        .food-bg::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.4); /* 40% 黑色遮罩 */
+            z-index: -1;
+        }
+
+        /* 背景动画关键帧：慢速缩放和平移 */
+        @keyframes slowZoomPan {
+            0% {
+                transform: scale(1) translate(0, 0);
+            }
+            100% {
+                transform: scale(1.1) translate(-5%, 5%);
+            }
+        }
+
+        /* 内容卡片样式：保持微透明和背景模糊效果 */
+        .card-container {
+            backdrop-filter: blur(8px); /* 略微增加模糊度 */
+            background-color: rgba(255, 255, 255, 0.9); /* 90% 透明度的白色 */
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 动画美食背景容器 -->
+    <div class="food-bg"></div> 
+
+    <div id="app" class="min-h-screen flex items-center justify-center p-4">
+        <!-- 应用新的 card-container 样式 -->
+        <div class="card-container w-full max-w-2xl shadow-2xl rounded-xl p-6 md:p-10 transition-all duration-300">
+            <!-- Header -->
+            <header class="text-center mb-8">
+                <h1 class="text-3xl font-bold text-gray-800 mb-2">⭐⭐ 好评文案自动生成器 ⭐⭐</h1>
+                <p class="text-gray-600">输入关键词，快速生成高赞好评文案，一键复制！</p>
+            </header>
+
+            <!-- Input Section -->
+            <section class="space-y-6">
+                
+                <!-- Keywords Input -->
+                <div>
+                    <label for="keywords" class="block text-sm font-medium text-gray-700 mb-1">关键信息/菜品名称 (例如: 麻辣小龙虾, 服务态度超好, 环境优雅)</label>
+                    <textarea id="keywords" rows="3" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-600 focus:border-blue-600 transition duration-150 shadow-inner" placeholder="请输入本次体验的关键词，例如：味道正宗、性价比高、下次还来"></textarea>
+                </div>
+
+                <!-- Generation Options (Flexible UI for future integration) -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="modelSelect" class="block text-sm font-medium text-gray-700 mb-1">AI 模型 (当前使用 Gemini)</label>
+                        <select id="modelSelect" class="w-full p-3 border border-gray-300 bg-gray-100 rounded-lg cursor-not-allowed" disabled>
+                            <option value="gemini">Gemini (已启用)</option>
+                            <option value="placeholder1" disabled>DeepSeek (预留)</option>
+                            <option value="placeholder2" disabled>Doubao (预留)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="reviewLength" class="block text-sm font-medium text-gray-700 mb-1">文案长度要求 (字数)</label>
+                        <select id="reviewLength" class="w-full p-3 border border-gray-300 bg-white rounded-lg focus:ring-blue-600 focus:border-blue-600 transition duration-150">
+                            <option value="short">简短有力 (约30-50字)</option>
+                            <option value="medium" selected>详细高赞 (约60-120字)</option>
+                            <option value="long">超长篇幅 (150字以上)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Action Button -->
+                <button onclick="handleGenerateClick()" id="generateBtn" class="w-full flex items-center justify-center py-3 px-4 border border-transparent text-lg font-bold rounded-lg text-white bg-red-500 hover:bg-red-600 focus:ring-4 focus:ring-red-500 focus:ring-opacity-50 transition duration-150 shadow-lg hover:shadow-xl transform hover:scale-[1.01]">
+                    <span id="btnText">🚀 自动生成好评文案</span>
+                    <svg id="loadingSpinner" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </button>
+            </section>
+
+            <!-- Output Section -->
+            <section id="outputSection" class="mt-8 pt-6 border-t border-gray-300">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                    <svg class="w-6 h-6 mr-2 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944c-3.141 1.055-5.83 3.614-7.618 6.944-1.788 3.33-2.115 7.152-.927 10.598C4.542 20.373 7.027 21 9.5 21h5.04c2.473 0 4.958-.627 7.045-2.514 1.188-3.446.861-7.268-.927-10.598z"></path></svg>
+                    好评文案结果
+                </h2>
+                
+                <div id="reviewOutput" class="min-h-[100px] bg-gray-100 p-4 border border-gray-300 rounded-lg text-gray-800 whitespace-pre-wrap flex items-center justify-center text-center shadow-inner">
+                    <p class="text-gray-400">请在上方输入关键词后，点击按钮生成好评。</p>
+                </div>
+
+                <div class="mt-4 flex justify-end">
+                    <button onclick="copyToClipboard()" id="copyBtn" class="px-4 py-2 text-sm font-medium rounded-lg text-white bg-green-500 hover:bg-green-600 focus:ring-4 focus:ring-green-500 focus:ring-opacity-50 transition duration-150 disabled:bg-gray-400 shadow-md">
+                        一键复制文案
+                    </button>
+                </div>
+            </section>
+
+            <!-- Toast Notification -->
+            <div id="toast" class="fixed bottom-5 left-1/2 transform -translate-x-1/2 p-3 bg-gray-800 text-white text-sm rounded-lg shadow-xl opacity-0 transition-opacity duration-300 pointer-events-none">
+                复制成功！
+            </div>
+            
+        </div>
+    </div>
+
+    <script>
+        // Canvas Global Variables Check
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const apiKey = "" // API Key placeholder for fetch call
+
+        // DOM Elements
+        const keywordsInput = document.getElementById('keywords');
+        const reviewLengthSelect = document.getElementById('reviewLength');
+        const generateBtn = document.getElementById('generateBtn');
+        const btnText = document.getElementById('btnText');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const reviewOutput = document.getElementById('reviewOutput');
+        const copyBtn = document.getElementById('copyBtn');
+        const toast = document.getElementById('toast');
+        
+        // --- Utility Functions ---
+
+        function showToast(message) {
+            toast.textContent = message;
+            toast.style.opacity = '1';
+            setTimeout(() => {
+                toast.style.opacity = '0';
+            }, 2000);
+        }
+
+        async function copyToClipboard() {
+            const text = reviewOutput.textContent.trim();
+            if (text && text !== "请在上方输入关键词后，点击按钮生成好评。") {
+                try {
+                    // Use execCommand('copy') for compatibility in some embedded environments
+                    const textarea = document.createElement('textarea');
+                    textarea.value = text;
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textarea);
+                    showToast('好评文案已成功复制！');
+                } catch (err) {
+                    showToast('复制失败，请手动复制。');
+                    console.error('Copy failed:', err);
+                }
+            }
+        }
+
+        function setGenerating(isGenerating) {
+            generateBtn.disabled = isGenerating;
+            // 只有当不在生成中，且输出内容不是占位符时，才启用复制按钮
+            copyBtn.disabled = isGenerating || reviewOutput.textContent.trim() === "请在上方输入关键词后，点击按钮生成好评。" || reviewOutput.textContent.trim().includes("生成好评失败");
+            if (isGenerating) {
+                btnText.textContent = '生成中，请稍候...';
+                loadingSpinner.classList.remove('hidden');
+                reviewOutput.innerHTML = '<p class="text-center text-red-500 font-semibold">AI正在努力创作中...</p>';
+            } else {
+                btnText.textContent = '🚀 自动生成好评文案';
+                loadingSpinner.classList.add('hidden');
+            }
+        }
+
+        // --- Core AI Generation Function ---
+
+        function getLengthRange(lengthKey) {
+            switch (lengthKey) {
+                case 'short': return "30到50个字符";
+                case 'medium': return "60到120个字符";
+                case 'long': return "150个字符以上";
+                default: return "60到120个字符";
+            }
+        }
+        
+        async function generateReview(userKeywords, lengthKey) {
+            const lengthRequirement = getLengthRange(lengthKey);
+
+            // System instruction to guide the model's persona and output format
+            const systemPrompt = `你是一位专注于为餐厅、美食产品或服务撰写高质量、充满热情的客户好评文案的专家。请根据用户提供的关键词，创作一段自然、真实且具有吸引力的中文好评。评论内容必须详细、积极，并确保文本长度在${lengthRequirement}之间。请直接输出好评文案，不要包含任何额外的引导语、标题或总结。`;
+
+            // User query using the provided keywords
+            const userQuery = `根据以下关键词生成好评文案：${userKeywords}`;
+            
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                systemInstruction: {
+                    parts: [{ text: systemPrompt }]
+                },
+                // Optional: Ensure response is grounded for genuine-sounding details
+                tools: [{ "google_search": {} }], 
+            };
+            
+            let lastError = null;
+            const maxRetries = 3;
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        lastError = `API Request failed with status: ${response.status} ${response.statusText}`;
+                        if (response.status === 429) { // Rate limit or transient error
+                             throw new Error("Rate limit or server error, retrying...");
+                        } else {
+                            // Non-retryable error, stop
+                            break;
+                        }
+                    }
+
+                    const result = await response.json();
+                    const candidate = result.candidates?.[0];
+
+                    if (candidate && candidate.content?.parts?.[0]?.text) {
+                        const text = candidate.content.parts[0].text.trim();
+                        return text;
+                    } else {
+                        lastError = "API response was valid but contained no generated text.";
+                        break;
+                    }
+
+                } catch (error) {
+                    lastError = error.message;
+                    // Exponential backoff
+                    if (i < maxRetries - 1) {
+                        const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                    }
+                }
+            }
+            
+            // Fallback error message
+            return `生成好评失败。请检查您的关键词或稍后再试。错误信息: ${lastError || "未知错误"}`;
+        }
+
+
+        // --- Event Handlers ---
+
+        async function handleGenerateClick() {
+            const keywords = keywordsInput.value.trim();
+            const lengthKey = reviewLengthSelect.value;
+
+            if (!keywords) {
+                reviewOutput.innerHTML = '<p class="text-center text-red-500 font-semibold">请先输入您的关键词，描述一下您的体验！</p>';
+                copyBtn.disabled = true;
+                return;
+            }
+
+            setGenerating(true);
+            try {
+                const generatedText = await generateReview(keywords, lengthKey);
+                
+                // Update output and ensure text is displayed correctly
+                if (generatedText.includes("生成好评失败")) {
+                    reviewOutput.innerHTML = `<p class="text-center text-red-500 font-semibold">${generatedText}</p>`;
+                } else {
+                    reviewOutput.textContent = generatedText;
+                }
+                
+                // Update copy button state
+                setGenerating(false);
+
+            } catch (error) {
+                console.error("Critical error during generation:", error);
+                reviewOutput.innerHTML = `<p class="text-center text-red-500 font-semibold">发生意外错误，请检查控制台信息或网络连接。</p>`;
+                setGenerating(false); // Should set false here to re-enable generate button
+            }
+        }
+        
+        // Initial state update to ensure copy button is disabled on load
+        window.onload = () => {
+             // Set initial output content to placeholder text in case browser state persists
+            reviewOutput.innerHTML = '<p class="text-gray-400">请在上方输入关键词后，点击按钮生成好评。</p>';
+            copyBtn.disabled = true;
+        }
+
+    </script>
+
+</body>
+</html>

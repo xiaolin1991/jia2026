@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>崽崽坐姿小卫士</title>
+    <title>坐姿小卫士</title>
     <!-- 引入 Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 引入 Noto Sans Inter 字体 -->
@@ -62,6 +62,9 @@
             <button id="start-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg shadow-md transition duration-150 active:scale-95">
                 开始监控 (点击启动语音提示)
             </button>
+            <button id="test-audio-button" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-lg shadow-md transition duration-150 active:scale-95">
+                测试语音效果 (无需摄像头)
+            </button>
             <div class="text-xs text-gray-500 text-center">
                 首次点击会激活语音合成功能，确保提示有效。
             </div>
@@ -87,6 +90,7 @@
         const canvasCtx = canvasElement.getContext('2d');
         const statusMessage = document.getElementById('status-message');
         const startButton = document.getElementById('start-button');
+        const testAudioButton = document.getElementById('test-audio-button'); // 新增按钮
         const alertCounter = document.getElementById('alert-counter');
 
         let isMonitoring = false;
@@ -160,6 +164,7 @@
             // 检查是否在说话中，是否已解锁，以及 AudioContext 是否存在
             if (isSpeaking || !audioUnlocked || !audioContext) {
                  if (!audioUnlocked) console.log("Audio not unlocked yet. Waiting for user interaction.");
+                 console.warn("Speech skipped. isSpeaking:", isSpeaking, "audioUnlocked:", audioUnlocked, "audioContext is initialized:", !!audioContext);
                 return;
             }
             isSpeaking = true;
@@ -194,23 +199,33 @@
 
             while (!success && retries < MAX_RETRIES) {
                 try {
+                    console.log(`[TTS] Attempting API call (Retry ${retries + 1})...`); // Log attempt
                     const response = await fetch(apiUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
                     });
 
-                    if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
-
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        console.error(`[TTS] API Error Response Status: ${response.status}`, errorText);
+                        throw new Error(`API Error: ${response.statusText}`);
+                    }
+                    
                     const result = await response.json();
+                    console.log("[TTS] API call successful. Parsing response."); // Log success
+                    
                     const part = result?.candidates?.[0]?.content?.parts?.[0];
                     const audioData = part?.inlineData?.data;
                     const mimeType = part?.inlineData?.mimeType;
 
                     if (audioData && mimeType && mimeType.startsWith("audio/")) {
+                        console.log(`[TTS] Audio Data Received. MimeType: ${mimeType}, Size: ${audioData.length} bytes.`); // Log data
+                        
                         // 1. 获取采样率 (默认为 16000)
                         const rateMatch = mimeType.match(/rate=(\d+)/);
                         const sampleRate = rateMatch ? parseInt(rateMatch[1], 10) : 16000; 
+                        console.log(`[TTS] Sample Rate detected: ${sampleRate} Hz.`);
 
                         // 2. 将 Base64 转换为原始 PCM ArrayBuffer
                         const pcmBuffer = base64ToArrayBuffer(audioData);
@@ -234,26 +249,32 @@
 
                         source.onended = () => {
                             isSpeaking = false; // 播放结束后释放锁定
+                            console.log("[TTS] Playback finished. Speaking lock released."); // Log end
                         };
                         source.start(0); // 立即播放
                         
                         success = true;
                     } else {
+                        console.error("[TTS] Missing or invalid audio data in response structure."); // Log missing data
                         throw new Error("TTS API returned invalid audio data structure.");
                     }
 
                 } catch (error) {
-                    console.error("TTS 语音合成失败:", error);
+                    console.error("[TTS] TTS 语音合成失败 (Caught Error):", error);
                     retries++;
                     if (retries < MAX_RETRIES) {
                         const delay = Math.pow(2, retries) * 1000;
+                        console.warn(`[TTS] Retrying in ${delay / 1000}s...`);
                         await new Promise(resolve => setTimeout(resolve, delay)); // Exponential backoff
                     }
                 }
             }
             // 无论成功或失败，如果最终未成功，则清除锁定
             if (!success) {
-                console.warn("无法播放语音提示，请检查网络连接或API状态。");
+                console.error("无法播放语音提示。请检查控制台获取详细错误信息。");
+                // 提供视觉反馈，因为语音失败了
+                statusMessage.textContent = '❌ 语音提示失败！请检查网络和控制台错误。';
+                statusMessage.className = 'text-center font-semibold text-lg p-3 rounded-lg bg-red-800 text-white shadow-xl';
                 isSpeaking = false;
             }
         }
@@ -332,8 +353,11 @@
                     // 错误姿势持续时间超过阈值，发出警告
                     const warningMessage = ALERT_MESSAGES[Math.floor(Math.random() * ALERT_MESSAGES.length)];
                     
-                    statusMessage.textContent = "🚨 " + warningMessage;
-                    statusMessage.className = 'text-center font-semibold text-lg p-3 rounded-lg bg-red-500 text-white shadow-xl animate-pulse';
+                    // 只有在 API 没失败的情况下才更新为警告色
+                    if (statusMessage.className.indexOf('bg-red-800') === -1) {
+                         statusMessage.textContent = "🚨 " + warningMessage;
+                         statusMessage.className = 'text-center font-semibold text-lg p-3 rounded-lg bg-red-500 text-white shadow-xl animate-pulse';
+                    }
 
                     // 播放语音警告
                     if (!isSpeaking) {
@@ -348,8 +372,11 @@
                 } else {
                     // 仍在错误姿势计时中
                     const remaining = ((BAD_POSTURE_THRESHOLD - (Date.now() - badPostureStartTime)) / 1000).toFixed(1);
-                    statusMessage.textContent = `⚠️ 正在检测错误坐姿...请在 ${remaining} 秒内纠正。`;
-                    statusMessage.className = 'text-center font-semibold text-lg p-3 rounded-lg bg-yellow-200 text-yellow-800';
+                    // 只有在 API 没失败的情况下才更新为黄色
+                    if (statusMessage.className.indexOf('bg-red-800') === -1) {
+                        statusMessage.textContent = `⚠️ 正在检测错误坐姿...请在 ${remaining} 秒内纠正。`;
+                        statusMessage.className = 'text-center font-semibold text-lg p-3 rounded-lg bg-yellow-200 text-yellow-800';
+                    }
                 }
 
             } else {
@@ -441,6 +468,34 @@
                 startButton.classList.add('bg-blue-600');
                 statusMessage.textContent = '监控暂停，请点击重新激活。';
                 statusMessage.className = 'text-center font-semibold text-lg p-3 rounded-lg bg-gray-200 text-gray-700';
+            }
+        });
+
+        testAudioButton.addEventListener('click', async () => {
+            console.log("[Test Audio] Button clicked. Attempting audio test.");
+            unlockAudio(); // Always unlock on user interaction
+            
+            if (isSpeaking) {
+                statusMessage.textContent = '请稍候，正在播放上一个提示...';
+                statusMessage.className = 'text-center font-semibold text-lg p-3 rounded-lg bg-yellow-200 text-yellow-800';
+                return;
+            }
+            
+            const testMessage = "语音测试成功。您听到的声音是纠正坐姿时的提醒效果。";
+            statusMessage.textContent = '🔊 正在播放测试语音...';
+            statusMessage.className = 'text-center font-semibold text-lg p-3 rounded-lg bg-purple-100 text-purple-700';
+
+            // Wait for the alert to complete or fail
+            await speakAlert(testMessage);
+
+            // Reset status message if it wasn't set to the RED failure state by speakAlert
+            if (statusMessage.className.indexOf('bg-red-800') === -1) {
+                if (!isMonitoring) {
+                    statusMessage.textContent = '测试完成，请点击开始监控。';
+                    statusMessage.className = 'text-center font-semibold text-lg p-3 rounded-lg bg-gray-200 text-gray-700';
+                } else {
+                    // 如果监控处于活动状态，让 onResults 循环来更新状态
+                }
             }
         });
 

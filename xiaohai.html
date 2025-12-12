@@ -43,7 +43,7 @@
 <body class="bg-gray-50 min-h-screen p-4 flex flex-col items-center">
 
     <div class="w-full max-w-lg mb-6 text-center">
-        <h1 class="text-3xl font-bold text-blue-700 mb-2">坐姿小卫士</h1>
+        <h1 class="text-3xl font-bold text-blue-700 mb-2">小孩坐姿小卫士</h1>
         <p class="text-gray-600 text-sm">请将手机放置在稳定位置，正对孩子上半身。</p>
     </div>
 
@@ -97,14 +97,18 @@
         let alertCount = 0;
         let isSpeaking = false; // Flag to prevent overlapping audio alerts
 
+        // Audio unlock variables
+        let audioContext = null;
+        let audioUnlocked = false;
+
         const apiKey = ""; 
 
         // 随机警告语，包含纠正建议
         const ALERT_MESSAGES = [
-            "小朋友，快点坐直，背要靠到椅背哦！",
-            "哎呀，你趴得太近了！请抬头，让眼睛离书本远一点。",
+            "曹无奈，快点坐直，背要靠到椅背哦！",
+            "哎呀，无奈趴得太近了！请抬头，让眼睛离书本远一点。",
             "小脑袋歪啦，快把肩膀放平，不要侧着写字。",
-            "姿势不对，这样容易近视和驼背哦。请调整坐姿。",
+            "姿势不对，无奈这样容易近视和驼背哦。请调整坐姿。",
             "注意！请把腰挺直，收腹，保持双肩一样高。"
         ];
 
@@ -160,6 +164,31 @@
 
             return new Blob([buffer], { type: 'audio/wav' });
         }
+        
+        /**
+         * 尝试在用户交互后解锁浏览器的音频播放功能。
+         */
+        function unlockAudio() {
+            if (audioUnlocked) return;
+            
+            // 尝试创建/恢复 AudioContext
+            if (!audioContext) {
+                // 确保浏览器兼容性
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            
+            // 检查 context 状态，如果是 suspended (浏览器默认策略)，则尝试 resume
+            if (audioContext.state === 'suspended') {
+                audioContext.resume().then(() => {
+                    console.log('AudioContext resumed successfully.');
+                    audioUnlocked = true;
+                }).catch(e => {
+                    console.error('Failed to resume AudioContext:', e);
+                });
+            } else {
+                audioUnlocked = true;
+            }
+        }
 
 
         // --- TTS API Integration ---
@@ -168,7 +197,8 @@
             if (isSpeaking) return;
             isSpeaking = true;
             
-            const randomDelay = Math.random() * 500 + 500; // 随机延迟 500ms - 1000ms
+            // 随机延迟 500ms - 1000ms，让系统更自然
+            const randomDelay = Math.random() * 500 + 500; 
             await new Promise(resolve => setTimeout(resolve, randomDelay));
 
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
@@ -211,9 +241,9 @@
                     const mimeType = part?.inlineData?.mimeType;
 
                     if (audioData && mimeType && mimeType.startsWith("audio/")) {
-                        // 从 MIME 类型的 rate= 提取采样率
+                        // 从 MIME 类型的 rate= 提取采样率，默认为 16000
                         const rateMatch = mimeType.match(/rate=(\d+)/);
-                        const sampleRate = rateMatch ? parseInt(rateMatch[1], 10) : 16000; // 默认 16000
+                        const sampleRate = rateMatch ? parseInt(rateMatch[1], 10) : 16000; 
 
                         const pcmData = base64ToArrayBuffer(audioData);
                         const pcm16 = new Int16Array(pcmData);
@@ -238,13 +268,11 @@
                     if (retries < MAX_RETRIES) {
                         const delay = Math.pow(2, retries) * 1000;
                         await new Promise(resolve => setTimeout(resolve, delay)); // Exponential backoff
-                    } else {
-                        isSpeaking = false;
                     }
                 }
             }
+            // 无论成功或失败，如果最终未成功，则清除锁定
             if (!success) {
-                // Fallback to console message if all retries fail
                 console.warn("无法播放语音提示，请检查网络连接或API状态。");
                 isSpeaking = false;
             }
@@ -416,7 +444,9 @@
         // --- Event Listener ---
         startButton.addEventListener('click', async () => {
             if (!isMonitoring) {
-                // 不需要 Tone.js 的 setupAudio，直接开始监控
+                // IMPORTANT: Call unlockAudio on user interaction to bypass browser autoplay restrictions
+                unlockAudio(); 
+
                 isMonitoring = true;
                 startButton.textContent = '监控已激活 (点击静音)';
                 startButton.classList.remove('bg-blue-600');

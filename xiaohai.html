@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>晓林监控无奈——坐姿监控与纠正系统</title>
+    <title>小孩坐姿小卫士</title>
     <!-- 引入 Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 引入 Noto Sans Inter 字体 -->
@@ -38,12 +38,11 @@
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
-    <!-- Tone.js 库已不再需要，但保留 TTS 逻辑 -->
 </head>
 <body class="bg-gray-50 min-h-screen p-4 flex flex-col items-center">
 
     <div class="w-full max-w-lg mb-6 text-center">
-        <h1 class="text-3xl font-bold text-blue-700 mb-2">小孩坐姿小卫士</h1>
+        <h1 class="text-3xl font-bold text-blue-700 mb-2">崽崽坐姿小卫士</h1>
         <p class="text-gray-600 text-sm">请将手机放置在稳定位置，正对孩子上半身。</p>
     </div>
 
@@ -112,8 +111,13 @@
             "注意！请把腰挺直，收腹，保持双肩一样高。"
         ];
 
-        // --- TTS Utility Functions (for PCM to WAV conversion) ---
+        // --- TTS Utility Functions ---
 
+        /**
+         * 将 Base64 字符串解码为 ArrayBuffer
+         * @param {string} base64 base64 编码的二进制数据
+         * @returns {ArrayBuffer} 
+         */
         function base64ToArrayBuffer(base64) {
             const binaryString = window.atob(base64);
             const len = binaryString.length;
@@ -122,47 +126,6 @@
                 bytes[i] = binaryString.charCodeAt(i);
             }
             return bytes.buffer;
-        }
-
-        function writeString(view, offset, string) {
-            for (let i = 0; i < string.length; i++) {
-                view.setUint8(offset + i, string.charCodeAt(i));
-            }
-        }
-
-        function pcmToWav(pcmData, sampleRate) {
-            const numChannels = 1;
-            const bytesPerSample = 2; // Int16
-            const bitsPerSample = 16;
-            const blockAlign = numChannels * bytesPerSample;
-            const byteRate = sampleRate * blockAlign;
-
-            const buffer = new ArrayBuffer(44 + pcmData.length * bytesPerSample);
-            const view = new DataView(buffer);
-
-            // Write WAV file header
-            writeString(view, 0, 'RIFF');
-            view.setUint32(4, 36 + pcmData.length * bytesPerSample, true);
-            writeString(view, 8, 'WAVE');
-            writeString(view, 12, 'fmt ');
-            view.setUint32(16, 16, true);
-            view.setUint16(20, 1, true); // PCM
-            view.setUint16(22, numChannels, true);
-            view.setUint32(24, sampleRate, true);
-            view.setUint32(28, byteRate, true);
-            view.setUint16(32, blockAlign, true);
-            view.setUint16(34, bitsPerSample, true);
-            writeString(view, 36, 'data');
-            view.setUint32(40, pcmData.length * bytesPerSample, true);
-
-            // Write PCM data
-            let offset = 44;
-            for (let i = 0; i < pcmData.length; i++) {
-                view.setInt16(offset, pcmData[i], true);
-                offset += 2;
-            }
-
-            return new Blob([buffer], { type: 'audio/wav' });
         }
         
         /**
@@ -180,10 +143,10 @@
             // 检查 context 状态，如果是 suspended (浏览器默认策略)，则尝试 resume
             if (audioContext.state === 'suspended') {
                 audioContext.resume().then(() => {
-                    console.log('AudioContext resumed successfully.');
+                    console.log('AudioContext resumed successfully. 音频已解锁。');
                     audioUnlocked = true;
                 }).catch(e => {
-                    console.error('Failed to resume AudioContext:', e);
+                    console.error('Failed to resume AudioContext: 无法恢复 AudioContext', e);
                 });
             } else {
                 audioUnlocked = true;
@@ -191,10 +154,14 @@
         }
 
 
-        // --- TTS API Integration ---
+        // --- TTS API Integration (使用 AudioContext 播放 PCM) ---
 
         async function speakAlert(text) {
-            if (isSpeaking) return;
+            // 检查是否在说话中，是否已解锁，以及 AudioContext 是否存在
+            if (isSpeaking || !audioUnlocked || !audioContext) {
+                 if (!audioUnlocked) console.log("Audio not unlocked yet. Waiting for user interaction.");
+                return;
+            }
             isSpeaking = true;
             
             // 随机延迟 500ms - 1000ms，让系统更自然
@@ -241,22 +208,35 @@
                     const mimeType = part?.inlineData?.mimeType;
 
                     if (audioData && mimeType && mimeType.startsWith("audio/")) {
-                        // 从 MIME 类型的 rate= 提取采样率，默认为 16000
+                        // 1. 获取采样率 (默认为 16000)
                         const rateMatch = mimeType.match(/rate=(\d+)/);
                         const sampleRate = rateMatch ? parseInt(rateMatch[1], 10) : 16000; 
 
-                        const pcmData = base64ToArrayBuffer(audioData);
-                        const pcm16 = new Int16Array(pcmData);
-                        const wavBlob = pcmToWav(pcm16, sampleRate);
-                        const audioUrl = URL.createObjectURL(wavBlob);
+                        // 2. 将 Base64 转换为原始 PCM ArrayBuffer
+                        const pcmBuffer = base64ToArrayBuffer(audioData);
+                        
+                        // 3. 转换为 16 位有符号整数数组
+                        const pcm16 = new Int16Array(pcmBuffer);
+                        
+                        // 4. 创建 AudioBuffer (单声道, 长度, 采样率)
+                        const audioBuffer = audioContext.createBuffer(1, pcm16.length, sampleRate);
+                        const channelData = audioBuffer.getChannelData(0);
+                        
+                        // 5. 将 16 位整数数据转换为 AudioBuffer 需要的 Float32 [-1.0, 1.0] 范围
+                        for (let i = 0; i < pcm16.length; i++) {
+                            channelData[i] = pcm16[i] / 32768.0; 
+                        }
 
-                        const audio = new Audio(audioUrl);
-                        audio.play();
+                        // 6. 创建 BufferSource 节点并播放
+                        const source = audioContext.createBufferSource();
+                        source.buffer = audioBuffer;
+                        source.connect(audioContext.destination);
 
-                        audio.onended = () => {
-                            URL.revokeObjectURL(audioUrl);
-                            isSpeaking = false;
+                        source.onended = () => {
+                            isSpeaking = false; // 播放结束后释放锁定
                         };
+                        source.start(0); // 立即播放
+                        
                         success = true;
                     } else {
                         throw new Error("TTS API returned invalid audio data structure.");

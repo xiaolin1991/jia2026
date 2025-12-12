@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>崽崽坐姿小卫士</title>
+    <title>坐姿小卫士</title>
     <!-- 引入 Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 引入 Noto Sans Inter 字体 -->
@@ -100,12 +100,6 @@
         let alertCount = 0;
         let isSpeaking = false; // Flag to prevent overlapping audio alerts
 
-        // Audio unlock variables
-        let audioContext = null;
-        let audioUnlocked = false;
-
-        const apiKey = ""; 
-
         // 随机警告语，包含纠正建议
         const ALERT_MESSAGES = [
             "曹无奈，快点坐直，背要靠到椅背哦！",
@@ -115,170 +109,57 @@
             "注意！请把腰挺直，收腹，保持双肩一样高。"
         ];
 
-        // --- TTS Utility Functions ---
+        // --- TTS Implementation using Native Web Speech API (替代 Gemini TTS) ---
 
         /**
-         * 将 Base64 字符串解码为 ArrayBuffer
-         * @param {string} base64 base64 编码的二进制数据
-         * @returns {ArrayBuffer} 
+         * 使用浏览器原生的语音合成功能播放警告语。
+         * @param {string} text 要播放的文本
          */
-        function base64ToArrayBuffer(base64) {
-            const binaryString = window.atob(base64);
-            const len = binaryString.length;
-            const bytes = new Uint8Array(len);
-            for (let i = 0; i < len; i++) {
-                bytes[i] = binaryString.charCodeAt(i);
-            }
-            return bytes.buffer;
-        }
-        
-        /**
-         * 尝试在用户交互后解锁浏览器的音频播放功能。
-         */
-        function unlockAudio() {
-            if (audioUnlocked) return;
-            
-            // 尝试创建/恢复 AudioContext
-            if (!audioContext) {
-                // 确保浏览器兼容性
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            }
-            
-            // 检查 context 状态，如果是 suspended (浏览器默认策略)，则尝试 resume
-            if (audioContext.state === 'suspended') {
-                audioContext.resume().then(() => {
-                    console.log('AudioContext resumed successfully. 音频已解锁。');
-                    audioUnlocked = true;
-                }).catch(e => {
-                    console.error('Failed to resume AudioContext: 无法恢复 AudioContext', e);
-                });
-            } else {
-                audioUnlocked = true;
-            }
-        }
-
-
-        // --- TTS API Integration (使用 AudioContext 播放 PCM) ---
-
         async function speakAlert(text) {
-            // 检查是否在说话中，是否已解锁，以及 AudioContext 是否存在
-            if (isSpeaking || !audioUnlocked || !audioContext) {
-                 if (!audioUnlocked) console.log("Audio not unlocked yet. Waiting for user interaction.");
-                 console.warn("Speech skipped. isSpeaking:", isSpeaking, "audioUnlocked:", audioUnlocked, "audioContext is initialized:", !!audioContext);
+            // 1. 检查 Web Speech API 是否可用
+            if (!('speechSynthesis' in window)) {
+                console.error("Web Speech API is not supported in this browser.");
+                statusMessage.textContent = '❌ 浏览器不支持语音提示！';
+                statusMessage.className = 'text-center font-semibold text-lg p-3 rounded-lg bg-red-800 text-white shadow-xl';
                 return;
             }
-            isSpeaking = true;
-            
-            // 随机延迟 500ms - 1000ms，让系统更自然
-            const randomDelay = Math.random() * 500 + 500; 
-            await new Promise(resolve => setTimeout(resolve, randomDelay));
 
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
-
-            const payload = {
-                contents: [{
-                    parts: [{ text: text }]
-                }],
-                generationConfig: {
-                    responseModalities: ["AUDIO"],
-                    speechConfig: {
-                        voiceConfig: {
-                            // 更改为 "Kore" 语音 (Firm/坚定) 尝试解决 API 错误
-                            prebuiltVoiceConfig: { voiceName: "Kore" } 
-                        },
-                        // 设置语言为中文
-                        languageCode: "zh-CN" 
-                    }
-                },
-                model: "gemini-2.5-flash-preview-tts"
-            };
-
-            let success = false;
-            let retries = 0;
-            const MAX_RETRIES = 3;
-
-            while (!success && retries < MAX_RETRIES) {
-                try {
-                    console.log(`[TTS] Attempting API call (Retry ${retries + 1})...`); // Log attempt
-                    console.log("[TTS] Payload:", JSON.stringify(payload)); // Log payload for inspection
-                    const response = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-
-                    if (!response.ok) {
-                        const errorText = await response.text();
-                        console.error(`[TTS] API Error Response Status: ${response.status}`, errorText);
-                        // 抛出更详细的错误信息，包含状态码和错误文本的片段
-                        throw new Error(`API Call Failed (Status: ${response.status} ${response.statusText || 'Unknown'}): ${errorText.substring(0, 100)}...`);
-                    }
-                    
-                    const result = await response.json();
-                    console.log("[TTS] API call successful. Parsing response."); // Log success
-                    
-                    const part = result?.candidates?.[0]?.content?.parts?.[0];
-                    const audioData = part?.inlineData?.data;
-                    const mimeType = part?.inlineData?.mimeType;
-
-                    if (audioData && mimeType && mimeType.startsWith("audio/")) {
-                        console.log(`[TTS] Audio Data Received. MimeType: ${mimeType}, Size: ${audioData.length} bytes.`); // Log data
-                        
-                        // 1. 获取采样率 (默认为 16000)
-                        const rateMatch = mimeType.match(/rate=(\d+)/);
-                        const sampleRate = rateMatch ? parseInt(rateMatch[1], 10) : 16000; 
-                        console.log(`[TTS] Sample Rate detected: ${sampleRate} Hz.`);
-
-                        // 2. 将 Base64 转换为原始 PCM ArrayBuffer
-                        const pcmBuffer = base64ToArrayBuffer(audioData);
-                        
-                        // 3. 转换为 16 位有符号整数数组
-                        const pcm16 = new Int16Array(pcmBuffer);
-                        
-                        // 4. 创建 AudioBuffer (单声道, 长度, 采样率)
-                        const audioBuffer = audioContext.createBuffer(1, pcm16.length, sampleRate);
-                        const channelData = audioBuffer.getChannelData(0);
-                        
-                        // 5. 将 16 位整数数据转换为 AudioBuffer 需要的 Float32 [-1.0, 1.0] 范围
-                        for (let i = 0; i < pcm16.length; i++) {
-                            channelData[i] = pcm16[i] / 32768.0; 
-                        }
-
-                        // 6. 创建 BufferSource 节点并播放
-                        const source = audioContext.createBufferSource();
-                        source.buffer = audioBuffer;
-                        source.connect(audioContext.destination);
-
-                        source.onended = () => {
-                            isSpeaking = false; // 播放结束后释放锁定
-                            console.log("[TTS] Playback finished. Speaking lock released."); // Log end
-                        };
-                        source.start(0); // 立即播放
-                        
-                        success = true;
-                    } else {
-                        console.error("[TTS] Missing or invalid audio data in response structure."); // Log missing data
-                        throw new Error("TTS API returned invalid audio data structure.");
-                    }
-
-                } catch (error) {
-                    console.error("[TTS] TTS 语音合成失败 (Caught Error):", error);
-                    retries++;
-                    if (retries < MAX_RETRIES) {
-                        const delay = Math.pow(2, retries) * 1000;
-                        console.warn(`[TTS] Retrying in ${delay / 1000}s...`);
-                        await new Promise(resolve => setTimeout(resolve, delay)); // Exponential backoff
-                    }
-                }
+            // 2. 检查是否正在说话，避免语音重叠
+            if (window.speechSynthesis.speaking || isSpeaking) {
+                console.warn("Speech skipped. Already speaking.");
+                return;
             }
-            // 无论成功或失败，如果最终未成功，则清除锁定
-            if (!success) {
-                console.error("无法播放语音提示。请检查控制台获取详细错误信息。");
-                // 提供视觉反馈，因为语音失败了
-                statusMessage.textContent = '❌ 语音提示失败！请检查网络和控制台错误。';
+            
+            isSpeaking = true; // 锁定说话状态
+
+            // 3. 创建语音实例
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'zh-CN'; // 设置语言为中文
+            utterance.rate = 1.0; 
+
+            // 4. 设置结束和错误回调
+            utterance.onend = () => {
+                isSpeaking = false; // 播放结束后释放锁定
+                console.log("[Native TTS] Playback finished. Speaking lock released.");
+            };
+            
+            utterance.onerror = (event) => {
+                console.error("[Native TTS] TTS Error:", event.error);
+                statusMessage.textContent = '❌ 语音合成错误 (Native TTS)';
                 statusMessage.className = 'text-center font-semibold text-lg p-3 rounded-lg bg-red-800 text-white shadow-xl';
                 isSpeaking = false;
-            }
+            };
+
+            // 5. 开始播放
+            window.speechSynthesis.speak(utterance);
+
+            // 6. 添加超时强制重置锁定，防止 onend/onerror 失败导致 app 锁死
+            setTimeout(() => {
+                if (isSpeaking) {
+                     isSpeaking = false;
+                     console.warn("[Native TTS] Forced 'isSpeaking' reset after timeout.");
+                }
+            }, 5000); // 5 秒后强制重置
         }
 
         // --- Posture Analysis Logic (Unchanged) ---
@@ -355,13 +236,13 @@
                     // 错误姿势持续时间超过阈值，发出警告
                     const warningMessage = ALERT_MESSAGES[Math.floor(Math.random() * ALERT_MESSAGES.length)];
                     
-                    // 只有在 API 没失败的情况下才更新为警告色
+                    // 只有在没有本地语音错误的情况下才更新为警告色
                     if (statusMessage.className.indexOf('bg-red-800') === -1) {
                          statusMessage.textContent = "🚨 " + warningMessage;
                          statusMessage.className = 'text-center font-semibold text-lg p-3 rounded-lg bg-red-500 text-white shadow-xl animate-pulse';
                     }
 
-                    // 播放语音警告
+                    // 播放语音警告 (使用 Native TTS)
                     if (!isSpeaking) {
                         speakAlert(warningMessage);
                         alertCount++;
@@ -374,7 +255,7 @@
                 } else {
                     // 仍在错误姿势计时中
                     const remaining = ((BAD_POSTURE_THRESHOLD - (Date.now() - badPostureStartTime)) / 1000).toFixed(1);
-                    // 只有在 API 没失败的情况下才更新为黄色
+                    // 只有在没有本地语音错误的情况下才更新为黄色
                     if (statusMessage.className.indexOf('bg-red-800') === -1) {
                         statusMessage.textContent = `⚠️ 正在检测错误坐姿...请在 ${remaining} 秒内纠正。`;
                         statusMessage.className = 'text-center font-semibold text-lg p-3 rounded-lg bg-yellow-200 text-yellow-800';
@@ -453,9 +334,6 @@
         // --- Event Listener ---
         startButton.addEventListener('click', async () => {
             if (!isMonitoring) {
-                // IMPORTANT: Call unlockAudio on user interaction to bypass browser autoplay restrictions
-                unlockAudio(); 
-
                 isMonitoring = true;
                 startButton.textContent = '监控已激活 (点击静音)';
                 startButton.classList.remove('bg-blue-600');
@@ -475,7 +353,6 @@
 
         testAudioButton.addEventListener('click', async () => {
             console.log("[Test Audio] Button clicked. Attempting audio test.");
-            unlockAudio(); // Always unlock on user interaction
             
             if (isSpeaking) {
                 statusMessage.textContent = '请稍候，正在播放上一个提示...';
@@ -487,18 +364,18 @@
             statusMessage.textContent = '🔊 正在播放测试语音...';
             statusMessage.className = 'text-center font-semibold text-lg p-3 rounded-lg bg-purple-100 text-purple-700';
 
-            // Wait for the alert to complete or fail
+            // 播放测试语音
             await speakAlert(testMessage);
 
-            // Reset status message if it wasn't set to the RED failure state by speakAlert
-            if (statusMessage.className.indexOf('bg-red-800') === -1) {
-                if (!isMonitoring) {
-                    statusMessage.textContent = '测试完成，请点击开始监控。';
-                    statusMessage.className = 'text-center font-semibold text-lg p-3 rounded-lg bg-gray-200 text-gray-700';
-                } else {
-                    // 如果监控处于活动状态，让 onResults 循环来更新状态
+            // 播放结束后，重置状态消息
+            setTimeout(() => {
+                if (statusMessage.className.indexOf('bg-red-800') === -1) {
+                    if (!isMonitoring) {
+                        statusMessage.textContent = '测试完成，请点击开始监控。';
+                        statusMessage.className = 'text-center font-semibold text-lg p-3 rounded-lg bg-gray-200 text-gray-700';
+                    }
                 }
-            }
+            }, 3000); // 3秒后重置，留出足够播放时间
         });
 
         // 启动流程

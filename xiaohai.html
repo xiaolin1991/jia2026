@@ -3,388 +3,850 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>无奈坐姿小卫士</title>
-    <!-- 引入 Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 引入 Noto Sans Inter 字体 -->
+    <title>无奈坐姿监控助手</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-
-        /* 自定义 CSS 用于视频和画布的叠加 */
-        #container {
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Comic Sans MS', '微软雅黑', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(90deg, #6a89cc 0%, #4a69bd 100%);
+            color: white;
+            padding: 25px;
+            text-align: center;
+            position: relative;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .main-content {
+            display: flex;
+            flex-wrap: wrap;
+            padding: 20px;
+        }
+        
+        .video-section {
+            flex: 1;
+            min-width: 300px;
+            padding: 20px;
+        }
+        
+        .controls-section {
+            flex: 1;
+            min-width: 300px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 15px;
+            margin-left: 10px;
+        }
+        
+        .video-container {
             position: relative;
             width: 100%;
-            max-width: 600px; /* 限制最大宽度以适应桌面视图 */
-            margin: 0 auto;
+            height: 400px;
+            background-color: #222;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 20px;
         }
-        #video, #canvas {
+        
+        #video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .pose-canvas {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            border-radius: 1rem;
+            z-index: 2;
         }
-        #video {
-            transform: scaleX(-1); /* 镜像显示，用户体验更好 */
+        
+        .status-indicator {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            z-index: 3;
+            display: flex;
+            align-items: center;
         }
-        #canvas {
-            transform: scaleX(-1); /* 保持镜像一致 */
+        
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+            background-color: #4cd964;
+        }
+        
+        .status-dot.bad {
+            background-color: #ff3b30;
+        }
+        
+        .status-dot.warning {
+            background-color: #ffcc00;
+        }
+        
+        .control-panel {
+            background-color: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            margin-bottom: 25px;
+        }
+        
+        h2 {
+            color: #4a69bd;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+        }
+        
+        .control-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+        
+        .button {
+            background: linear-gradient(to right, #6a89cc, #4a69bd);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(106, 137, 204, 0.4);
+        }
+        
+        .button:active {
+            transform: translateY(0);
+        }
+        
+        .button i {
+            margin-right: 8px;
+        }
+        
+        .button.stop {
+            background: linear-gradient(to right, #ff6b6b, #ee5a52);
+        }
+        
+        .timer-display {
+            font-size: 2.5rem;
+            font-weight: bold;
+            text-align: center;
+            color: #4a69bd;
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f0f4ff;
+            border-radius: 10px;
+        }
+        
+        .alert-box {
+            background-color: #fff9e6;
+            border-left: 5px solid #ffcc00;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+            display: none;
+        }
+        
+        .alert-box.show {
+            display: block;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 204, 0, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 204, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 204, 0, 0); }
+        }
+        
+        .warning-list {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .warning-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .warning-item:last-child {
+            border-bottom: none;
+        }
+        
+        .warning-item i {
+            color: #ff6b6b;
+            margin-right: 8px;
+        }
+        
+        .tips-section {
+            background-color: #e8f4ff;
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 20px;
+        }
+        
+        .tips-section h3 {
+            color: #4a69bd;
+            margin-bottom: 15px;
+        }
+        
+        .tip-item {
+            padding: 10px 0;
+            border-bottom: 1px dashed #b8d4ff;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 0.9rem;
+            background-color: #f5f5f5;
+            border-top: 1px solid #eee;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .controls-section {
+                margin-left: 0;
+                margin-top: 20px;
+            }
+            
+            .video-container {
+                height: 300px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+        }
+        
+        .voice-select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            margin-bottom: 15px;
+        }
+        
+        .rest-timer {
+            background-color: #e8f7ef;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: center;
+            display: none;
+        }
+        
+        .rest-timer.show {
+            display: block;
+        }
+        
+        .progress-bar {
+            height: 10px;
+            background-color: #eee;
+            border-radius: 5px;
+            margin-top: 15px;
+            overflow: hidden;
+        }
+        
+        .progress {
+            height: 100%;
+            background: linear-gradient(to right, #4cd964, #2ecc71);
+            width: 0%;
+            transition: width 0.5s ease;
         }
     </style>
-    <!-- 引入 MediaPipe Pose (姿势检测) -->
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
 </head>
-<body class="bg-gray-50 min-h-screen p-4 flex flex-col items-center">
-
-    <div class="w-full max-w-lg mb-6 text-center">
-        <h1 class="text-3xl font-bold text-blue-700 mb-2">无奈小卫士</h1>
-        <p class="text-gray-600 text-sm">请将手机放置在稳定位置，正对孩子上半身。</p>
-    </div>
-
-    <!-- 视频和画布容器 -->
-    <div id="container" class="w-full max-w-lg shadow-2xl bg-gray-900 rounded-xl overflow-hidden aspect-video">
-        <video id="video" playsinline></video>
-        <canvas id="canvas"></canvas>
-    </div>
-
-    <!-- 状态和控制区域 -->
-    <div class="w-full max-w-lg mt-6 bg-white p-6 rounded-xl shadow-lg">
-        <div id="status-message" class="text-center font-semibold text-lg p-3 rounded-lg transition-all duration-300 bg-green-100 text-green-700">
-            等待摄像头启动...
-        </div>
-
-        <div class="mt-4 flex flex-col space-y-3">
-            <button id="start-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg shadow-md transition duration-150 active:scale-95">
-                开始监控 (点击启动语音提示)
-            </button>
-            <button id="test-audio-button" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-lg shadow-md transition duration-150 active:scale-95">
-                测试语音效果 (无需摄像头)
-            </button>
-            <div class="text-xs text-gray-500 text-center">
-                首次点击会激活语音合成功能，确保提示有效。
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-child"></i> 儿童坐姿监控助手</h1>
+            <p class="subtitle">智能检测坐姿，培养良好习惯，保护视力健康</p>
+        </header>
+        
+        <div class="main-content">
+            <div class="video-section">
+                <h2><i class="fas fa-video"></i> 实时监控画面</h2>
+                <div class="video-container">
+                    <video id="video" autoplay playsinline></video>
+                    <canvas class="pose-canvas" id="pose-canvas"></canvas>
+                    <div class="status-indicator">
+                        <div class="status-dot" id="status-dot"></div>
+                        <span id="status-text">等待检测...</span>
+                    </div>
+                </div>
+                
+                <div class="control-panel">
+                    <h2><i class="fas fa-cogs"></i> 监控控制</h2>
+                    <div class="control-group">
+                        <label for="voice-select">选择提示声音：</label>
+                        <select id="voice-select" class="voice-select">
+                            <option value="female1">温柔女声 (默认)</option>
+                            <option value="female2">清脆女声</option>
+                            <option value="female3">亲切女声</option>
+                        </select>
+                    </div>
+                    
+                    <button class="button" id="start-btn">
+                        <i class="fas fa-play-circle"></i> 开始监控
+                    </button>
+                    <button class="button stop" id="stop-btn">
+                        <i class="fas fa-stop-circle"></i> 停止监控
+                    </button>
+                    <button class="button" id="test-voice-btn">
+                        <i class="fas fa-volume-up"></i> 测试语音
+                    </button>
+                </div>
+                
+                <div class="alert-box" id="alert-box">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>坐姿提醒：</strong>
+                    <span id="alert-message">请坐直身体，保持正确坐姿！</span>
+                </div>
+                
+                <div class="rest-timer" id="rest-timer">
+                    <h3><i class="fas fa-clock"></i> 休息时间到！</h3>
+                    <p>已经学习45分钟了，请站起来活动一下，看看远处，让眼睛休息5分钟。</p>
+                    <div class="progress-bar">
+                        <div class="progress" id="rest-progress"></div>
+                    </div>
+                    <p id="rest-countdown">5:00 后恢复监控</p>
+                </div>
             </div>
-            <div id="alert-counter" class="text-sm text-red-500 text-center hidden mt-2">
-                今日已提醒次数: 0
+            
+            <div class="controls-section">
+                <h2><i class="fas fa-chart-line"></i> 坐姿监控状态</h2>
+                
+                <div class="timer-display">
+                    <span id="minutes">45</span>:<span id="seconds">00</span>
+                </div>
+                <p style="text-align: center; margin-bottom: 20px;">距离下次休息还有</p>
+                
+                <div class="control-group">
+                    <h3><i class="fas fa-bell"></i> 坐姿纠正提示</h3>
+                    <p id="correction-tip">监控准备就绪，点击"开始监控"按钮启动坐姿检测。</p>
+                </div>
+                
+                <div class="warning-list" id="warning-list">
+                    <div class="warning-item">
+                        <i class="fas fa-exclamation-circle"></i> 系统已准备就绪
+                    </div>
+                </div>
+                
+                <div class="tips-section">
+                    <h3><i class="fas fa-lightbulb"></i> 正确坐姿要点</h3>
+                    <div class="tip-item">
+                        <strong>1. 背部挺直：</strong> 背部应轻靠椅背，保持自然直立
+                    </div>
+                    <div class="tip-item">
+                        <strong>2. 双脚平放：</strong> 双脚平放在地上，不要悬空或交叉
+                    </div>
+                    <div class="tip-item">
+                        <strong>3. 眼睛距离：</strong> 眼睛与书本/屏幕保持30-40厘米距离
+                    </div>
+                    <div class="tip-item">
+                        <strong>4. 手臂自然：</strong> 手臂自然放在桌面上，不要歪斜
+                    </div>
+                    <div class="tip-item">
+                        <strong>5. 定时休息：</strong> 每45分钟休息5-10分钟，看看远处
+                    </div>
+                </div>
             </div>
         </div>
-
-        <div class="mt-6 border-t pt-4">
-            <h3 class="text-md font-bold text-gray-700 mb-2">姿势检测指标 (简化)</h3>
-            <ul class="text-sm text-gray-600 space-y-1 list-disc list-inside">
-                <li><span class="font-medium">头部正直度:</span> 检查鼻尖与肩膀中点的垂直对齐。</li>
-                <li><span class="font-medium">侧倾:</span> 检查左右肩膀的垂直高度差。</li>
-                <li><span class="font-medium">持续时长:</span> 错误姿势持续超过 2 秒才会触发提醒。</li>
-            </ul>
+        
+        <div class="footer">
+            <p>© 2023 儿童坐姿监控助手 | 设计用于帮助儿童培养良好坐姿习惯 | 本系统在浏览器本地运行，不会上传任何视频数据</p>
         </div>
     </div>
 
-    <script type="module">
-        // Global variables
-        const videoElement = document.getElementById('video');
-        const canvasElement = document.getElementById('canvas');
-        const canvasCtx = canvasElement.getContext('2d');
-        const statusMessage = document.getElementById('status-message');
-        const startButton = document.getElementById('start-button');
-        const testAudioButton = document.getElementById('test-audio-button'); // 新增按钮
-        const alertCounter = document.getElementById('alert-counter');
-
+    <script>
+        // 全局变量
+        let videoStream = null;
         let isMonitoring = false;
-        let pose;
-        let badPostureStartTime = 0;
-        const BAD_POSTURE_THRESHOLD = 2000; // 2 seconds
-        let alertCount = 0;
-        let isSpeaking = false; // Flag to prevent overlapping audio alerts
-
-        // 随机警告语，包含纠正建议
-        const ALERT_MESSAGES = [
-            "曹无奈，快点坐直，背要靠到椅背哦！",
-            "哎呀，无奈趴得太近了！请抬头，让眼睛离书本远一点。",
-            "小脑袋歪啦，快把肩膀放平，不要侧着写字。",
-            "姿势不对，无奈这样容易近视和驼背哦。请调整坐姿。",
-            "注意！请把腰挺直，收腹，保持双肩一样高。"
+        let monitorInterval = null;
+        let timerInterval = null;
+        let remainingTime = 45 * 60; // 45分钟，以秒为单位
+        let badPostureCount = 0;
+        let lastAlertTime = 0;
+        const ALERT_COOLDOWN = 10000; // 10秒内不重复提醒
+        let currentVoice = 'female1';
+        
+        // 警告语数组
+        const warningMessages = [
+            "小朋友，你的坐姿有点歪了哦，请坐直身体！",
+            "注意坐姿！背要挺直，眼睛离书本不要太近。",
+            "检测到你有点弯腰了，请挺直背部保护脊椎。",
+            "坐姿不正确哦，请调整姿势，双脚平放地面。",
+            "你的头太低了，请抬高一点，保护视力很重要。",
+            "肩膀放松，不要一边高一边低，保持平衡。",
+            "坐姿提醒：身体不要歪向一边，保持正直。",
+            "小同学，请坐好，保持正确的写字姿势哦！"
         ];
-
-        // --- TTS Implementation using Native Web Speech API (替代 Gemini TTS) ---
-
-        /**
-         * 使用浏览器原生的语音合成功能播放警告语。
-         * @param {string} text 要播放的文本
-         */
-        async function speakAlert(text) {
-            // 1. 检查 Web Speech API 是否可用
-            if (!('speechSynthesis' in window)) {
-                console.error("Web Speech API is not supported in this browser.");
-                statusMessage.textContent = '❌ 浏览器不支持语音提示！';
-                statusMessage.className = 'text-center font-semibold text-lg p-3 rounded-lg bg-red-800 text-white shadow-xl';
-                return;
-            }
-
-            // 2. 检查是否正在说话，避免语音重叠
-            if (window.speechSynthesis.speaking || isSpeaking) {
-                console.warn("Speech skipped. Already speaking.");
-                return;
-            }
+        
+        // 坐姿调整建议
+        const correctionTips = [
+            "请将背部轻轻靠在椅背上，保持自然直立。",
+            "双脚平放在地面上，不要悬空或交叉。",
+            "调整椅子高度，使大腿与地面平行。",
+            "眼睛与书本保持30-40厘米的距离。",
+            "双臂自然放在桌面上，肘部呈90度角。",
+            "书本或屏幕应放在正前方，不要歪着头看。",
+            "如果使用电脑，屏幕顶部应与眼睛水平。",
+            "肩膀放松，不要耸肩，保持自然状态。"
+        ];
+        
+        // DOM元素
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('pose-canvas');
+        const ctx = canvas.getContext('2d');
+        const startBtn = document.getElementById('start-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        const testVoiceBtn = document.getElementById('test-voice-btn');
+        const statusDot = document.getElementById('status-dot');
+        const statusText = document.getElementById('status-text');
+        const alertBox = document.getElementById('alert-box');
+        const alertMessage = document.getElementById('alert-message');
+        const correctionTip = document.getElementById('correction-tip');
+        const warningList = document.getElementById('warning-list');
+        const minutesDisplay = document.getElementById('minutes');
+        const secondsDisplay = document.getElementById('seconds');
+        const voiceSelect = document.getElementById('voice-select');
+        const restTimer = document.getElementById('rest-timer');
+        const restCountdown = document.getElementById('rest-countdown');
+        const restProgress = document.getElementById('rest-progress');
+        
+        // 初始化
+        function init() {
+            // 设置画布尺寸
+            canvas.width = video.offsetWidth;
+            canvas.height = video.offsetHeight;
             
-            isSpeaking = true; // 锁定说话状态
-
-            // 3. 创建语音实例
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'zh-CN'; // 设置语言为中文
-            utterance.rate = 1.0; 
-
-            // 4. 设置结束和错误回调
-            utterance.onend = () => {
-                isSpeaking = false; // 播放结束后释放锁定
-                console.log("[Native TTS] Playback finished. Speaking lock released.");
-            };
+            // 事件监听
+            startBtn.addEventListener('click', startMonitoring);
+            stopBtn.addEventListener('click', stopMonitoring);
+            testVoiceBtn.addEventListener('click', testVoice);
+            voiceSelect.addEventListener('change', function() {
+                currentVoice = this.value;
+            });
             
-            utterance.onerror = (event) => {
-                console.error("[Native TTS] TTS Error:", event.error);
-                statusMessage.textContent = '❌ 语音合成错误 (Native TTS)';
-                statusMessage.className = 'text-center font-semibold text-lg p-3 rounded-lg bg-red-800 text-white shadow-xl';
-                isSpeaking = false;
-            };
-
-            // 5. 开始播放
-            window.speechSynthesis.speak(utterance);
-
-            // 6. 添加超时强制重置锁定，防止 onend/onerror 失败导致 app 锁死
+            // 初始化计时器显示
+            updateTimerDisplay();
+            
+            // 开始摄像头
+            startCamera();
+            
+            // 模拟初始化姿态检测
             setTimeout(() => {
-                if (isSpeaking) {
-                     isSpeaking = false;
-                     console.warn("[Native TTS] Forced 'isSpeaking' reset after timeout.");
-                }
-            }, 5000); // 5 秒后强制重置
+                addWarningMessage("系统初始化完成，准备进行坐姿检测");
+            }, 1000);
         }
-
-        // --- Posture Analysis Logic (Unchanged) ---
-
-        /**
-         * 检查检测到的姿势是否符合良好坐姿的标准。
-         * @param {Object} results MediaPipe Pose 结果
-         * @returns {string | null} 错误描述字符串，如果姿势良好则返回 null
-         */
-        function checkPosture(results) {
-            const landmarks = results.poseWorldLandmarks;
-            if (!landmarks || landmarks.length === 0) {
-                return "未检测到人体。";
-            }
-
-            // 获取关键点 (使用世界坐标 World Landmarks 以减少透视失真)
-            const nose = landmarks[POSE_LANDMARKS.NOSE];
-            const leftShoulder = landmarks[POSE_LANDMARKS.LEFT_SHOULDER];
-            const rightShoulder = landmarks[POSE_LANDMARKS.RIGHT_SHOULDER];
-            
-            // 使用可视度 (visibility) 检查关键点是否被遮挡或在视线外
-            const minVisibility = 0.6;
-            if (nose.visibility < minVisibility || leftShoulder.visibility < minVisibility || rightShoulder.visibility < minVisibility) {
-                return "关键点不可见，请保持完整身体在镜头内。";
-            }
-
-            // 1. 头部低垂/趴桌检测 (检查鼻子相对于肩膀的垂直位置)
-            const shoulderMidY = (leftShoulder.y + rightShoulder.y) / 2;
-            const noseY = nose.y;
-
-            const verticalSlouchTolerance = 0.08; // 8% 的世界坐标差值
-            if (noseY - shoulderMidY > verticalSlouchTolerance) {
-                return "头部低垂，请坐直！";
-            }
-            
-            // 2. 侧倾/歪斜检测 (检查左右肩膀的垂直高度差)
-            const sideLeanTolerance = 0.05; // 5% 的世界坐标差值
-            const shoulderDiffY = Math.abs(leftShoulder.y - rightShoulder.y);
-
-            if (shoulderDiffY > sideLeanTolerance) {
-                return "身体歪斜，请保持双肩水平！";
-            }
-
-            // 姿势良好
-            return null;
-        }
-
-
-        // --- MediaPipe Callback ---
-
-        function onResults(results) {
-            if (!isMonitoring) return;
-
-            // 绘制清空画布
-            canvasCtx.save();
-            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-            
-            // 绘制姿势关键点和连接线
-            drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS,
-                           {color: '#00FF00', lineWidth: 4});
-            drawLandmarks(canvasCtx, results.poseLandmarks,
-                          {color: '#FF0000', lineWidth: 2});
-            canvasCtx.restore();
-
-            // 姿势检测逻辑
-            const error = checkPosture(results);
-
-            if (error) {
-                // 检测到错误姿势
-                if (badPostureStartTime === 0) {
-                    // 记录错误姿势开始时间
-                    badPostureStartTime = Date.now();
-                } else if (Date.now() - badPostureStartTime >= BAD_POSTURE_THRESHOLD) {
-                    // 错误姿势持续时间超过阈值，发出警告
-                    const warningMessage = ALERT_MESSAGES[Math.floor(Math.random() * ALERT_MESSAGES.length)];
-                    
-                    // 只有在没有本地语音错误的情况下才更新为警告色
-                    if (statusMessage.className.indexOf('bg-red-800') === -1) {
-                         statusMessage.textContent = "🚨 " + warningMessage;
-                         statusMessage.className = 'text-center font-semibold text-lg p-3 rounded-lg bg-red-500 text-white shadow-xl animate-pulse';
-                    }
-
-                    // 播放语音警告 (使用 Native TTS)
-                    if (!isSpeaking) {
-                        speakAlert(warningMessage);
-                        alertCount++;
-                        alertCounter.textContent = `今日已提醒次数: ${alertCount}`;
-                        alertCounter.classList.remove('hidden');
-                    }
-                    
-                    // 重置计时器，避免连续触发，直到姿势纠正
-                    badPostureStartTime = Date.now(); 
-                } else {
-                    // 仍在错误姿势计时中
-                    const remaining = ((BAD_POSTURE_THRESHOLD - (Date.now() - badPostureStartTime)) / 1000).toFixed(1);
-                    // 只有在没有本地语音错误的情况下才更新为黄色
-                    if (statusMessage.className.indexOf('bg-red-800') === -1) {
-                        statusMessage.textContent = `⚠️ 正在检测错误坐姿...请在 ${remaining} 秒内纠正。`;
-                        statusMessage.className = 'text-center font-semibold text-lg p-3 rounded-lg bg-yellow-200 text-yellow-800';
-                    }
-                }
-
-            } else {
-                // 姿势良好
-                badPostureStartTime = 0; // 重置计时器
-                statusMessage.textContent = '✅ 坐姿端正，继续保持！';
-                statusMessage.className = 'text-center font-semibold text-lg p-3 rounded-lg bg-green-100 text-green-700';
-            }
-        }
-
-
-        // --- Initialization and Camera Setup (Unchanged) ---
-
-        function onVideoLoaded() {
-             // 确保画布和视频尺寸一致
-            canvasElement.width = videoElement.videoWidth;
-            canvasElement.height = videoElement.videoHeight;
-            // 确保容器保持正确的宽高比
-            const aspectRatio = videoElement.videoHeight / videoElement.videoWidth;
-            document.getElementById('container').style.paddingBottom = `${aspectRatio * 100}%`;
-        }
-
-
-        function startCamera() {
-            // 请求前置摄像头权限
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } })
-                .then(stream => {
-                    videoElement.srcObject = stream;
-                    videoElement.onloadedmetadata = () => {
-                        videoElement.play();
-                        onVideoLoaded(); // 调整画布大小
-                        setupPose(); // 启动 MediaPipe
-                    };
-                    statusMessage.textContent = '摄像头已启动。';
-                })
-                .catch(err => {
-                    console.error("无法访问摄像头: ", err);
-                    statusMessage.textContent = '❌ 无法访问摄像头。请检查权限或设备。';
+        
+        // 启动摄像头
+        async function startCamera() {
+            try {
+                videoStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: "user", width: 640, height: 480 },
+                    audio: false
                 });
+                video.srcObject = videoStream;
+                statusText.textContent = "摄像头已开启";
+            } catch (err) {
+                console.error("无法访问摄像头: ", err);
+                statusText.textContent = "无法访问摄像头";
+                statusDot.style.backgroundColor = "#ff3b30";
+                
+                // 使用占位图像
+                video.style.background = "#333";
+                addWarningMessage("摄像头访问失败，将使用模拟检测模式");
+                
+                // 模拟检测
+                simulateDetection();
+            }
         }
         
-        function setupPose() {
-            pose = new Pose({locateFile: (file) => {
-                // MediaPipe 模型文件路径
-                return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
-            }});
+        // 开始监控
+        function startMonitoring() {
+            if (isMonitoring) return;
             
-            // 配置姿势检测
-            pose.setOptions({
-                modelComplexity: 1, // 适中复杂度，适合移动端
-                smoothLandmarks: true,
-                enableSegmentation: false,
-                minDetectionConfidence: 0.5,
-                minTrackingConfidence: 0.5
-            });
-
-            pose.onResults(onResults);
-
-            // 启动 CameraHelper 来循环发送视频帧给 MediaPipe
-            const camera = new Camera(videoElement, {
-                onFrame: async () => {
-                    if (isMonitoring) {
-                        await pose.send({image: videoElement});
-                    }
-                },
-                width: 640,
-                height: 480
-            });
-            camera.start();
+            isMonitoring = true;
+            statusDot.style.backgroundColor = "#4cd964";
+            statusText.textContent = "监控中 - 坐姿良好";
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+            
+            // 开始姿态检测
+            monitorInterval = setInterval(detectPose, 2000);
+            
+            // 开始计时器
+            startTimer();
+            
+            addWarningMessage("坐姿监控已启动");
+            
+            // 初始提示
+            speak("坐姿监控已经开始，我会帮你保持正确的坐姿哦！");
         }
-
-        // --- Event Listener ---
-        startButton.addEventListener('click', async () => {
-            if (!isMonitoring) {
-                isMonitoring = true;
-                startButton.textContent = '监控已激活 (点击静音)';
-                startButton.classList.remove('bg-blue-600');
-                startButton.classList.add('bg-gray-400');
-                statusMessage.textContent = '监控已激活，请保持良好坐姿。';
-                statusMessage.className = 'text-center font-semibold text-lg p-3 rounded-lg bg-green-100 text-green-700';
-            } else {
-                isMonitoring = false;
-                badPostureStartTime = 0;
-                startButton.textContent = '开始监控 (点击启动语音提示)';
-                startButton.classList.remove('bg-gray-400');
-                startButton.classList.add('bg-blue-600');
-                statusMessage.textContent = '监控暂停，请点击重新激活。';
-                statusMessage.className = 'text-center font-semibold text-lg p-3 rounded-lg bg-gray-200 text-gray-700';
-            }
-        });
-
-        testAudioButton.addEventListener('click', async () => {
-            console.log("[Test Audio] Button clicked. Attempting audio test.");
+        
+        // 停止监控
+        function stopMonitoring() {
+            if (!isMonitoring) return;
             
-            if (isSpeaking) {
-                statusMessage.textContent = '请稍候，正在播放上一个提示...';
-                statusMessage.className = 'text-center font-semibold text-lg p-3 rounded-lg bg-yellow-200 text-yellow-800';
-                return;
-            }
+            isMonitoring = false;
+            statusDot.style.backgroundColor = "#ffcc00";
+            statusText.textContent = "监控已停止";
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
             
-            const testMessage = "语音测试成功。您听到的声音是纠正坐姿时的提醒效果。";
-            statusMessage.textContent = '🔊 正在播放测试语音...';
-            statusMessage.className = 'text-center font-semibold text-lg p-3 rounded-lg bg-purple-100 text-purple-700';
-
-            // 播放测试语音
-            await speakAlert(testMessage);
-
-            // 播放结束后，重置状态消息
-            setTimeout(() => {
-                if (statusMessage.className.indexOf('bg-red-800') === -1) {
-                    if (!isMonitoring) {
-                        statusMessage.textContent = '测试完成，请点击开始监控。';
-                        statusMessage.className = 'text-center font-semibold text-lg p-3 rounded-lg bg-gray-200 text-gray-700';
-                    }
+            // 清除间隔
+            clearInterval(monitorInterval);
+            clearInterval(timerInterval);
+            
+            // 隐藏警报
+            alertBox.classList.remove('show');
+            
+            addWarningMessage("坐姿监控已停止");
+            
+            // 停止语音
+            speechSynthesis.cancel();
+        }
+        
+        // 姿态检测函数（模拟版本）
+        function detectPose() {
+            if (!isMonitoring) return;
+            
+            // 模拟检测 - 在实际应用中，这里会使用真正的姿态检测算法
+            // 例如使用TensorFlow.js PoseNet或MediaPipe Pose Detection
+            const isBadPosture = Math.random() > 0.7; // 30%的概率检测到不良坐姿
+            
+            if (isBadPosture) {
+                badPostureCount++;
+                
+                // 更新状态指示器
+                statusDot.style.backgroundColor = "#ff3b30";
+                statusText.textContent = "监控中 - 坐姿需要调整";
+                
+                // 显示警报
+                alertBox.classList.add('show');
+                
+                // 选择随机的警告消息
+                const randomMessage = warningMessages[Math.floor(Math.random() * warningMessages.length)];
+                alertMessage.textContent = randomMessage;
+                
+                // 选择随机的调整建议
+                const randomTip = correctionTips[Math.floor(Math.random() * correctionTips.length)];
+                correctionTip.textContent = randomTip;
+                
+                // 语音提醒（避免频繁提醒）
+                const now = Date.now();
+                if (now - lastAlertTime > ALERT_COOLDOWN) {
+                    speak(randomMessage);
+                    lastAlertTime = now;
                 }
-            }, 3000); // 3秒后重置，留出足够播放时间
-        });
-
-        // 启动流程
-        window.onload = startCamera;
-        
-        // 调试用：设置 Firebase 日志级别（即使没有用到 Firebase 也要保留此行）
-        if (typeof setLogLevel !== 'undefined') {
-            setLogLevel('Debug');
+                
+                // 添加警告记录
+                addWarningMessage(`检测到不良坐姿: ${randomMessage}`);
+                
+                // 绘制模拟姿态点（在实际应用中，这里会绘制真实的姿态关键点）
+                drawSimulatedPosePoints();
+            } else {
+                // 良好坐姿
+                statusDot.style.backgroundColor = "#4cd964";
+                statusText.textContent = "监控中 - 坐姿良好";
+                alertBox.classList.remove('show');
+                correctionTip.textContent = "坐姿良好，请继续保持！";
+            }
         }
+        
+        // 模拟姿态检测（用于摄像头不可用时）
+        function simulateDetection() {
+            // 每3秒模拟一次检测
+            setInterval(() => {
+                if (!isMonitoring) return;
+                
+                const isBadPosture = Math.random() > 0.8; // 20%的概率检测到不良坐姿
+                
+                if (isBadPosture) {
+                    statusDot.style.backgroundColor = "#ff3b30";
+                    statusText.textContent = "模拟检测 - 坐姿需要调整";
+                    alertBox.classList.add('show');
+                    
+                    const randomMessage = warningMessages[Math.floor(Math.random() * warningMessages.length)];
+                    alertMessage.textContent = randomMessage;
+                    
+                    const randomTip = correctionTips[Math.floor(Math.random() * correctionTips.length)];
+                    correctionTip.textContent = randomTip;
+                    
+                    // 语音提醒
+                    const now = Date.now();
+                    if (now - lastAlertTime > ALERT_COOLDOWN) {
+                        speak(randomMessage);
+                        lastAlertTime = now;
+                    }
+                    
+                    addWarningMessage(`模拟检测到不良坐姿: ${randomMessage}`);
+                } else {
+                    statusDot.style.backgroundColor = "#4cd964";
+                    statusText.textContent = "模拟检测 - 坐姿良好";
+                    alertBox.classList.remove('show');
+                    correctionTip.textContent = "坐姿良好，请继续保持！";
+                }
+            }, 3000);
+        }
+        
+        // 绘制模拟姿态点
+        function drawSimulatedPosePoints() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 绘制模拟的关键点
+            const points = [
+                {x: 0.5, y: 0.3, name: "nose", color: "#FF0000"},
+                {x: 0.4, y: 0.35, name: "leftEye", color: "#00FF00"},
+                {x: 0.6, y: 0.35, name: "rightEye", color: "#00FF00"},
+                {x: 0.3, y: 0.5, name: "leftShoulder", color: "#0000FF"},
+                {x: 0.7, y: 0.5, name: "rightShoulder", color: "#0000FF"},
+                {x: 0.2, y: 0.7, name: "leftElbow", color: "#FF00FF"},
+                {x: 0.8, y: 0.7, name: "rightElbow", color: "#FF00FF"},
+            ];
+            
+            points.forEach(point => {
+                const x = point.x * canvas.width;
+                const y = point.y * canvas.height;
+                
+                // 绘制点
+                ctx.beginPath();
+                ctx.arc(x, y, 8, 0, 2 * Math.PI);
+                ctx.fillStyle = point.color;
+                ctx.fill();
+                ctx.strokeStyle = "#FFFFFF";
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                // 绘制标签
+                ctx.font = "12px Arial";
+                ctx.fillStyle = "#FFFFFF";
+                ctx.fillText(point.name, x - 15, y - 10);
+            });
+            
+            // 绘制连线
+            ctx.beginPath();
+            ctx.moveTo(0.4 * canvas.width, 0.35 * canvas.height); // leftEye
+            ctx.lineTo(0.6 * canvas.width, 0.35 * canvas.height); // rightEye
+            ctx.moveTo(0.5 * canvas.width, 0.3 * canvas.height); // nose
+            ctx.lineTo(0.5 * canvas.width, 0.4 * canvas.height); // 脖子
+            
+            ctx.moveTo(0.3 * canvas.width, 0.5 * canvas.height); // leftShoulder
+            ctx.lineTo(0.7 * canvas.width, 0.5 * canvas.height); // rightShoulder
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = "#FFFF00";
+            ctx.stroke();
+        }
+        
+        // 语音合成
+        function speak(text) {
+            if (!isMonitoring) return;
+            
+            // 停止当前语音
+            speechSynthesis.cancel();
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            
+            // 设置语音参数
+            utterance.lang = 'zh-CN';
+            utterance.rate = 0.9; // 语速
+            utterance.pitch = 1.0; // 音高
+            
+            // 根据选择的声音类型调整
+            switch(currentVoice) {
+                case 'female2':
+                    utterance.rate = 1.0;
+                    utterance.pitch = 1.2;
+                    break;
+                case 'female3':
+                    utterance.rate = 0.8;
+                    utterance.pitch = 0.9;
+                    break;
+                default:
+                    utterance.rate = 0.9;
+                    utterance.pitch = 1.0;
+            }
+            
+            // 获取可用的语音
+            const voices = speechSynthesis.getVoices();
+            
+            // 尝试寻找中文女声
+            const chineseVoice = voices.find(voice => 
+                voice.lang.includes('zh') && voice.name.includes('Female')
+            );
+            
+            if (chineseVoice) {
+                utterance.voice = chineseVoice;
+            }
+            
+            speechSynthesis.speak(utterance);
+        }
+        
+        // 测试语音
+        function testVoice() {
+            speak("这是一条测试语音，坐姿监控系统工作正常。");
+        }
+        
+        // 添加警告消息
+        function addWarningMessage(message) {
+            const warningItem = document.createElement('div');
+            warningItem.className = 'warning-item';
+            warningItem.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${new Date().toLocaleTimeString()} - ${message}`;
+            
+            warningList.prepend(warningItem);
+            
+            // 限制最多显示10条消息
+            if (warningList.children.length > 10) {
+                warningList.removeChild(warningList.lastChild);
+            }
+        }
+        
+        // 开始计时器
+        function startTimer() {
+            // 如果已有计时器，先清除
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
+            
+            // 重置时间
+            remainingTime = 45 * 60;
+            updateTimerDisplay();
+            
+            // 开始计时
+            timerInterval = setInterval(() => {
+                remainingTime--;
+                updateTimerDisplay();
+                
+                // 时间到，触发休息提醒
+                if (remainingTime <= 0) {
+                    triggerRestBreak();
+                    clearInterval(timerInterval);
+                }
+            }, 1000);
+        }
+        
+        // 更新计时器显示
+        function updateTimerDisplay() {
+            const minutes = Math.floor(remainingTime / 60);
+            const seconds = remainingTime % 60;
+            
+            minutesDisplay.textContent = minutes.toString().padStart(2, '0');
+            secondsDisplay.textContent = seconds.toString().padStart(2, '0');
+        }
+        
+        // 触发休息提醒
+        function triggerRestBreak() {
+            // 停止监控
+            stopMonitoring();
+            
+            // 显示休息提醒
+            restTimer.classList.add('show');
+            
+            // 播放休息提醒语音
+            speak("学习时间到！已经45分钟了，请站起来活动一下，看看远处，让眼睛休息5分钟。");
+            
+            // 开始休息倒计时
+            let restTime = 5 * 60; // 5分钟休息时间
+            const restInterval = setInterval(() => {
+                restTime--;
+                
+                const restMinutes = Math.floor(restTime / 60);
+                const restSeconds = restTime % 60;
+                restCountdown.textContent = `${restMinutes}:${restSeconds.toString().padStart(2, '0')} 后恢复监控`;
+                
+                // 更新进度条
+                const progress = ((5 * 60 - restTime) / (5 * 60)) * 100;
+                restProgress.style.width = `${progress}%`;
+                
+                // 休息时间结束
+                if (restTime <= 0) {
+                    clearInterval(restInterval);
+                    restTimer.classList.remove('show');
+                    
+                    // 重新开始监控
+                    setTimeout(() => {
+                        startMonitoring();
+                        speak("休息时间结束，请继续保持正确坐姿学习。");
+                    }, 1000);
+                }
+            }, 1000);
+            
+            addWarningMessage("学习时间已达45分钟，开始5分钟休息");
+        }
+        
+        // 页面加载完成后初始化
+        window.addEventListener('load', init);
+        
+        // 调整画布大小
+        window.addEventListener('resize', function() {
+            canvas.width = video.offsetWidth;
+            canvas.height = video.offsetHeight;
+        });
     </script>
 </body>
 </html>

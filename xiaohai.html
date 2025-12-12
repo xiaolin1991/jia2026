@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 晓林搭建监控与纠正系统</title>
+    <!-- 引入 Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Noto Sans Inter 字体 -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+
+        /* 自定义 CSS 用于视频和画布的叠加 */
+        #container {
+            position: relative;
+            width: 100%;
+            max-width: 600px; /* 限制最大宽度以适应桌面视图 */
+            margin: 0 auto;
+        }
+        #video, #canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 1rem;
+        }
+        #video {
+            transform: scaleX(-1); /* 镜像显示，用户体验更好 */
+        }
+        #canvas {
+            transform: scaleX(-1); /* 保持镜像一致 */
+        }
+    </style>
+    <!-- 引入 MediaPipe Pose (姿势检测) -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
+    <!-- 引入 Tone.js (用于声音提示) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen p-4 flex flex-col items-center">
+
+    <div class="w-full max-w-lg mb-6 text-center">
+        <h1 class="text-3xl font-bold text-blue-700 mb-2">坐姿小卫士</h1>
+        <p class="text-gray-600 text-sm">请将手机放置在稳定位置，正对孩子上半身。</p>
+    </div>
+
+    <!-- 视频和画布容器 -->
+    <div id="container" class="w-full max-w-lg shadow-2xl bg-gray-900 rounded-xl overflow-hidden aspect-video">
+        <video id="video" playsinline></video>
+        <canvas id="canvas"></canvas>
+    </div>
+
+    <!-- 状态和控制区域 -->
+    <div class="w-full max-w-lg mt-6 bg-white p-6 rounded-xl shadow-lg">
+        <div id="status-message" class="text-center font-semibold text-lg p-3 rounded-lg transition-all duration-300 bg-green-100 text-green-700">
+            等待摄像头启动...
+        </div>
+
+        <div class="mt-4 flex flex-col space-y-3">
+            <button id="start-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg shadow-md transition duration-150 active:scale-95">
+                开始监控 (点击启动声音)
+            </button>
+            <div class="text-xs text-gray-500 text-center">
+                首次点击会激活声音，确保提示有效。
+            </div>
+            <div id="alert-counter" class="text-sm text-red-500 text-center hidden mt-2">
+                今日已提醒次数: 0
+            </div>
+        </div>
+
+        <div class="mt-6 border-t pt-4">
+            <h3 class="text-md font-bold text-gray-700 mb-2">姿势检测指标 (简化)</h3>
+            <ul class="text-sm text-gray-600 space-y-1 list-disc list-inside">
+                <li><span class="font-medium">头部正直度:</span> 检查鼻尖与肩膀中点的垂直对齐。</li>
+                <li><span class="font-medium">侧倾:</span> 检查左右肩膀的垂直高度差。</li>
+                <li><span class="font-medium">持续时长:</span> 错误姿势持续超过 2 秒才会触发提醒。</li>
+            </ul>
+        </div>
+    </div>
+
+    <script type="module">
+        // Global variables
+        const videoElement = document.getElementById('video');
+        const canvasElement = document.getElementById('canvas');
+        const canvasCtx = canvasElement.getContext('2d');
+        const statusMessage = document.getElementById('status-message');
+        const startButton = document.getElementById('start-button');
+        const alertCounter = document.getElementById('alert-counter');
+
+        let isMonitoring = false;
+        let pose;
+        let badPostureStartTime = 0;
+        const BAD_POSTURE_THRESHOLD = 2000; // 2 seconds
+        let alertCount = 0;
+        let synth;
+
+        const apiKey = ""; // API key is not required for client-side ML (MediaPipe)
+
+        // --- Tone.js Setup for Audio Feedback ---
+        async function setupAudio() {
+            try {
+                // Initialize a simple synthesizer for the alert sound
+                synth = new Tone.Synth().toDestination();
+                await Tone.start();
+                console.log("Tone.js Audio Context started.");
+            } catch (error) {
+                console.error("Failed to start Tone.js audio context:", error);
+                statusMessage.textContent = "声音启动失败，请检查浏览器设置。";
+            }
+        }
+
+        // Play a simple, attention-grabbing sound
+        function playAlertSound() {
+            if (synth && Tone.Transport.state !== 'started') {
+                 Tone.Transport.start(); // Ensure transport is started if it wasn't already
+            }
+            if (synth) {
+                synth.triggerAttackRelease("C4", "8n");
+            }
+        }
+
+        // --- Posture Analysis Logic ---
+
+        /**
+         * 检查检测到的姿势是否符合良好坐姿的标准。
+         * @param {Object} results MediaPipe Pose 结果
+         * @returns {string | null} 错误描述字符串，如果姿势良好则返回 null
+         */
+        function checkPosture(results) {
+            const landmarks = results.poseWorldLandmarks;
+            if (!landmarks || landmarks.length === 0) {
+                return "未检测到人体。";
+            }
+
+            // 获取关键点 (使用世界坐标 World Landmarks 以减少透视失真)
+            const nose = landmarks[POSE_LANDMARKS.NOSE];
+            const leftShoulder = landmarks[POSE_LANDMARKS.LEFT_SHOULDER];
+            const rightShoulder = landmarks[POSE_LANDMARKS.RIGHT_SHOULDER];
+            
+            // 使用可视度 (visibility) 检查关键点是否被遮挡或在视线外
+            const minVisibility = 0.6;
+            if (nose.visibility < minVisibility || leftShoulder.visibility < minVisibility || rightShoulder.visibility < minVisibility) {
+                return "关键点不可见，请保持完整身体在镜头内。";
+            }
+
+            // 1. 头部低垂/趴桌检测 (检查鼻子相对于肩膀的垂直位置)
+            // 找出肩膀中点的 Y 坐标
+            const shoulderMidY = (leftShoulder.y + rightShoulder.y) / 2;
+            // 鼻子 Y 坐标 (Y 轴朝下，数值越大表示越低)
+            const noseY = nose.y;
+
+            // 检查鼻子的垂直位置是否比肩膀中点低太多 (即低头或趴桌)
+            // 假设坐姿正直时，鼻子应该在肩膀中点上方 (Y值小于shoulderMidY)
+            // 我们关注的是鼻子Y值比肩膀Y值大多少
+            const verticalSlouchTolerance = 0.08; // 8% 的世界坐标差值
+            if (noseY - shoulderMidY > verticalSlouchTolerance) {
+                return "头部低垂，请坐直！";
+            }
+            
+            // 2. 侧倾/歪斜检测 (检查左右肩膀的垂直高度差)
+            const sideLeanTolerance = 0.05; // 5% 的世界坐标差值
+            const shoulderDiffY = Math.abs(leftShoulder.y - rightShoulder.y);
+
+            if (shoulderDiffY > sideLeanTolerance) {
+                return "身体歪斜，请保持双肩水平！";
+            }
+
+            // 姿势良好
+            return null;
+        }
+
+
+        // --- MediaPipe Callback ---
+
+        function onResults(results) {
+            if (!isMonitoring) return;
+
+            // 绘制清空画布
+            canvasCtx.save();
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+            
+            // 绘制姿势关键点和连接线
+            drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS,
+                           {color: '#00FF00', lineWidth: 4});
+            drawLandmarks(canvasCtx, results.poseLandmarks,
+                          {color: '#FF0000', lineWidth: 2});
+            canvasCtx.restore();
+
+            // 姿势检测逻辑
+            const error = checkPosture(results);
+
+            if (error) {
+                // 检测到错误姿势
+                if (badPostureStartTime === 0) {
+                    // 记录错误姿势开始时间
+                    badPostureStartTime = Date.now();
+                } else if (Date.now() - badPostureStartTime >= BAD_POSTURE_THRESHOLD) {
+                    // 错误姿势持续时间超过阈值，发出警告
+                    statusMessage.textContent = "🚨 " + error;
+                    statusMessage.className = 'text-center font-semibold text-lg p-3 rounded-lg bg-red-500 text-white shadow-xl animate-pulse';
+
+                    // 检查是否需要播放声音和计数
+                    if (synth) {
+                        playAlertSound();
+                        alertCount++;
+                        alertCounter.textContent = `今日已提醒次数: ${alertCount}`;
+                        alertCounter.classList.remove('hidden');
+                    }
+                    
+                    // 重置计时器，避免连续播放，直到姿势纠正
+                    badPostureStartTime = Date.now(); 
+                } else {
+                    // 仍在错误姿势计时中
+                    const remaining = ((BAD_POSTURE_THRESHOLD - (Date.now() - badPostureStartTime)) / 1000).toFixed(1);
+                    statusMessage.textContent = `⚠️ 正在检测错误坐姿...请在 ${remaining} 秒内纠正。`;
+                    statusMessage.className = 'text-center font-semibold text-lg p-3 rounded-lg bg-yellow-200 text-yellow-800';
+                }
+
+            } else {
+                // 姿势良好
+                badPostureStartTime = 0; // 重置计时器
+                statusMessage.textContent = '✅ 坐姿端正，继续保持！';
+                statusMessage.className = 'text-center font-semibold text-lg p-3 rounded-lg bg-green-100 text-green-700';
+            }
+        }
+
+
+        // --- Initialization and Camera Setup ---
+
+        function onVideoLoaded() {
+             // 确保画布和视频尺寸一致
+            canvasElement.width = videoElement.videoWidth;
+            canvasElement.height = videoElement.videoHeight;
+            // 确保容器保持正确的宽高比
+            const aspectRatio = videoElement.videoHeight / videoElement.videoWidth;
+            document.getElementById('container').style.paddingBottom = `${aspectRatio * 100}%`;
+        }
+
+
+        function startCamera() {
+            // 请求前置摄像头权限
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } })
+                .then(stream => {
+                    videoElement.srcObject = stream;
+                    videoElement.onloadedmetadata = () => {
+                        videoElement.play();
+                        onVideoLoaded(); // 调整画布大小
+                        setupPose(); // 启动 MediaPipe
+                    };
+                    statusMessage.textContent = '摄像头已启动。';
+                })
+                .catch(err => {
+                    console.error("无法访问摄像头: ", err);
+                    statusMessage.textContent = '❌ 无法访问摄像头。请检查权限或设备。';
+                });
+        }
+        
+        function setupPose() {
+            pose = new Pose({locateFile: (file) => {
+                // MediaPipe 模型文件路径
+                return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
+            }});
+            
+            // 配置姿势检测
+            pose.setOptions({
+                modelComplexity: 1, // 适中复杂度，适合移动端
+                smoothLandmarks: true,
+                enableSegmentation: false,
+                minDetectionConfidence: 0.5,
+                minTrackingConfidence: 0.5
+            });
+
+            pose.onResults(onResults);
+
+            // 启动 CameraHelper 来循环发送视频帧给 MediaPipe
+            const camera = new Camera(videoElement, {
+                onFrame: async () => {
+                    if (isMonitoring) {
+                        await pose.send({image: videoElement});
+                    }
+                },
+                width: 640,
+                height: 480
+            });
+            camera.start();
+        }
+
+        // --- Event Listener ---
+        startButton.addEventListener('click', async () => {
+            if (!isMonitoring) {
+                await setupAudio(); // 启动 Tone.js
+                isMonitoring = true;
+                startButton.textContent = '监控已激活 (点击静音)';
+                startButton.classList.remove('bg-blue-600');
+                startButton.classList.add('bg-gray-400');
+            } else {
+                isMonitoring = false;
+                badPostureStartTime = 0;
+                startButton.textContent = '开始监控 (点击启动声音)';
+                startButton.classList.remove('bg-gray-400');
+                startButton.classList.add('bg-blue-600');
+                statusMessage.textContent = '监控暂停，请点击重新激活。';
+                statusMessage.className = 'text-center font-semibold text-lg p-3 rounded-lg bg-gray-200 text-gray-700';
+            }
+        });
+
+        // 启动流程
+        window.onload = startCamera;
+        
+        // 调试用：设置 Firebase 日志级别（即使没有用到 Firebase 也要保留此行）
+        if (typeof setLogLevel !== 'undefined') {
+            setLogLevel('Debug');
+        }
+    </script>
+</body>
+</html>

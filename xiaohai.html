@@ -2,8 +2,8 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>晓林技术支持设计开发——坐姿监控助手</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>晓林技术支持——无奈坐姿监控助手</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -16,67 +16,44 @@
         :root {
             --primary: #5d6afb;
             --primary-dark: #4a56d2;
-            --secondary: #ff7b9c;
             --success: #4cd964;
             --warning: #ffcc00;
             --danger: #ff6b6b;
-            --light: #f9f9ff;
-            --dark: #333366;
-            --text: #444;
-            --border: #e0e4ff;
+            --text: #333;
+            --bg: #f8f9ff;
+            --sidebar-width: 300px;
         }
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
-            background: linear-gradient(135deg, #f0f3ff 0%, #e8edff 100%);
+            background: var(--bg);
             color: var(--text);
-            min-height: 100vh;
-            padding: 10px;
-        }
-        
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(93, 106, 251, 0.15);
             overflow: hidden;
+            height: 100vh;
+            position: relative;
         }
         
-        .header {
-            background: linear-gradient(90deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: white;
-            padding: 25px 20px;
-            text-align: center;
+        /* 主监控页面 */
+        .main-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 10;
+            transition: transform 0.3s ease;
         }
         
-        .header h1 {
-            font-size: 1.8rem;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-        }
-        
-        .header p {
-            opacity: 0.9;
-            font-size: 1rem;
-        }
-        
-        .main-content {
-            padding: 20px;
+        .main-screen.hidden {
+            transform: translateX(-100%);
         }
         
         .video-container {
             width: 100%;
-            height: 300px;
-            background: #111;
-            border-radius: 15px;
-            overflow: hidden;
+            height: 100%;
             position: relative;
-            margin-bottom: 20px;
-            border: 3px solid var(--primary);
+            overflow: hidden;
         }
         
         #video {
@@ -91,7 +68,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.7);
+            background: rgba(0,0,0,0.85);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -101,19 +78,25 @@
             padding: 20px;
         }
         
+        .video-overlay i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            color: #5d6afb;
+        }
+        
         .status-indicator {
             position: absolute;
-            top: 15px;
-            right: 15px;
+            top: 20px;
+            right: 20px;
             background: rgba(0,0,0,0.7);
             color: white;
-            padding: 8px 15px;
+            padding: 10px 15px;
             border-radius: 20px;
-            font-size: 0.9rem;
             display: flex;
             align-items: center;
             gap: 8px;
             backdrop-filter: blur(10px);
+            z-index: 2;
         }
         
         .status-dot {
@@ -138,518 +121,1029 @@
             100% { box-shadow: 0 0 0 0 rgba(255, 107, 107, 0); }
         }
         
-        .control-panel {
-            background: #f9f9ff;
-            padding: 20px;
-            border-radius: 15px;
-            margin-bottom: 20px;
-        }
-        
-        .section-title {
-            font-size: 1.3rem;
-            color: var(--primary-dark);
-            margin-bottom: 15px;
+        /* 控制按钮组 */
+        .control-buttons {
+            position: absolute;
+            bottom: 30px;
+            left: 0;
+            width: 100%;
             display: flex;
-            align-items: center;
-            gap: 10px;
+            justify-content: center;
+            gap: 15px;
+            padding: 0 20px;
+            z-index: 2;
         }
         
-        .btn-group {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        
-        .btn {
-            padding: 15px;
-            border-radius: 10px;
+        .control-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
             border: none;
-            font-size: 1rem;
-            font-weight: 600;
+            background: rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            color: white;
+            font-size: 1.5rem;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
             cursor: pointer;
             transition: all 0.3s;
         }
         
-        .btn-primary {
-            background: linear-gradient(90deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: white;
+        .control-btn:hover, .control-btn:active {
+            transform: scale(1.1);
+            background: rgba(255,255,255,0.3);
         }
         
-        .btn-success {
-            background: linear-gradient(90deg, var(--success) 0%, #3ac752 100%);
-            color: white;
+        .control-btn.primary {
+            background: var(--primary);
         }
         
-        .btn-danger {
-            background: linear-gradient(90deg, var(--danger) 0%, #e05555 100%);
+        .control-btn.danger {
+            background: var(--danger);
+        }
+        
+        .control-btn.success {
+            background: var(--success);
+        }
+        
+        .control-btn.warning {
+            background: var(--warning);
+        }
+        
+        .control-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        /* 菜单按钮 */
+        .menu-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
             color: white;
+            border: none;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 2;
+        }
+        
+        /* 语音提醒框 */
+        .voice-alert {
+            position: absolute;
+            bottom: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 15px;
+            max-width: 300px;
+            text-align: center;
+            display: none;
+            backdrop-filter: blur(10px);
+            z-index: 2;
+            animation: slideUp 0.3s ease;
+        }
+        
+        @keyframes slideUp {
+            from { transform: translate(-50%, 20px); opacity: 0; }
+            to { transform: translate(-50%, 0); opacity: 1; }
+        }
+        
+        .voice-alert.show {
+            display: block;
+        }
+        
+        .voice-alert i {
+            color: var(--warning);
+            margin-right: 10px;
+        }
+        
+        /* 计时器显示 */
+        .timer-display {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 1.2rem;
+            backdrop-filter: blur(10px);
+            z-index: 2;
+        }
+        
+        /* 侧边栏设置 */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: var(--sidebar-width);
+            height: 100%;
+            background: white;
+            box-shadow: -5px 0 20px rgba(0,0,0,0.1);
+            z-index: 20;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        
+        .sidebar.open {
+            transform: translateX(0);
+        }
+        
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--bg);
+        }
+        
+        .sidebar-header h2 {
+            color: var(--primary-dark);
+            font-size: 1.5rem;
+        }
+        
+        .close-sidebar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--bg);
+            border: none;
+            font-size: 1.2rem;
+            color: var(--text);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* 设置项样式 */
+        .setting-section {
+            margin-bottom: 30px;
+        }
+        
+        .setting-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: var(--primary-dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .setting-group {
+            margin-bottom: 20px;
+        }
+        
+        .setting-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        .select-box {
+            width: 100%;
+            padding: 12px 15px;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            background: white;
+            font-size: 1rem;
+            color: var(--text);
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border-radius: 10px;
+            border: none;
+            background: var(--primary);
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
         }
         
         .btn-warning {
-            background: linear-gradient(90deg, var(--warning) 0%, #e6b800 100%);
+            background: var(--warning);
             color: #333;
         }
         
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
+        .btn-success {
+            background: var(--success);
         }
         
-        .alert-box {
-            background: linear-gradient(90deg, #fff9e6 0%, #fff0cc 100%);
-            border-left: 4px solid var(--warning);
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            display: none;
-            align-items: center;
-            gap: 15px;
-        }
-        
-        .alert-box.show {
+        /* 提示卡片 */
+        .tip-cards {
             display: flex;
-            animation: slideIn 0.5s;
-        }
-        
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateX(-20px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-        
-        .alert-icon {
-            font-size: 1.8rem;
-            color: var(--warning);
-        }
-        
-        .timer-container {
-            background: linear-gradient(135deg, #f0f4ff 0%, #e6ebff 100%);
-            padding: 20px;
-            border-radius: 15px;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        
-        .timer-display {
-            font-size: 2.5rem;
-            font-weight: 800;
-            color: var(--primary-dark);
-            margin: 10px 0;
-        }
-        
-        .progress-bar {
-            height: 8px;
-            background: rgba(93, 106, 251, 0.1);
-            border-radius: 4px;
-            overflow: hidden;
-            margin-top: 15px;
-        }
-        
-        .progress {
-            height: 100%;
-            background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%);
-            width: 0%;
-            transition: width 1s linear;
-        }
-        
-        .tips-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            flex-direction: column;
             gap: 15px;
-            margin-bottom: 20px;
         }
         
         .tip-card {
-            background: white;
+            background: var(--bg);
             padding: 15px;
             border-radius: 10px;
             border-left: 4px solid var(--primary);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
         }
         
         .tip-card h4 {
-            color: var(--primary-dark);
             margin-bottom: 8px;
+            color: var(--primary-dark);
             display: flex;
             align-items: center;
             gap: 8px;
         }
         
-        .warning-history {
+        /* 历史记录 */
+        .history-list {
             max-height: 200px;
             overflow-y: auto;
-            background: white;
-            padding: 15px;
+            background: var(--bg);
             border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            padding: 10px;
         }
         
-        .warning-item {
-            padding: 10px 0;
-            border-bottom: 1px solid var(--border);
+        .history-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
             font-size: 0.9rem;
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
         }
         
-        .warning-item:last-child {
+        .history-item:last-child {
             border-bottom: none;
         }
         
-        .warning-item i {
-            color: var(--danger);
-            margin-top: 2px;
-        }
-        
-        .compatibility-fix {
+        /* 兼容性提示 */
+        .compatibility-alert {
             background: #fff8e1;
             border-left: 4px solid #ffb300;
             padding: 15px;
             border-radius: 10px;
             margin-bottom: 20px;
+        }
+        
+        /* 页面切换按钮 */
+        .page-switcher {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .page-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: var(--bg);
+            color: var(--text);
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .page-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+        
+        /* 页面内容 */
+        .page-content {
             display: none;
         }
         
-        .compatibility-fix.show {
+        .page-content.active {
             display: block;
         }
         
-        .fix-options {
+        /* 音频测试区域 */
+        .audio-test-buttons {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: 1fr 1fr;
             gap: 10px;
             margin-top: 15px;
         }
         
-        @media (max-width: 600px) {
-            .header h1 {
-                font-size: 1.5rem;
+        .audio-test-btn {
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            background: white;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+        
+        .audio-test-btn:hover {
+            background: var(--bg);
+        }
+        
+        /* 优化视频渲染 */
+        .video-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            :root {
+                --sidebar-width: 100%;
             }
             
-            .video-container {
-                height: 250px;
-            }
-            
-            .btn-group {
-                grid-template-columns: 1fr;
+            .control-btn {
+                width: 55px;
+                height: 55px;
+                font-size: 1.3rem;
             }
             
             .timer-display {
-                font-size: 2rem;
+                font-size: 1rem;
+                padding: 8px 15px;
             }
-            
-            .tips-grid {
-                grid-template-columns: 1fr;
-            }
+        }
+        
+        /* 休息提醒 */
+        .rest-alert {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 100;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .rest-alert.show {
+            display: flex;
+        }
+        
+        .rest-alert h2 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+            color: var(--success);
+        }
+        
+        .rest-alert p {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            max-width: 500px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header class="header">
-            <h1>
+    <!-- 主监控屏幕 -->
+    <div class="main-screen" id="main-screen">
+        <div class="video-container">
+            <video id="video" autoplay playsinline muted></video>
+            <canvas class="video-canvas" id="video-canvas"></canvas>
+            
+            <div class="video-overlay" id="video-overlay">
                 <i class="fas fa-child"></i>
-                学习坐姿监控助手—晓林技术支持
-            </h1>
-            <p>智能检测坐姿，培养良好习惯，保护视力健康,专门监督曹无奈</p>
-        </header>
+                <h2>儿童坐姿监控助手</h2>
+                <p>点击下方按钮开始监控</p>
+            </div>
+            
+            <div class="status-indicator">
+                <div class="status-dot" id="status-dot"></div>
+                <span id="status-text">等待启动</span>
+            </div>
+            
+            <div class="timer-display">
+                <span id="minutes">45</span>:<span id="seconds">00</span>
+            </div>
+            
+            <button class="menu-btn" id="menu-btn">
+                <i class="fas fa-bars"></i>
+            </button>
+            
+            <div class="control-buttons">
+                <button class="control-btn primary" id="start-btn" title="开始监控">
+                    <i class="fas fa-play"></i>
+                </button>
+                <button class="control-btn danger" id="stop-btn" disabled title="停止监控">
+                    <i class="fas fa-stop"></i>
+                </button>
+                <button class="control-btn success" id="test-voice-btn" title="测试语音">
+                    <i class="fas fa-volume-up"></i>
+                </button>
+                <button class="control-btn warning" id="voice-mode-btn" title="语音模式">
+                    <i class="fas fa-microphone"></i>
+                </button>
+            </div>
+            
+            <div class="voice-alert" id="voice-alert">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span id="voice-message">请坐直身体，保持正确坐姿！</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 侧边栏设置 -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h2><i class="fas fa-cog"></i> 设置面板</h2>
+            <button class="close-sidebar" id="close-sidebar">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
         
-        <div class="main-content">
-            <!-- 兼容性修复提示 -->
-            <div class="compatibility-fix" id="compatibility-fix">
-                <h3 class="section-title"><i class="fas fa-tools"></i> 华为浏览器兼容性修复</h3>
-                <p>检测到华为浏览器语音功能受限，请尝试以下方案：</p>
-                <div class="fix-options">
-                    <button class="btn btn-primary" id="fix-audio-context">
-                        <i class="fas fa-volume-up"></i> 修复音频播放
+        <!-- 页面切换 -->
+        <div class="page-switcher">
+            <button class="page-btn active" data-page="settings">基本设置</button>
+            <button class="page-btn" data-page="tips">坐姿提示</button>
+            <button class="page-btn" data-page="history">提醒记录</button>
+        </div>
+        
+        <!-- 基本设置页面 -->
+        <div class="page-content active" id="settings-page">
+            <div class="setting-section">
+                <h3 class="setting-title"><i class="fas fa-volume-up"></i> 语音设置</h3>
+                
+                <div class="compatibility-alert" id="compatibility-alert">
+                    <p><i class="fas fa-exclamation-triangle"></i> <strong>语音兼容性提示：</strong>正在使用最适合您浏览器的语音方案</p>
+                </div>
+                
+                <div class="setting-group">
+                    <label class="setting-label">语音提示方案：</label>
+                    <select id="voice-scheme" class="select-box">
+                        <option value="auto">自动选择最佳方案</option>
+                        <option value="tts1">Web Speech API (推荐)</option>
+                        <option value="tts2">中文女声增强版</option>
+                        <option value="tts3">HTML5 Audio备用方案</option>
+                        <option value="beep">蜂鸣音提示</option>
+                    </select>
+                </div>
+                
+                <div class="audio-test-buttons">
+                    <button class="audio-test-btn" id="test-tts1-btn">
+                        <i class="fas fa-female"></i> 测试女声
                     </button>
-                    <button class="btn btn-success" id="enable-autoplay">
-                        <i class="fas fa-play"></i> 启用自动播放
+                    <button class="audio-test-btn" id="test-tts2-btn">
+                        <i class="fas fa-child"></i> 测试童声
                     </button>
-                    <button class="btn btn-warning" id="test-local-audio">
-                        <i class="fas fa-music"></i> 测试本地音频
+                    <button class="audio-test-btn" id="test-tts3-btn">
+                        <i class="fas fa-microphone"></i> 测试语音3
+                    </button>
+                    <button class="audio-test-btn" id="test-beep-btn">
+                        <i class="fas fa-bell"></i> 测试蜂鸣
                     </button>
                 </div>
             </div>
             
-            <!-- 视频监控区域 -->
-            <div class="video-container">
-                <video id="video" autoplay playsinline muted></video>
-                <div class="video-overlay" id="video-overlay">
-                    <i class="fas fa-camera" style="font-size: 3rem; margin-bottom: 15px;"></i>
-                    <p>点击下方按钮开始摄像头监控</p>
-                </div>
-                <div class="status-indicator">
-                    <div class="status-dot" id="status-dot"></div>
-                    <span id="status-text">等待启动</span>
-                </div>
-            </div>
-            
-            <!-- 控制面板 -->
-            <div class="control-panel">
-                <h3 class="section-title"><i class="fas fa-cogs"></i> 控制面板</h3>
+            <div class="setting-section">
+                <h3 class="setting-title"><i class="fas fa-sliders-h"></i> 监控设置</h3>
                 
-                <div class="btn-group">
-                    <button class="btn btn-primary" id="start-btn">
-                        <i class="fas fa-play"></i> 开始监控
-                    </button>
-                    <button class="btn btn-danger" id="stop-btn" disabled>
-                        <i class="fas fa-stop"></i> 停止监控
-                    </button>
-                    <button class="btn btn-success" id="test-tts-btn">
-                        <i class="fas fa-microphone"></i> 测试语音合成
-                    </button>
-                    <button class="btn btn-warning" id="test-beep-btn">
-                        <i class="fas fa-bell"></i> 测试蜂鸣音
-                    </button>
+                <div class="setting-group">
+                    <label class="setting-label">检测灵敏度：</label>
+                    <select id="sensitivity" class="select-box">
+                        <option value="high">高 - 频繁提醒</option>
+                        <option value="medium" selected>中 - 适中提醒</option>
+                        <option value="low">低 - 较少提醒</option>
+                    </select>
                 </div>
                 
-                <!-- 语音类型选择 -->
-                <div style="margin-bottom: 15px;">
-                    <label style="display: block; margin-bottom: 8px; font-weight: 600;">提示声音类型：</label>
-                    <select id="voice-type" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border);">
-                        <option value="beep">蜂鸣提示音</option>
-                        <option value="local-tts">本地语音合成</option>
-                        <option value="text-alert">文字提示</option>
+                <div class="setting-group">
+                    <label class="setting-label">学习时间(分钟)：</label>
+                    <select id="study-time" class="select-box">
+                        <option value="30">30分钟</option>
+                        <option value="45" selected>45分钟</option>
+                        <option value="60">60分钟</option>
+                    </select>
+                </div>
+                
+                <div class="setting-group">
+                    <label class="setting-label">休息时间(分钟)：</label>
+                    <select id="rest-time" class="select-box">
+                        <option value="5" selected>5分钟</option>
+                        <option value="10">10分钟</option>
+                        <option value="15">15分钟</option>
                     </select>
                 </div>
             </div>
             
-            <!-- 坐姿提醒 -->
-            <div class="alert-box" id="alert-box">
-                <div class="alert-icon">
-                    <i class="fas fa-exclamation-triangle"></i>
+            <div class="setting-section">
+                <h3 class="setting-title"><i class="fas fa-camera"></i> 摄像头设置</h3>
+                
+                <div class="setting-group">
+                    <label class="setting-label">视频质量：</label>
+                    <select id="video-quality" class="select-box">
+                        <option value="low">低质量 (减少卡顿)</option>
+                        <option value="medium" selected>中等质量</option>
+                        <option value="high">高质量</option>
+                    </select>
                 </div>
-                <div>
-                    <div style="font-weight: bold; color: #b38f00;">坐姿提醒</div>
-                    <div id="alert-message">请坐直身体，保持正确坐姿！</div>
-                </div>
+                
+                <button class="btn" id="reset-camera-btn">
+                    <i class="fas fa-redo"></i> 重新初始化摄像头
+                </button>
             </div>
-            
-            <!-- 计时器 -->
-            <div class="timer-container">
-                <div style="color: var(--primary); font-weight: 600;">距离下次休息还有</div>
-                <div class="timer-display">
-                    <span id="minutes">45</span>:<span id="seconds">00</span>
-                </div>
-                <div class="progress-bar">
-                    <div class="progress" id="timer-progress"></div>
-                </div>
-            </div>
-            
-            <!-- 正确坐姿提示 -->
-            <h3 class="section-title"><i class="fas fa-lightbulb"></i> 正确坐姿要点</h3>
-            <div class="tips-grid">
-                <div class="tip-card">
-                    <h4><i class="fas fa-user"></i> 背部姿势</h4>
-                    <p>背部挺直，轻微靠椅背，避免驼背</p>
-                </div>
-                <div class="tip-card">
-                    <h4><i class="fas fa-eye"></i> 眼部距离</h4>
-                    <p>眼睛离书本30-40厘米，视线向下15度</p>
-                </div>
-                <div class="tip-card">
-                    <h4><i class="fas fa-hands"></i> 手臂位置</h4>
-                    <p>手臂自然弯曲，肘部呈90度角</p>
-                </div>
-                <div class="tip-card">
-                    <h4><i class="fas fa-shoe-prints"></i> 脚部姿势</h4>
-                    <p>双脚平放地面，大腿与地面平行</p>
-                </div>
-            </div>
-            
-            <!-- 提醒记录 -->
-            <h3 class="section-title"><i class="fas fa-history"></i> 提醒记录</h3>
-            <div class="warning-history" id="warning-history">
-                <div class="warning-item">
-                    <i class="fas fa-info-circle"></i>
-                    <div>系统准备就绪，点击"开始监控"按钮启动检测</div>
+        </div>
+        
+        <!-- 坐姿提示页面 -->
+        <div class="page-content" id="tips-page">
+            <div class="setting-section">
+                <h3 class="setting-title"><i class="fas fa-lightbulb"></i> 正确坐姿要点</h3>
+                
+                <div class="tip-cards">
+                    <div class="tip-card">
+                        <h4><i class="fas fa-user"></i> 背部姿势</h4>
+                        <p>背部挺直，轻微靠椅背，避免驼背或过度后仰</p>
+                    </div>
+                    
+                    <div class="tip-card">
+                        <h4><i class="fas fa-eye"></i> 眼部距离</h4>
+                        <p>眼睛离书本30-40厘米，视线向下15度角</p>
+                    </div>
+                    
+                    <div class="tip-card">
+                        <h4><i class="fas fa-hands"></i> 手臂位置</h4>
+                        <p>手臂自然弯曲，肘部呈90度角，前臂平放桌面</p>
+                    </div>
+                    
+                    <div class="tip-card">
+                        <h4><i class="fas fa-shoe-prints"></i> 脚部姿势</h4>
+                        <p>双脚平放地面，大腿与地面平行，不悬空不交叉</p>
+                    </div>
+                    
+                    <div class="tip-card">
+                        <h4><i class="fas fa-desktop"></i> 屏幕位置</h4>
+                        <p>屏幕中心与眼睛平齐，距离50-70厘米</p>
+                    </div>
+                    
+                    <div class="tip-card">
+                        <h4><i class="fas fa-chair"></i> 椅子调整</h4>
+                        <p>椅子高度使膝盖呈90度，背部有良好支撑</p>
+                    </div>
                 </div>
             </div>
         </div>
+        
+        <!-- 历史记录页面 -->
+        <div class="page-content" id="history-page">
+            <div class="setting-section">
+                <h3 class="setting-title"><i class="fas fa-history"></i> 提醒记录</h3>
+                
+                <div class="history-list" id="history-list">
+                    <div class="history-item">
+                        <strong>系统启动</strong><br>
+                        <small>坐姿监控助手准备就绪</small>
+                    </div>
+                </div>
+                
+                <button class="btn btn-warning" id="clear-history-btn" style="margin-top: 15px;">
+                    <i class="fas fa-trash"></i> 清空记录
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 休息提醒弹窗 -->
+    <div class="rest-alert" id="rest-alert">
+        <h2><i class="fas fa-clock"></i> 休息时间到！</h2>
+        <p>已经学习45分钟了，请站起来活动一下，看看远处，让眼睛休息5分钟。</p>
+        <p>休息倒计时: <span id="rest-countdown">5:00</span></p>
+        <button class="btn btn-success" id="restart-monitoring-btn" style="margin-top: 20px; max-width: 200px;">
+            <i class="fas fa-redo"></i> 恢复监控
+        </button>
     </div>
 
+    <!-- 预加载音频（用于HTML5 Audio方案） -->
+    <audio id="voice1" preload="auto">
+        <source src="https://translate.google.com/translate_tts?ie=UTF-8&tl=zh-CN&client=tw-ob&q=坐姿提醒" type="audio/mpeg">
+    </audio>
+    
     <script>
         // 全局变量
         let videoStream = null;
         let isMonitoring = false;
         let monitorInterval = null;
         let timerInterval = null;
+        let restInterval = null;
         let remainingTime = 45 * 60; // 45分钟
+        let restRemainingTime = 5 * 60; // 5分钟休息
+        let badPostureCount = 0;
         let lastAlertTime = 0;
-        let audioContext = null;
-        let oscillator = null;
-        let userInteracted = false;
-        let voiceType = 'beep'; // 默认使用蜂鸣音
+        const ALERT_COOLDOWN = 15000; // 15秒内不重复提醒
+        let userInteracted = false; // 用户是否已交互（用于解锁音频）
+        let currentVoiceScheme = 'auto'; // 当前语音方案
+        let isVideoActive = true; // 视频是否活跃（用于防卡顿）
         
-        // 警告语数组
-        const warningMessages = [
-            "小朋友，你的坐姿有点歪了哦，请坐直身体！",
-            "注意坐姿！背要挺直，眼睛离书本不要太近。",
-            "检测到你有点弯腰了，请挺直背部保护脊椎。",
-            "坐姿不正确哦，请调整姿势，双脚平放地面。",
-            "你的头太低了，请抬高一点，保护视力很重要。",
-            "肩膀放松，不要一边高一边低，保持平衡。",
-            "坐姿提醒：身体不要歪向一边，保持正直。",
-            "小同学，请坐好，保持正确的写字姿势哦！"
+        // 多语言语音库
+        const voiceMessages = [
+            { text: "小朋友，你的坐姿有点歪了哦，请坐直身体！", type: "warning" },
+            { text: "注意坐姿！背要挺直，眼睛离书本不要太近。", type: "warning" },
+            { text: "检测到你有点弯腰了，请挺直背部保护脊椎。", type: "warning" },
+            { text: "坐姿不正确哦，请调整姿势，双脚平放地面。", type: "warning" },
+            { text: "你的头太低了，请抬高一点，保护视力很重要。", type: "warning" },
+            { text: "肩膀放松，不要一边高一边低，保持平衡。", type: "warning" },
+            { text: "坐姿提醒：身体不要歪向一边，保持正直。", type: "warning" },
+            { text: "小同学，请坐好，保持正确的写字姿势哦！", type: "warning" },
+            { text: "坐姿很好，请继续保持！", type: "good" },
+            { text: "坐姿正确，真棒！", type: "good" }
         ];
         
         // DOM元素
+        const mainScreen = document.getElementById('main-screen');
         const video = document.getElementById('video');
+        const videoCanvas = document.getElementById('video-canvas');
         const videoOverlay = document.getElementById('video-overlay');
         const startBtn = document.getElementById('start-btn');
         const stopBtn = document.getElementById('stop-btn');
+        const testVoiceBtn = document.getElementById('test-voice-btn');
+        const voiceModeBtn = document.getElementById('voice-mode-btn');
+        const menuBtn = document.getElementById('menu-btn');
         const statusDot = document.getElementById('status-dot');
         const statusText = document.getElementById('status-text');
-        const alertBox = document.getElementById('alert-box');
-        const alertMessage = document.getElementById('alert-message');
-        const warningHistory = document.getElementById('warning-history');
+        const voiceAlert = document.getElementById('voice-alert');
+        const voiceMessage = document.getElementById('voice-message');
+        const sidebar = document.getElementById('sidebar');
+        const closeSidebar = document.getElementById('close-sidebar');
         const minutesDisplay = document.getElementById('minutes');
         const secondsDisplay = document.getElementById('seconds');
-        const timerProgress = document.getElementById('timer-progress');
-        const voiceTypeSelect = document.getElementById('voice-type');
-        const compatibilityFix = document.getElementById('compatibility-fix');
-        const testTtsBtn = document.getElementById('test-tts-btn');
+        const restAlert = document.getElementById('rest-alert');
+        const restCountdown = document.getElementById('rest-countdown');
+        const restartMonitoringBtn = document.getElementById('restart-monitoring-btn');
+        
+        // 设置相关元素
+        const voiceSchemeSelect = document.getElementById('voice-scheme');
+        const sensitivitySelect = document.getElementById('sensitivity');
+        const studyTimeSelect = document.getElementById('study-time');
+        const restTimeSelect = document.getElementById('rest-time');
+        const videoQualitySelect = document.getElementById('video-quality');
+        const resetCameraBtn = document.getElementById('reset-camera-btn');
+        const historyList = document.getElementById('history-list');
+        const clearHistoryBtn = document.getElementById('clear-history-btn');
+        const compatibilityAlert = document.getElementById('compatibility-alert');
+        const testTts1Btn = document.getElementById('test-tts1-btn');
+        const testTts2Btn = document.getElementById('test-tts2-btn');
+        const testTts3Btn = document.getElementById('test-tts3-btn');
         const testBeepBtn = document.getElementById('test-beep-btn');
-        const fixAudioContextBtn = document.getElementById('fix-audio-context');
-        const enableAutoplayBtn = document.getElementById('enable-autoplay');
-        const testLocalAudioBtn = document.getElementById('test-local-audio');
+        
+        // 页面切换元素
+        const pageBtns = document.querySelectorAll('.page-btn');
+        const pageContents = document.querySelectorAll('.page-content');
+        
+        // 音频元素
+        const voice1Audio = document.getElementById('voice1');
         
         // 初始化函数
         async function init() {
-            // 检测浏览器类型
-            const ua = navigator.userAgent.toLowerCase();
-            const isHuaweiBrowser = ua.includes('huawei') || ua.includes('harmony');
+            console.log("初始化坐姿监控系统...");
             
-            // 如果是华为浏览器，显示兼容性修复提示
-            if (isHuaweiBrowser) {
-                compatibilityFix.classList.add('show');
-                addWarningMessage("检测到华为浏览器，部分功能可能需要额外设置");
-            }
+            // 设置画布尺寸
+            updateCanvasSize();
             
-            // 检查语音合成支持
-            if (!('speechSynthesis' in window)) {
-                addWarningMessage("您的浏览器不支持语音合成，将使用蜂鸣音提示");
-                testTtsBtn.disabled = true;
-                testTtsBtn.innerHTML = '<i class="fas fa-microphone-slash"></i> TTS不支持';
-            }
+            // 检测浏览器兼容性
+            detectBrowserCompatibility();
             
             // 事件监听
+            setupEventListeners();
+            
+            // 初始化语音方案
+            initVoiceScheme();
+            
+            // 尝试启动摄像头
+            await startCamera();
+            
+            // 添加初始历史记录
+            addHistory("系统初始化完成", "info");
+            
+            console.log("系统初始化完成");
+        }
+        
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 控制按钮
             startBtn.addEventListener('click', startMonitoring);
             stopBtn.addEventListener('click', stopMonitoring);
-            testTtsBtn.addEventListener('click', testTTS);
-            testBeepBtn.addEventListener('click', testBeep);
-            fixAudioContextBtn.addEventListener('click', fixAudioContext);
-            enableAutoplayBtn.addEventListener('click', enableAutoplay);
-            testLocalAudioBtn.addEventListener('click', testLocalAudio);
-            voiceTypeSelect.addEventListener('change', function() {
-                voiceType = this.value;
-                addWarningMessage(`提示类型已切换为: ${this.options[this.selectedIndex].text}`);
+            testVoiceBtn.addEventListener('click', testVoice);
+            voiceModeBtn.addEventListener('click', toggleVoiceMode);
+            
+            // 侧边栏菜单
+            menuBtn.addEventListener('click', openSidebar);
+            closeSidebar.addEventListener('click', closeSidebarFunc);
+            
+            // 设置更改
+            voiceSchemeSelect.addEventListener('change', updateVoiceScheme);
+            sensitivitySelect.addEventListener('change', updateSensitivity);
+            studyTimeSelect.addEventListener('change', updateStudyTime);
+            restTimeSelect.addEventListener('change', updateRestTime);
+            videoQualitySelect.addEventListener('change', updateVideoQuality);
+            
+            // 按钮事件
+            resetCameraBtn.addEventListener('click', resetCamera);
+            clearHistoryBtn.addEventListener('click', clearHistory);
+            restartMonitoringBtn.addEventListener('click', restartMonitoring);
+            
+            // 音频测试按钮
+            testTts1Btn.addEventListener('click', () => testVoiceScheme('tts1'));
+            testTts2Btn.addEventListener('click', () => testVoiceScheme('tts2'));
+            testTts3Btn.addEventListener('click', () => testVoiceScheme('tts3'));
+            testBeepBtn.addEventListener('click', () => testVoiceScheme('beep'));
+            
+            // 页面切换
+            pageBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const pageId = this.getAttribute('data-page');
+                    switchPage(pageId);
+                });
             });
             
             // 用户交互监听（解锁音频）
             document.addEventListener('click', unlockAudio);
             document.addEventListener('touchstart', unlockAudio);
             
-            // 初始化计时器
-            updateTimerDisplay();
+            // 窗口大小变化
+            window.addEventListener('resize', updateCanvasSize);
             
-            // 尝试启动摄像头
-            try {
-                await startCamera();
-            } catch (err) {
-                console.log("摄像头初始化失败:", err);
+            // 视频卡顿优化：定期检查视频流状态
+            setInterval(checkVideoStatus, 10000);
+        }
+        
+        // 检测浏览器兼容性
+        function detectBrowserCompatibility() {
+            const ua = navigator.userAgent.toLowerCase();
+            let browserInfo = "未知浏览器";
+            
+            if (ua.includes('micromessenger')) {
+                browserInfo = "微信浏览器";
+                compatibilityAlert.innerHTML = `<p><i class="fas fa-exclamation-triangle"></i> <strong>微信浏览器提示：</strong>请点击右上角菜单，选择"在浏览器打开"以获得完整功能</p>`;
+            } else if (ua.includes('huawei') || ua.includes('harmony')) {
+                browserInfo = "华为浏览器";
+                compatibilityAlert.innerHTML = `<p><i class="fas fa-exclamation-triangle"></i> <strong>华为浏览器提示：</strong>请确保允许网站使用麦克风和摄像头权限</p>`;
+            } else if (ua.includes('safari') && !ua.includes('chrome')) {
+                browserInfo = "Safari浏览器";
+                compatibilityAlert.innerHTML = `<p><i class="fas fa-exclamation-triangle"></i> <strong>Safari提示：</strong>请前往"设置 > Safari > 摄像头/麦克风"中允许此网站使用权限</p>`;
+            } else {
+                browserInfo = "Chrome/Edge等现代浏览器";
+                compatibilityAlert.innerHTML = `<p><i class="fas fa-check-circle"></i> <strong>兼容性良好：</strong>您的浏览器支持完整功能</p>`;
+                compatibilityAlert.style.background = "#e8f7ef";
+                compatibilityAlert.style.borderLeftColor = "#4cd964";
+            }
+            
+            addHistory(`检测到: ${browserInfo}`, "info");
+        }
+        
+        // 初始化语音方案
+        function initVoiceScheme() {
+            // 检查Web Speech API支持
+            const supportsSpeech = 'speechSynthesis' in window;
+            
+            if (supportsSpeech) {
+                currentVoiceScheme = 'tts1';
+                voiceSchemeSelect.value = 'tts1';
+                addHistory("Web Speech API支持: 是", "info");
+            } else {
+                currentVoiceScheme = 'tts3'; // 回退到HTML5 Audio
+                voiceSchemeSelect.value = 'tts3';
+                addHistory("Web Speech API支持: 否，使用备用方案", "warning");
             }
         }
         
-        // 解锁音频（华为浏览器需要用户交互后才能播放声音）
+        // 更新语音方案
+        function updateVoiceScheme() {
+            currentVoiceScheme = voiceSchemeSelect.value;
+            addHistory(`语音方案切换为: ${voiceSchemeSelect.options[voiceSchemeSelect.selectedIndex].text}`, "info");
+        }
+        
+        // 更新灵敏度
+        function updateSensitivity() {
+            addHistory(`灵敏度设置为: ${sensitivitySelect.options[sensitivitySelect.selectedIndex].text}`, "info");
+        }
+        
+        // 更新学习时间
+        function updateStudyTime() {
+            const studyTime = parseInt(studyTimeSelect.value);
+            remainingTime = studyTime * 60;
+            updateTimerDisplay();
+            addHistory(`学习时间设置为: ${studyTime}分钟`, "info");
+        }
+        
+        // 更新休息时间
+        function updateRestTime() {
+            addHistory(`休息时间设置为: ${restTimeSelect.options[restTimeSelect.selectedIndex].text}`, "info");
+        }
+        
+        // 更新视频质量
+        function updateVideoQuality() {
+            addHistory(`视频质量设置为: ${videoQualitySelect.options[videoQualitySelect.selectedIndex].text}`, "info");
+            // 在实际应用中，这里需要重新初始化摄像头
+        }
+        
+        // 重置摄像头
+        async function resetCamera() {
+            stopMonitoring();
+            
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+                videoStream = null;
+            }
+            
+            videoOverlay.style.display = 'flex';
+            videoOverlay.innerHTML = `
+                <i class="fas fa-sync-alt fa-spin"></i>
+                <h2>正在重新初始化摄像头...</h2>
+            `;
+            
+            await startCamera();
+            addHistory("摄像头已重新初始化", "info");
+        }
+        
+        // 打开侧边栏
+        function openSidebar() {
+            sidebar.classList.add('open');
+        }
+        
+        // 关闭侧边栏
+        function closeSidebarFunc() {
+            sidebar.classList.remove('open');
+        }
+        
+        // 切换页面
+        function switchPage(pageId) {
+            // 更新按钮状态
+            pageBtns.forEach(btn => {
+                if (btn.getAttribute('data-page') === pageId) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            
+            // 显示对应页面
+            pageContents.forEach(page => {
+                if (page.id === `${pageId}-page`) {
+                    page.classList.add('active');
+                } else {
+                    page.classList.remove('active');
+                }
+            });
+        }
+        
+        // 添加历史记录
+        function addHistory(message, type = "info") {
+            const now = new Date();
+            const time = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+            
+            const item = document.createElement('div');
+            item.className = 'history-item';
+            
+            let icon = "fa-info-circle";
+            if (type === "warning") icon = "fa-exclamation-triangle";
+            if (type === "error") icon = "fa-times-circle";
+            if (type === "success") icon = "fa-check-circle";
+            
+            item.innerHTML = `
+                <strong><i class="fas ${icon}"></i> ${time}</strong><br>
+                <small>${message}</small>
+            `;
+            
+            historyList.prepend(item);
+            
+            // 限制最多50条记录
+            if (historyList.children.length > 50) {
+                historyList.removeChild(historyList.lastChild);
+            }
+        }
+        
+        // 清空历史记录
+        function clearHistory() {
+            historyList.innerHTML = '';
+            addHistory("历史记录已清空", "info");
+        }
+        
+        // 更新画布尺寸
+        function updateCanvasSize() {
+            const container = document.querySelector('.video-container');
+            videoCanvas.width = container.clientWidth;
+            videoCanvas.height = container.clientHeight;
+        }
+        
+        // 解锁音频（需要用户交互）
         function unlockAudio() {
             if (!userInteracted) {
                 userInteracted = true;
                 console.log("用户已交互，音频已解锁");
                 
-                // 尝试创建一个非常短的静音音频来解锁音频上下文
+                // 播放静音音频解锁音频上下文
                 try {
                     const silentAudio = new Audio();
                     silentAudio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEAQB8AAEAfAAABAAgAZGF0YQ';
                     silentAudio.volume = 0;
                     silentAudio.play().then(() => {
-                        console.log("静音音频播放成功，音频上下文已解锁");
-                    }).catch(e => {
-                        console.log("静音音频播放失败:", e);
+                        console.log("音频上下文已解锁");
                     });
                 } catch (e) {
-                    console.log("静音音频创建失败:", e);
+                    console.log("音频解锁失败:", e);
                 }
             }
-        }
-        
-        // 修复音频上下文（针对华为浏览器）
-        function fixAudioContext() {
-            if (!audioContext) {
-                try {
-                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    addWarningMessage("音频上下文创建成功");
-                } catch (e) {
-                    addWarningMessage("音频上下文创建失败: " + e.message);
-                }
-            } else {
-                addWarningMessage("音频上下文已存在");
-            }
-        }
-        
-        // 启用自动播放
-        function enableAutoplay() {
-            // 华为浏览器需要用户明确授权
-            if (video.paused) {
-                video.play().then(() => {
-                    addWarningMessage("视频自动播放已启用");
-                }).catch(e => {
-                    addWarningMessage("视频自动播放被阻止: " + e.message);
-                });
-            }
-            
-            // 尝试播放测试音频
-            testLocalAudio();
-        }
-        
-        // 测试本地音频（使用Web Audio API）
-        function testLocalAudio() {
-            if (!userInteracted) {
-                addWarningMessage("请先点击页面任意位置激活音频播放");
-                return;
-            }
-            
-            playBeepSound(800, 200); // 播放800Hz，200ms的蜂鸣音
-            addWarningMessage("本地蜂鸣音测试完成");
         }
         
         // 启动摄像头
         async function startCamera() {
             try {
-                videoStream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: "user" },
+                // 根据视频质量设置参数
+                const quality = videoQualitySelect.value;
+                let constraints = {
+                    video: {
+                        facingMode: "user",
+                        width: { ideal: 640 },
+                        height: { ideal: 480 },
+                        frameRate: { ideal: 15, max: 30 }
+                    },
                     audio: false
-                });
+                };
+                
+                // 根据质量调整参数
+                if (quality === 'low') {
+                    constraints.video.width = { ideal: 320 };
+                    constraints.video.height = { ideal: 240 };
+                    constraints.video.frameRate = { ideal: 10, max: 15 };
+                } else if (quality === 'high') {
+                    constraints.video.width = { ideal: 1280 };
+                    constraints.video.height = { ideal: 720 };
+                    constraints.video.frameRate = { ideal: 30, max: 60 };
+                }
+                
+                videoStream = await navigator.mediaDevices.getUserMedia(constraints);
                 video.srcObject = videoStream;
                 videoOverlay.style.display = 'none';
-                addWarningMessage("摄像头已开启");
+                
+                addHistory("摄像头已成功开启", "success");
+                isVideoActive = true;
+                
             } catch (err) {
                 console.error("摄像头访问失败:", err);
                 videoOverlay.innerHTML = `
                     <i class="fas fa-video-slash"></i>
-                    <p>摄像头访问失败，将使用模拟检测模式</p>
+                    <h2>摄像头访问失败</h2>
+                    <p>${err.message || "请检查摄像头权限"}</p>
+                    <p style="margin-top: 20px; font-size: 0.9rem;">将使用模拟检测模式</p>
                 `;
                 videoOverlay.style.display = 'flex';
-                addWarningMessage("摄像头访问失败，使用模拟模式");
+                
+                addHistory(`摄像头访问失败: ${err.message || "权限被拒绝"}`, "error");
                 
                 // 启动模拟检测
                 simulateDetection();
+            }
+        }
+        
+        // 检查视频状态（防卡顿）
+        function checkVideoStatus() {
+            if (!isMonitoring || !videoStream) return;
+            
+            // 检查视频是否卡顿
+            const video = document.getElementById('video');
+            if (video.readyState === 0) {
+                console.warn("视频流可能已中断，尝试恢复...");
+                addHistory("视频流中断，尝试恢复", "warning");
+                
+                // 尝试重新获取视频流
+                setTimeout(() => {
+                    if (isMonitoring) {
+                        resetCamera();
+                    }
+                }, 1000);
             }
         }
         
@@ -657,11 +1151,19 @@
         function startMonitoring() {
             if (isMonitoring) return;
             
+            // 确保用户已交互（解锁音频）
+            if (!userInteracted) {
+                unlockAudio();
+            }
+            
             isMonitoring = true;
             statusDot.className = 'status-dot';
             statusText.textContent = "监控中 - 坐姿良好";
             startBtn.disabled = true;
             stopBtn.disabled = false;
+            
+            // 隐藏休息提醒
+            restAlert.classList.remove('show');
             
             // 开始姿态检测
             monitorInterval = setInterval(detectPose, 3000);
@@ -669,10 +1171,10 @@
             // 开始计时器
             startTimer();
             
-            addWarningMessage("坐姿监控已启动");
-            
             // 初始语音提示
-            playAlert("坐姿监控已经开始，我会帮你保持正确的坐姿哦！");
+            speakVoice("坐姿监控已经开始，我会帮你保持正确的坐姿哦！");
+            
+            addHistory("坐姿监控已启动", "success");
         }
         
         // 停止监控
@@ -687,35 +1189,77 @@
             
             clearInterval(monitorInterval);
             clearInterval(timerInterval);
-            alertBox.classList.remove('show');
             
-            addWarningMessage("坐姿监控已停止");
+            // 隐藏语音提醒
+            voiceAlert.classList.remove('show');
+            
+            addHistory("坐姿监控已停止", "info");
+        }
+        
+        // 重新开始监控（从休息中恢复）
+        function restartMonitoring() {
+            clearInterval(restInterval);
+            restAlert.classList.remove('show');
+            startMonitoring();
         }
         
         // 检测坐姿（模拟）
         function detectPose() {
             if (!isMonitoring) return;
             
-            // 模拟30%的概率检测到不良坐姿
-            const isBadPosture = Math.random() > 0.7;
+            // 获取灵敏度设置
+            const sensitivity = sensitivitySelect.value;
+            let badPostureProbability = 0.3; // 默认中等灵敏度
+            
+            if (sensitivity === 'high') badPostureProbability = 0.5;
+            if (sensitivity === 'low') badPostureProbability = 0.15;
+            
+            const isBadPosture = Math.random() > (1 - badPostureProbability);
             
             if (isBadPosture) {
+                badPostureCount++;
+                
+                // 更新状态指示器
                 statusDot.className = 'status-dot danger';
                 statusText.textContent = "坐姿需要调整";
-                alertBox.classList.add('show');
                 
+                // 选择随机的警告消息
+                const warningMessages = voiceMessages.filter(msg => msg.type === "warning");
                 const randomMessage = warningMessages[Math.floor(Math.random() * warningMessages.length)];
-                alertMessage.textContent = randomMessage;
                 
-                // 播放提醒
-                playAlert(randomMessage);
+                // 显示语音提醒
+                showVoiceAlert(randomMessage.text);
                 
-                addWarningMessage(`坐姿提醒: ${randomMessage}`);
+                // 播放语音提示
+                speakVoice(randomMessage.text);
+                
+                addHistory(`坐姿提醒: ${randomMessage.text}`, "warning");
+                
+                // 绘制模拟姿态点
+                drawSimulatedPose();
+                
             } else {
+                // 良好坐姿（10%概率给予鼓励）
+                if (Math.random() > 0.9) {
+                    const goodMessages = voiceMessages.filter(msg => msg.type === "good");
+                    const randomMessage = goodMessages[Math.floor(Math.random() * goodMessages.length)];
+                    speakVoice(randomMessage.text);
+                }
+                
                 statusDot.className = 'status-dot';
                 statusText.textContent = "坐姿良好";
-                alertBox.classList.remove('show');
             }
+        }
+        
+        // 显示语音提醒
+        function showVoiceAlert(message) {
+            voiceMessage.textContent = message;
+            voiceAlert.classList.add('show');
+            
+            // 3秒后自动隐藏
+            setTimeout(() => {
+                voiceAlert.classList.remove('show');
+            }, 3000);
         }
         
         // 模拟检测（摄像头不可用时）
@@ -723,104 +1267,134 @@
             setInterval(() => {
                 if (!isMonitoring) return;
                 
-                const isBadPosture = Math.random() > 0.8;
+                const sensitivity = sensitivitySelect.value;
+                let badPostureProbability = 0.3;
+                
+                if (sensitivity === 'high') badPostureProbability = 0.5;
+                if (sensitivity === 'low') badPostureProbability = 0.15;
+                
+                const isBadPosture = Math.random() > (1 - badPostureProbability);
                 
                 if (isBadPosture) {
                     statusDot.className = 'status-dot danger';
                     statusText.textContent = "模拟检测 - 坐姿需要调整";
-                    alertBox.classList.add('show');
                     
+                    const warningMessages = voiceMessages.filter(msg => msg.type === "warning");
                     const randomMessage = warningMessages[Math.floor(Math.random() * warningMessages.length)];
-                    alertMessage.textContent = randomMessage;
                     
-                    playAlert(randomMessage);
+                    showVoiceAlert(randomMessage.text);
+                    speakVoice(randomMessage.text);
                     
-                    addWarningMessage(`模拟检测: ${randomMessage}`);
+                    addHistory(`模拟检测: ${randomMessage.text}`, "warning");
                 } else {
                     statusDot.className = 'status-dot';
                     statusText.textContent = "模拟检测 - 坐姿良好";
-                    alertBox.classList.remove('show');
                 }
             }, 3000);
         }
         
-        // 播放提醒（根据选择的类型）
-        function playAlert(message) {
-            if (!isMonitoring) return;
+        // 绘制模拟姿态
+        function drawSimulatedPose() {
+            const ctx = videoCanvas.getContext('2d');
+            ctx.clearRect(0, 0, videoCanvas.width, videoCanvas.height);
             
-            switch(voiceType) {
+            // 绘制模拟的关键点
+            const points = [
+                {x: 0.5, y: 0.3, color: "#FF0000"}, // 鼻子
+                {x: 0.4, y: 0.35, color: "#00FF00"}, // 左眼
+                {x: 0.6, y: 0.35, color: "#00FF00"}, // 右眼
+                {x: 0.3, y: 0.5, color: "#5d6afb"}, // 左肩
+                {x: 0.7, y: 0.5, color: "#5d6afb"}, // 右肩
+                {x: 0.2, y: 0.7, color: "#ff7b9c"}, // 左肘
+                {x: 0.8, y: 0.7, color: "#ff7b9c"}, // 右肘
+            ];
+            
+            points.forEach(point => {
+                const x = point.x * videoCanvas.width;
+                const y = point.y * videoCanvas.height;
+                
+                // 绘制点
+                ctx.beginPath();
+                ctx.arc(x, y, 6, 0, 2 * Math.PI);
+                ctx.fillStyle = point.color;
+                ctx.fill();
+                ctx.strokeStyle = "#FFFFFF";
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            });
+            
+            // 绘制连线
+            ctx.beginPath();
+            ctx.moveTo(0.4 * videoCanvas.width, 0.35 * videoCanvas.height);
+            ctx.lineTo(0.6 * videoCanvas.width, 0.35 * videoCanvas.height);
+            ctx.moveTo(0.5 * videoCanvas.width, 0.3 * videoCanvas.height);
+            ctx.lineTo(0.5 * videoCanvas.width, 0.4 * videoCanvas.height);
+            ctx.moveTo(0.3 * videoCanvas.width, 0.5 * videoCanvas.height);
+            ctx.lineTo(0.7 * videoCanvas.width, 0.5 * videoCanvas.height);
+            
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = "#FFFF00";
+            ctx.stroke();
+            
+            // 3秒后清除
+            setTimeout(() => {
+                ctx.clearRect(0, 0, videoCanvas.width, videoCanvas.height);
+            }, 3000);
+        }
+        
+        // 语音合成主函数
+        function speakVoice(text) {
+            if (!userInteracted) return; // 用户未交互时不播放音频
+            
+            const now = Date.now();
+            if (now - lastAlertTime < ALERT_COOLDOWN) return; // 避免频繁提醒
+            lastAlertTime = now;
+            
+            // 根据当前语音方案选择播放方式
+            switch(currentVoiceScheme) {
+                case 'auto':
+                    // 自动选择最佳方案
+                    if ('speechSynthesis' in window) {
+                        useWebSpeechAPI(text);
+                    } else {
+                        useHTML5Audio(text);
+                    }
+                    break;
+                    
+                case 'tts1':
+                    // Web Speech API方案
+                    useWebSpeechAPI(text);
+                    break;
+                    
+                case 'tts2':
+                    // 中文女声增强版
+                    useEnhancedSpeech(text);
+                    break;
+                    
+                case 'tts3':
+                    // HTML5 Audio备用方案
+                    useHTML5Audio(text);
+                    break;
+                    
                 case 'beep':
-                    playBeepSound(600, 300);
+                    // 蜂鸣音提示
+                    playBeepSound();
                     break;
-                case 'local-tts':
-                    speakText(message);
-                    break;
-                case 'text-alert':
-                    // 文字提示已经显示，不需要额外操作
-                    break;
+                    
+                default:
+                    useWebSpeechAPI(text);
             }
         }
         
-        // 播放蜂鸣音（Web Audio API）
-        function playBeepSound(frequency, duration) {
-            if (!userInteracted) return;
-            
-            try {
-                if (!audioContext) {
-                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                }
-                
-                oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-                
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-                
-                oscillator.frequency.value = frequency;
-                oscillator.type = 'sine';
-                
-                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration / 1000);
-                
-                oscillator.start(audioContext.currentTime);
-                oscillator.stop(audioContext.currentTime + duration / 1000);
-                
-            } catch (e) {
-                console.log("蜂鸣音播放失败:", e);
-                // 如果Web Audio API失败，尝试使用HTML5 Audio
-                fallbackBeep();
+        // 使用Web Speech API
+        function useWebSpeechAPI(text) {
+            if (!('speechSynthesis' in window)) {
+                console.log("Web Speech API不可用，回退到备用方案");
+                useHTML5Audio(text);
+                return;
             }
-        }
-        
-        // 备用蜂鸣音（HTML5 Audio）
-        function fallbackBeep() {
-            if (!userInteracted) return;
             
-            try {
-                // 创建一个简单的beep声
-                const audio = new Audio();
-                const context = new (window.AudioContext || window.webkitAudioContext)();
-                const oscillator = context.createOscillator();
-                const gainNode = context.createGain();
-                
-                oscillator.connect(gainNode);
-                gainNode.connect(context.destination);
-                
-                oscillator.frequency.value = 800;
-                gainNode.gain.value = 0.3;
-                
-                oscillator.start();
-                setTimeout(() => oscillator.stop(), 200);
-                
-            } catch (e) {
-                console.log("备用蜂鸣音也失败:", e);
-            }
-        }
-        
-        // 语音合成
-        function speakText(text) {
-            if (!('speechSynthesis' in window)) return;
-            
+            // 停止当前语音
             speechSynthesis.cancel();
             
             const utterance = new SpeechSynthesisUtterance(text);
@@ -829,62 +1403,150 @@
             utterance.pitch = 1.0;
             utterance.volume = 1.0;
             
-            // 获取中文语音
+            // 获取可用的语音
             const voices = speechSynthesis.getVoices();
+            
             if (voices.length > 0) {
-                const chineseVoice = voices.find(v => v.lang.includes('zh'));
+                // 优先选择中文语音
+                const chineseVoice = voices.find(v => v.lang.includes('zh') || v.lang.includes('CN'));
                 if (chineseVoice) utterance.voice = chineseVoice;
             }
             
             try {
                 speechSynthesis.speak(utterance);
             } catch (e) {
-                console.log("语音合成失败:", e);
-                // 语音合成失败时降级到蜂鸣音
-                playBeepSound(800, 300);
+                console.log("Web Speech API失败:", e);
+                useHTML5Audio(text); // 失败时回退
             }
         }
         
-        // 测试TTS
-        function testTTS() {
-            speakText("这是一条测试语音，坐姿监控系统工作正常。");
-            addWarningMessage("语音合成测试完成");
-        }
-        
-        // 测试蜂鸣音
-        function testBeep() {
-            playBeepSound(800, 300);
-            addWarningMessage("蜂鸣音测试完成");
-        }
-        
-        // 添加警告消息
-        function addWarningMessage(message) {
-            const now = new Date();
-            const time = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-            
-            const item = document.createElement('div');
-            item.className = 'warning-item';
-            item.innerHTML = `
-                <i class="fas fa-info-circle"></i>
-                <div>
-                    <span style="color: var(--primary); font-weight: 600;">${time}</span> 
-                    <span>${message}</span>
-                </div>
-            `;
-            
-            warningHistory.prepend(item);
-            
-            // 限制显示数量
-            if (warningHistory.children.length > 10) {
-                warningHistory.removeChild(warningHistory.lastChild);
+        // 使用增强版语音（尝试不同参数）
+        function useEnhancedSpeech(text) {
+            if (!('speechSynthesis' in window)) {
+                useHTML5Audio(text);
+                return;
             }
+            
+            speechSynthesis.cancel();
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'zh-CN';
+            utterance.rate = 1.0; // 稍快
+            utterance.pitch = 1.2; // 音调稍高，更像女声
+            utterance.volume = 1.0;
+            
+            const voices = speechSynthesis.getVoices();
+            
+            if (voices.length > 0) {
+                // 尝试找到女声
+                const femaleVoice = voices.find(v => 
+                    (v.lang.includes('zh') || v.lang.includes('CN')) && 
+                    v.name.toLowerCase().includes('female')
+                );
+                
+                if (femaleVoice) {
+                    utterance.voice = femaleVoice;
+                } else {
+                    // 如果没有女声，找中文语音
+                    const chineseVoice = voices.find(v => v.lang.includes('zh') || v.lang.includes('CN'));
+                    if (chineseVoice) utterance.voice = chineseVoice;
+                }
+            }
+            
+            try {
+                speechSynthesis.speak(utterance);
+            } catch (e) {
+                console.log("增强语音失败:", e);
+                useHTML5Audio(text);
+            }
+        }
+        
+        // 使用HTML5 Audio（备用方案）
+        function useHTML5Audio(text) {
+            // 这里可以使用预录制的音频，或者使用TTS服务
+            // 由于TTS服务需要网络，我们使用Web Speech API作为备用
+            
+            if ('speechSynthesis' in window) {
+                // 如果Web Speech API可用，使用它
+                useWebSpeechAPI(text);
+            } else {
+                // 否则播放蜂鸣音
+                playBeepSound();
+            }
+        }
+        
+        // 播放蜂鸣音
+        function playBeepSound() {
+            if (!userInteracted) return;
+            
+            try {
+                // 使用Web Audio API生成蜂鸣音
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = 800;
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.3);
+                
+            } catch (e) {
+                console.log("蜂鸣音播放失败:", e);
+            }
+        }
+        
+        // 测试语音
+        function testVoice() {
+            const testMessage = "这是一条测试语音，坐姿监控系统工作正常。";
+            speakVoice(testMessage);
+            showVoiceAlert(testMessage);
+            addHistory("语音测试完成", "info");
+        }
+        
+        // 测试语音方案
+        function testVoiceScheme(scheme) {
+            const originalScheme = currentVoiceScheme;
+            currentVoiceScheme = scheme;
+            
+            const testMessage = "这是一条测试语音，坐姿监控系统工作正常。";
+            speakVoice(testMessage);
+            
+            // 恢复原始方案
+            currentVoiceScheme = originalScheme;
+            
+            addHistory(`测试语音方案: ${scheme}`, "info");
+        }
+        
+        // 切换语音模式
+        function toggleVoiceMode() {
+            const currentIndex = Array.from(voiceSchemeSelect.options).findIndex(option => option.value === currentVoiceScheme);
+            const nextIndex = (currentIndex + 1) % voiceSchemeSelect.options.length;
+            
+            voiceSchemeSelect.selectedIndex = nextIndex;
+            updateVoiceScheme();
+            
+            // 测试新语音模式
+            setTimeout(() => testVoice(), 500);
         }
         
         // 开始计时器
         function startTimer() {
-            remainingTime = 45 * 60;
+            // 获取设置的学习时间
+            const studyTime = parseInt(studyTimeSelect.value);
+            remainingTime = studyTime * 60;
             updateTimerDisplay();
             
+            // 清除现有计时器
+            if (timerInterval) clearInterval(timerInterval);
+            
+            // 开始新计时器
             timerInterval = setInterval(() => {
                 remainingTime--;
                 updateTimerDisplay();
@@ -903,33 +1565,56 @@
             
             minutesDisplay.textContent = minutes.toString().padStart(2, '0');
             secondsDisplay.textContent = seconds.toString().padStart(2, '0');
-            
-            const progress = ((45 * 60 - remainingTime) / (45 * 60)) * 100;
-            timerProgress.style.width = `${progress}%`;
         }
         
-        // 触发休息
+        // 触发休息提醒
         function triggerRestBreak() {
+            // 停止监控
             stopMonitoring();
             
-            // 播放休息提醒
-            playAlert("学习时间到！已经45分钟了，请站起来活动一下，看看远处，让眼睛休息5分钟。");
+            // 显示休息提醒
+            restAlert.classList.add('show');
             
-            addWarningMessage("学习时间已达45分钟，开始5分钟休息");
+            // 播放休息提醒语音
+            speakVoice("学习时间到！已经45分钟了，请站起来活动一下，看看远处，让眼睛休息5分钟。");
             
-            // 5分钟后重新开始
-            setTimeout(() => {
-                if (confirm("休息时间结束，是否继续监控？")) {
-                    startMonitoring();
-                    playAlert("休息时间结束，请继续保持正确坐姿学习。");
+            // 获取设置的休息时间
+            const restTime = parseInt(restTimeSelect.value);
+            restRemainingTime = restTime * 60;
+            updateRestCountdown();
+            
+            // 开始休息倒计时
+            restInterval = setInterval(() => {
+                restRemainingTime--;
+                updateRestCountdown();
+                
+                // 休息时间结束
+                if (restRemainingTime <= 0) {
+                    clearInterval(restInterval);
+                    restAlert.classList.remove('show');
+                    
+                    // 自动重新开始监控
+                    setTimeout(() => {
+                        startMonitoring();
+                        speakVoice("休息时间结束，请继续保持正确坐姿学习。");
+                    }, 1000);
                 }
-            }, 5 * 60 * 1000);
+            }, 1000);
+            
+            addHistory(`学习时间结束，开始${restTime}分钟休息`, "info");
+        }
+        
+        // 更新休息倒计时
+        function updateRestCountdown() {
+            const restMinutes = Math.floor(restRemainingTime / 60);
+            const restSeconds = restRemainingTime % 60;
+            restCountdown.textContent = `${restMinutes}:${restSeconds.toString().padStart(2, '0')}`;
         }
         
         // 页面加载完成后初始化
         window.addEventListener('load', init);
         
-        // 确保视频可以播放（华为浏览器需要）
+        // 确保视频可以播放
         video.addEventListener('click', function() {
             if (video.paused) {
                 video.play().catch(e => {
@@ -937,6 +1622,13 @@
                 });
             }
         });
+        
+        // 语音合成可能需要时间加载语音
+        if ('speechSynthesis' in window) {
+            speechSynthesis.onvoiceschanged = function() {
+                console.log("语音列表已加载");
+            };
+        }
     </script>
 </body>
 </html>

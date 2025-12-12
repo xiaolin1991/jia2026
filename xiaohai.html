@@ -2,15 +2,18 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>儿童坐姿监控助手</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>曹无奈坐姿监控助手</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&family=Nunito:wght@400;600;700&display=swap">
     <style>
+        /* 重置默认样式，提高兼容性 */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-text-size-adjust: 100%;
         }
         
         :root {
@@ -31,12 +34,53 @@
         }
         
         body {
-            font-family: 'Nunito', '微软雅黑', sans-serif;
+            font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
             background: linear-gradient(135deg, #f0f3ff 0%, #e8edff 100%);
             color: var(--text);
             min-height: 100vh;
             padding: 15px;
             line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        /* 针对微信浏览器优化 */
+        .wechat-tip {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 9999;
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .wechat-tip.show {
+            display: flex;
+        }
+        
+        .wechat-tip i {
+            font-size: 3rem;
+            color: #07C160;
+            margin-bottom: 20px;
+        }
+        
+        .wechat-tip h3 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+        }
+        
+        .wechat-tip p {
+            margin-bottom: 10px;
+            font-size: 1rem;
+            line-height: 1.6;
         }
         
         .app-container {
@@ -81,6 +125,7 @@
             align-items: center;
             justify-content: center;
             margin-bottom: 15px;
+            flex-wrap: wrap;
         }
         
         .app-logo i {
@@ -90,14 +135,14 @@
         }
         
         .app-title {
-            font-size: 2.2rem;
+            font-size: 1.8rem;
             font-weight: 700;
             margin-bottom: 8px;
             font-family: 'Comic Neue', cursive;
         }
         
         .app-subtitle {
-            font-size: 1.1rem;
+            font-size: 1rem;
             opacity: 0.9;
             max-width: 600px;
             margin: 0 auto;
@@ -114,7 +159,7 @@
         .left-panel {
             flex: 1.2;
             min-width: 320px;
-            padding: 25px;
+            padding: 20px;
             border-right: 1px solid var(--border);
         }
         
@@ -122,15 +167,15 @@
         .right-panel {
             flex: 1;
             min-width: 320px;
-            padding: 25px;
+            padding: 20px;
             background-color: #fcfcff;
         }
         
         .section-title {
-            font-size: 1.5rem;
+            font-size: 1.3rem;
             color: var(--primary-dark);
-            margin-bottom: 20px;
-            padding-bottom: 10px;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
             border-bottom: 2px solid var(--border);
             font-weight: 700;
             display: flex;
@@ -146,11 +191,11 @@
         .video-container {
             position: relative;
             width: 100%;
-            height: 300px;
+            height: 280px;
             background-color: #111;
             border-radius: var(--radius-sm);
             overflow: hidden;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
         }
         
@@ -158,6 +203,7 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
+            display: block;
         }
         
         .pose-canvas {
@@ -175,7 +221,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.4);
+            background: rgba(0, 0, 0, 0.7);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -187,20 +233,20 @@
         }
         
         .video-overlay i {
-            font-size: 3rem;
+            font-size: 2.5rem;
             margin-bottom: 15px;
             color: rgba(255, 255, 255, 0.8);
         }
         
         .status-indicator {
             position: absolute;
-            top: 15px;
-            right: 15px;
+            top: 10px;
+            right: 10px;
             background-color: rgba(0, 0, 0, 0.7);
             color: white;
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-size: 0.85rem;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 0.8rem;
             z-index: 3;
             display: flex;
             align-items: center;
@@ -208,10 +254,10 @@
         }
         
         .status-dot {
-            width: 10px;
-            height: 10px;
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
-            margin-right: 8px;
+            margin-right: 6px;
             background-color: var(--success);
         }
         
@@ -232,14 +278,14 @@
         
         /* 控制按钮 */
         .control-buttons {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin-bottom: 25px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
         }
         
         .btn {
-            padding: 14px 20px;
+            padding: 14px 15px;
             border-radius: var(--radius-sm);
             font-size: 1rem;
             font-weight: 600;
@@ -249,13 +295,14 @@
             align-items: center;
             justify-content: center;
             border: none;
-            flex: 1;
-            min-width: 140px;
+            min-height: 50px;
+            touch-action: manipulation;
+            user-select: none;
         }
         
         .btn i {
             margin-right: 8px;
-            font-size: 1.2rem;
+            font-size: 1.1rem;
         }
         
         .btn-primary {
@@ -263,9 +310,9 @@
             color: white;
         }
         
-        .btn-primary:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 7px 15px rgba(93, 106, 251, 0.3);
+        .btn-primary:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 8px rgba(93, 106, 251, 0.3);
         }
         
         .btn-danger {
@@ -294,8 +341,8 @@
         .alert-box {
             background: linear-gradient(90deg, #fff9e6 0%, #fff0cc 100%);
             border-left: 4px solid var(--warning);
-            padding: 18px;
-            margin-bottom: 25px;
+            padding: 15px;
+            margin-bottom: 20px;
             border-radius: var(--radius-sm);
             display: none;
             align-items: center;
@@ -312,9 +359,9 @@
         }
         
         .alert-icon {
-            font-size: 1.8rem;
+            font-size: 1.5rem;
             color: var(--warning);
-            margin-right: 15px;
+            margin-right: 12px;
         }
         
         .alert-content {
@@ -325,37 +372,38 @@
             font-weight: 700;
             margin-bottom: 5px;
             color: #b38f00;
+            font-size: 1rem;
         }
         
         /* 计时器 */
         .timer-container {
             background: linear-gradient(135deg, #f0f4ff 0%, #e6ebff 100%);
-            padding: 25px;
+            padding: 20px;
             border-radius: var(--radius);
             text-align: center;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             box-shadow: 0 5px 15px rgba(93, 106, 251, 0.1);
         }
         
         .timer-label {
-            font-size: 1.1rem;
+            font-size: 1rem;
             color: var(--primary);
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             font-weight: 600;
         }
         
         .timer-display {
-            font-size: 3rem;
+            font-size: 2.5rem;
             font-weight: 800;
             color: var(--primary-dark);
             font-family: 'Comic Neue', cursive;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
         }
         
         .timer-progress {
-            height: 10px;
+            height: 8px;
             background-color: rgba(93, 106, 251, 0.1);
-            border-radius: 5px;
+            border-radius: 4px;
             overflow: hidden;
         }
         
@@ -363,7 +411,7 @@
             height: 100%;
             background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%);
             width: 100%;
-            border-radius: 5px;
+            border-radius: 4px;
             transition: width 1s linear;
         }
         
@@ -371,9 +419,9 @@
         .rest-alert {
             background: linear-gradient(135deg, #e8f7ef 0%, #d4f0e4 100%);
             border-left: 4px solid var(--success);
-            padding: 25px;
+            padding: 20px;
             border-radius: var(--radius-sm);
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             display: none;
             text-align: center;
         }
@@ -391,10 +439,11 @@
         
         .rest-alert h3 {
             color: #2e8b57;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
+            font-size: 1.2rem;
         }
         
         .rest-alert h3 i {
@@ -402,10 +451,10 @@
         }
         
         .rest-progress {
-            height: 10px;
+            height: 8px;
             background-color: rgba(46, 139, 87, 0.1);
-            border-radius: 5px;
-            margin: 20px 0;
+            border-radius: 4px;
+            margin: 15px 0;
             overflow: hidden;
         }
         
@@ -413,7 +462,7 @@
             height: 100%;
             background: linear-gradient(90deg, var(--success) 0%, #2e8b57 100%);
             width: 0%;
-            border-radius: 5px;
+            border-radius: 4px;
             transition: width 1s linear;
         }
         
@@ -421,17 +470,17 @@
         .warning-history {
             background-color: white;
             border-radius: var(--radius-sm);
-            padding: 20px;
+            padding: 15px;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-            margin-bottom: 25px;
-            max-height: 300px;
+            margin-bottom: 20px;
+            max-height: 250px;
             overflow-y: auto;
         }
         
         .warning-item {
-            padding: 12px 0;
+            padding: 10px 0;
             border-bottom: 1px solid var(--border);
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             color: var(--text-light);
             display: flex;
             align-items: flex-start;
@@ -443,41 +492,43 @@
         
         .warning-item i {
             color: var(--danger);
-            margin-right: 10px;
+            margin-right: 8px;
             margin-top: 2px;
-            font-size: 1rem;
+            font-size: 0.9rem;
         }
         
         .warning-time {
             color: var(--primary);
             font-weight: 600;
-            margin-right: 8px;
+            margin-right: 6px;
             white-space: nowrap;
+            font-size: 0.85rem;
         }
         
         /* 设置面板 */
         .settings-panel {
             background-color: white;
             border-radius: var(--radius-sm);
-            padding: 20px;
+            padding: 15px;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-            margin-bottom: 25px;
+            margin-bottom: 20px;
         }
         
         .setting-group {
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
         
         .setting-label {
             display: block;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             font-weight: 600;
             color: var(--primary-dark);
+            font-size: 0.95rem;
         }
         
         .select-box {
             width: 100%;
-            padding: 12px 15px;
+            padding: 12px;
             border-radius: var(--radius-sm);
             border: 1px solid var(--border);
             background-color: white;
@@ -485,6 +536,11 @@
             font-size: 1rem;
             color: var(--text);
             transition: border-color 0.3s;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 1em;
         }
         
         .select-box:focus {
@@ -495,38 +551,59 @@
         /* 提示卡片 */
         .tip-cards {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 15px;
-            margin-bottom: 25px;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
         }
         
         .tip-card {
             background: linear-gradient(135deg, #f9f9ff 0%, #f0f3ff 100%);
             border-radius: var(--radius-sm);
-            padding: 20px;
+            padding: 15px;
             border-left: 4px solid var(--primary);
         }
         
         .tip-card h4 {
             color: var(--primary-dark);
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             display: flex;
             align-items: center;
+            font-size: 1rem;
         }
         
         .tip-card h4 i {
-            margin-right: 10px;
+            margin-right: 8px;
             color: var(--primary);
+            font-size: 1rem;
+        }
+        
+        .tip-card p {
+            font-size: 0.9rem;
+            line-height: 1.4;
         }
         
         /* 底部 */
         .app-footer {
             text-align: center;
-            padding: 20px;
+            padding: 15px;
             color: var(--text-light);
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             background-color: #f9f9ff;
             border-top: 1px solid var(--border);
+        }
+        
+        /* 兼容性提示 */
+        .compatibility-alert {
+            background-color: #fff8e1;
+            border-left: 4px solid #ffb300;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: var(--radius-sm);
+            display: none;
+        }
+        
+        .compatibility-alert.show {
+            display: block;
         }
         
         /* 手机响应式调整 */
@@ -537,6 +614,7 @@
             
             .app-container {
                 border-radius: 12px;
+                min-height: 95vh;
             }
             
             .app-header {
@@ -544,40 +622,44 @@
             }
             
             .app-title {
-                font-size: 1.8rem;
+                font-size: 1.6rem;
             }
             
             .app-subtitle {
-                font-size: 1rem;
+                font-size: 0.95rem;
             }
             
             .left-panel, .right-panel {
-                padding: 20px 15px;
+                padding: 15px;
                 border-right: none;
                 border-bottom: 1px solid var(--border);
             }
             
             .video-container {
-                height: 250px;
+                height: 240px;
             }
             
             .timer-display {
-                font-size: 2.5rem;
+                font-size: 2.2rem;
             }
             
             .btn {
-                min-width: 100%;
-                margin-bottom: 8px;
+                padding: 12px 10px;
+                font-size: 0.95rem;
             }
             
             .control-buttons {
-                flex-direction: column;
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .tip-cards {
+                grid-template-columns: 1fr;
             }
         }
         
         @media (max-width: 480px) {
             .app-title {
-                font-size: 1.6rem;
+                font-size: 1.4rem;
             }
             
             .video-container {
@@ -585,14 +667,14 @@
             }
             
             .timer-display {
-                font-size: 2.2rem;
+                font-size: 2rem;
             }
             
             .section-title {
-                font-size: 1.3rem;
+                font-size: 1.2rem;
             }
             
-            .tip-cards {
+            .control-buttons {
                 grid-template-columns: 1fr;
             }
         }
@@ -601,12 +683,14 @@
         .voice-test {
             margin-top: 15px;
             display: flex;
+            flex-wrap: wrap;
             align-items: center;
             justify-content: space-between;
+            gap: 10px;
         }
         
         .voice-status {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             color: var(--text-light);
         }
         
@@ -617,9 +701,46 @@
         .voice-status.warning {
             color: var(--warning);
         }
+        
+        /* 权限请求按钮 */
+        .permission-request {
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%);
+            border-radius: var(--radius-sm);
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .permission-request.show {
+            display: block;
+        }
+        
+        /* 华为/OPPO/vivo特殊优化 */
+        .mobile-optimize {
+            /* 针对移动端触摸优化 */
+            touch-action: manipulation;
+        }
+        
+        /* 防止iOS点击延迟 */
+        .btn, .select-box, [role="button"] {
+            cursor: pointer;
+        }
     </style>
 </head>
-<body>
+<body class="mobile-optimize">
+    <!-- 微信浏览器提示 -->
+    <div class="wechat-tip" id="wechat-tip">
+        <i class="fab fa-weixin"></i>
+        <h3>微信浏览器使用提示</h3>
+        <p>1. 点击右上角"..."，选择"在浏览器打开"可获得更好体验</p>
+        <p>2. 或点击下方按钮授权摄像头权限</p>
+        <p>3. 如果无法自动播放语音，请点击"测试语音"按钮</p>
+        <button class="btn btn-primary" id="wechat-continue" style="margin-top: 20px; width: 200px;">
+            <i class="fas fa-play"></i> 继续使用
+        </button>
+    </div>
+    
     <div class="app-container">
         <header class="app-header">
             <div class="header-content">
@@ -633,13 +754,27 @@
             </div>
         </header>
         
+        <!-- 兼容性提示 -->
+        <div class="compatibility-alert" id="compatibility-alert">
+            <p><i class="fas fa-exclamation-triangle"></i> <strong>兼容性提示：</strong>检测到您的浏览器可能需要额外授权，请确保已允许摄像头和音频权限。</p>
+        </div>
+        
+        <!-- 权限请求提示 -->
+        <div class="permission-request" id="permission-request">
+            <h3><i class="fas fa-camera"></i> 摄像头权限请求</h3>
+            <p>坐姿检测需要访问您的摄像头，请点击下方按钮授权</p>
+            <button class="btn btn-primary" id="request-permission-btn">
+                <i class="fas fa-check-circle"></i> 授权摄像头访问
+            </button>
+        </div>
+        
         <main class="app-main">
             <!-- 左侧面板 -->
             <section class="left-panel">
                 <h2 class="section-title"><i class="fas fa-video"></i> 实时监控</h2>
                 
                 <div class="video-container">
-                    <video id="video" autoplay playsinline></video>
+                    <video id="video" autoplay playsinline muted></video>
                     <canvas class="pose-canvas" id="pose-canvas"></canvas>
                     
                     <div class="video-overlay" id="video-overlay">
@@ -767,13 +902,13 @@
         </footer>
     </div>
 
-    <!-- 备用音频元素 -->
+    <!-- 备用音频元素 - 使用国内可访问的音频源 -->
     <audio id="alert-sound" preload="auto">
-        <source src="https://assets.mixkit.co/sfx/preview/mixkit-alarm-digital-clock-beep-989.mp3" type="audio/mpeg">
+        <source src="https://cdn.jsdelivr.net/gh/feifeigd/audio@main/alert-beep.mp3" type="audio/mpeg">
     </audio>
     
     <audio id="test-sound" preload="auto">
-        <source src="https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-tone-2870.mp3" type="audio/mpeg">
+        <source src="https://cdn.jsdelivr.net/gh/feifeigd/audio@main/notification.mp3" type="audio/mpeg">
     </audio>
 
     <script>
@@ -790,6 +925,46 @@
         const ALERT_COOLDOWN = 15000; // 15秒内不重复提醒
         let currentVoice = 'default';
         let speechSupported = false;
+        let isWeChatBrowser = false;
+        let userInteracted = false; // 用户是否已交互
+        
+        // 检测浏览器类型
+        function detectBrowser() {
+            const ua = navigator.userAgent.toLowerCase();
+            
+            // 检测微信浏览器
+            if (ua.indexOf('micromessenger') !== -1) {
+                isWeChatBrowser = true;
+                document.getElementById('wechat-tip').classList.add('show');
+                return 'wechat';
+            }
+            
+            // 检测华为浏览器
+            if (ua.indexOf('huawei') !== -1 || ua.indexOf('harmony') !== -1) {
+                return 'huawei';
+            }
+            
+            // 检测OPPO浏览器
+            if (ua.indexOf('oppo') !== -1) {
+                return 'oppo';
+            }
+            
+            // 检测vivo浏览器
+            if (ua.indexOf('vivo') !== -1) {
+                return 'vivo';
+            }
+            
+            // 检测其他国内浏览器
+            if (ua.indexOf('qqbrowser') !== -1) {
+                return 'qq';
+            }
+            
+            if (ua.indexOf('ucbrowser') !== -1 || ua.indexOf('ucweb') !== -1) {
+                return 'uc';
+            }
+            
+            return 'other';
+        }
         
         // 警告语数组
         const warningMessages = [
@@ -853,6 +1028,11 @@
         const restProgressBar = document.getElementById('rest-progress-bar');
         const alertSound = document.getElementById('alert-sound');
         const testSound = document.getElementById('test-sound');
+        const compatibilityAlert = document.getElementById('compatibility-alert');
+        const permissionRequest = document.getElementById('permission-request');
+        const requestPermissionBtn = document.getElementById('request-permission-btn');
+        const wechatContinueBtn = document.getElementById('wechat-continue');
+        const wechatTip = document.getElementById('wechat-tip');
         
         // 提示元素
         const tipBack = document.getElementById('tip-back');
@@ -862,6 +1042,16 @@
         
         // 初始化
         function init() {
+            // 检测浏览器
+            const browserType = detectBrowser();
+            console.log('检测到浏览器类型:', browserType);
+            
+            // 显示兼容性提示（非微信浏览器）
+            if (browserType !== 'wechat' && browserType !== 'other') {
+                compatibilityAlert.classList.add('show');
+                compatibilityAlert.innerHTML = `<p><i class="fas fa-exclamation-triangle"></i> <strong>兼容性提示：</strong>检测到您使用的是${browserType.toUpperCase()}浏览器，请确保已允许摄像头和音频权限。</p>`;
+            }
+            
             // 设置画布尺寸
             updateCanvasSize();
             
@@ -874,6 +1064,9 @@
             testVoiceBtn.addEventListener('click', testVoice);
             testAudioBtn.addEventListener('click', testAudio);
             restartBtn.addEventListener('click', restartMonitoring);
+            requestPermissionBtn.addEventListener('click', requestCameraPermission);
+            wechatContinueBtn.addEventListener('click', continueInWechat);
+            
             voiceSelect.addEventListener('change', function() {
                 currentVoice = this.value;
                 addWarningMessage(`提示声音已切换为: ${this.options[this.selectedIndex].text}`);
@@ -883,17 +1076,54 @@
                 addWarningMessage(`检测灵敏度已设为: ${this.options[this.selectedIndex].text}`);
             });
             
+            // 用户交互事件监听（用于解锁音频）
+            document.addEventListener('click', handleUserInteraction);
+            document.addEventListener('touchstart', handleUserInteraction);
+            document.addEventListener('keydown', handleUserInteraction);
+            
             // 初始化计时器显示
             updateTimerDisplay();
             
             // 更新提示
             updateTips();
             
-            // 开始摄像头
-            startCamera();
+            // 尝试自动启动摄像头（非微信浏览器）
+            if (!isWeChatBrowser) {
+                setTimeout(() => {
+                    startCamera();
+                }, 500);
+            } else {
+                // 微信浏览器中显示权限请求
+                permissionRequest.classList.add('show');
+            }
             
             // 窗口大小变化时调整画布
             window.addEventListener('resize', updateCanvasSize);
+            
+            // 添加浏览器检测信息
+            addWarningMessage(`浏览器类型: ${browserType}`);
+        }
+        
+        // 处理用户交互（解锁音频）
+        function handleUserInteraction() {
+            if (!userInteracted) {
+                userInteracted = true;
+                console.log('用户已交互，音频已解锁');
+                
+                // 尝试播放静音音频以解锁音频上下文
+                try {
+                    const silentAudio = new Audio();
+                    silentAudio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEAQB8AAEAfAAABAAgAZGF0YQ';
+                    silentAudio.volume = 0;
+                    silentAudio.play().then(() => {
+                        console.log('静音音频播放成功，音频上下文已解锁');
+                    }).catch(e => {
+                        console.log('静音音频播放失败:', e);
+                    });
+                } catch (e) {
+                    console.log('静音音频播放异常:', e);
+                }
+            }
         }
         
         // 检查语音支持
@@ -917,21 +1147,86 @@
             canvas.height = container.clientHeight;
         }
         
-        // 启动摄像头
+        // 请求摄像头权限
+        function requestCameraPermission() {
+            permissionRequest.classList.remove('show');
+            startCamera();
+        }
+        
+        // 继续在微信中使用
+        function continueInWechat() {
+            wechatTip.classList.remove('show');
+            permissionRequest.classList.add('show');
+        }
+        
+        // 启动摄像头（兼容性版本）
         async function startCamera() {
             try {
-                videoStream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: "user", width: 640, height: 480 },
-                    audio: false
+                // 先检查是否支持getUserMedia
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    // 如果不支持，尝试使用旧版API
+                    const legacyGetUserMedia = navigator.getUserMedia || 
+                                               navigator.webkitGetUserMedia || 
+                                               navigator.mozGetUserMedia || 
+                                               navigator.msGetUserMedia;
+                    
+                    if (!legacyGetUserMedia) {
+                        throw new Error('您的浏览器不支持摄像头访问');
+                    }
+                    
+                    // 使用旧版API
+                    legacyGetUserMedia.call(navigator, 
+                        { video: true, audio: false },
+                        function(stream) {
+                            videoStream = stream;
+                            video.srcObject = videoStream;
+                            videoOverlay.style.display = 'none';
+                            addWarningMessage("摄像头已成功开启(旧版API)");
+                        },
+                        function(error) {
+                            throw new Error('摄像头访问被拒绝: ' + error.name);
+                        }
+                    );
+                } else {
+                    // 使用新版API
+                    videoStream = await navigator.mediaDevices.getUserMedia({
+                        video: { 
+                            facingMode: "user", 
+                            width: { ideal: 640 },
+                            height: { ideal: 480 }
+                        },
+                        audio: false
+                    });
+                    
+                    video.srcObject = videoStream;
+                    videoOverlay.style.display = 'none';
+                    addWarningMessage("摄像头已成功开启");
+                }
+                
+                // 确保视频播放
+                video.play().catch(e => {
+                    console.log('视频自动播放被阻止:', e);
+                    // 显示提示，需要用户交互
+                    videoOverlay.innerHTML = `
+                        <i class="fas fa-play-circle"></i>
+                        <p>点击此处开始视频播放</p>
+                    `;
+                    videoOverlay.style.display = 'flex';
+                    videoOverlay.addEventListener('click', function() {
+                        video.play().then(() => {
+                            videoOverlay.style.display = 'none';
+                        }).catch(e => {
+                            console.log('视频播放失败:', e);
+                        });
+                    });
                 });
-                video.srcObject = videoStream;
-                videoOverlay.style.display = 'none';
-                addWarningMessage("摄像头已成功开启");
+                
             } catch (err) {
                 console.error("无法访问摄像头: ", err);
                 videoOverlay.innerHTML = `
                     <i class="fas fa-video-slash"></i>
                     <p>无法访问摄像头，将使用模拟检测模式</p>
+                    <p style="font-size:12px;margin-top:10px;">${err.message}</p>
                 `;
                 videoOverlay.style.display = 'flex';
                 addWarningMessage("摄像头访问失败，将使用模拟检测模式");
@@ -944,6 +1239,11 @@
         // 开始监控
         function startMonitoring() {
             if (isMonitoring) return;
+            
+            // 确保用户已交互（解锁音频）
+            if (!userInteracted) {
+                handleUserInteraction();
+            }
             
             isMonitoring = true;
             statusDot.className = 'status-dot';
@@ -1166,8 +1466,21 @@
             }
             
             // 获取可用的语音
-            const voices = speechSynthesis.getVoices();
+            let voices = speechSynthesis.getVoices();
             
+            // 如果voices为空，等待voiceschanged事件
+            if (voices.length === 0) {
+                speechSynthesis.addEventListener('voiceschanged', function() {
+                    voices = speechSynthesis.getVoices();
+                    setVoiceAndSpeak(utterance, voices);
+                });
+            } else {
+                setVoiceAndSpeak(utterance, voices);
+            }
+        }
+        
+        // 设置语音并播放
+        function setVoiceAndSpeak(utterance, voices) {
             if (voices.length > 0) {
                 // 尝试寻找中文女声
                 const chineseVoice = voices.find(voice => 
@@ -1189,11 +1502,15 @@
         
         // 播放警报声音
         function playAlertSound() {
+            if (!userInteracted) return; // 用户未交互时不播放音频
+            
             try {
                 alertSound.currentTime = 0;
-                alertSound.play();
+                alertSound.play().catch(e => {
+                    console.error("警报音频播放失败:", e);
+                });
             } catch (e) {
-                console.error("音频播放失败:", e);
+                console.error("警报音频播放异常:", e);
             }
         }
         
@@ -1208,13 +1525,22 @@
         
         // 测试音频
         function testAudio() {
+            if (!userInteracted) {
+                alert("请先点击页面任意位置激活音频播放权限");
+                return;
+            }
+            
             try {
                 testSound.currentTime = 0;
-                testSound.play();
-                addWarningMessage("测试音频播放成功");
+                testSound.play().then(() => {
+                    addWarningMessage("测试音频播放成功");
+                }).catch(e => {
+                    console.error("测试音频播放失败:", e);
+                    addWarningMessage("测试音频播放失败，请检查浏览器权限设置");
+                });
             } catch (e) {
-                console.error("测试音频播放失败:", e);
-                addWarningMessage("测试音频播放失败，请检查网络连接");
+                console.error("测试音频播放异常:", e);
+                addWarningMessage("测试音频播放失败，请检查浏览器设置");
             }
         }
         
@@ -1332,15 +1658,6 @@
         
         // 页面加载完成后初始化
         window.addEventListener('load', init);
-        
-        // 语音合成API可能需要时间加载
-        setTimeout(() => {
-            if (speechSynthesis.getVoices().length === 0) {
-                speechSynthesis.addEventListener('voiceschanged', () => {
-                    checkSpeechSupport();
-                });
-            }
-        }, 100);
     </script>
 </body>
 </html>

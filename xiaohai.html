@@ -594,7 +594,7 @@
         <div class="top-bar">
             <div class="app-title">
                 <i class="fas fa-child"></i>
-                坐姿监控
+                曹无奈坐好
             </div>
             
             <div class="timer-display">
@@ -664,7 +664,7 @@
     <!-- 侧边栏设置 -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <h2><i class="fas fa-cog"></i> 设置面板</h2>
+            <h2><i class="fas fa-cog"></i> 晓林技术支持</h2>
             <button class="close-sidebar" id="close-sidebar">
                 <i class="fas fa-times"></i>
             </button>
@@ -850,7 +850,7 @@
                 <div class="history-list" id="history-list">
                     <div class="history-item">
                         <strong>系统启动</strong><br>
-                        <small>坐姿监控助手准备就绪</small>
+                        <small>助手准备就绪</small>
                     </div>
                 </div>
                 
@@ -1074,7 +1074,7 @@
         
         // 初始化函数
         async function init() {
-            console.log("初始化坐姿监控系统...");
+            console.log("初始化系统...");
             
             // 设置画布尺寸
             updateCanvasSize();
@@ -1599,10 +1599,10 @@
             startTimer();
             
             // 初始语音提示
-            speak("坐姿监控已经开始，我会帮你保持正确的坐姿哦！");
+            speak("已经开始，我会帮你保持正确的坐姿哦！");
             
-            addHistory("坐姿监控已启动", "success");
-            showVoiceStatus("坐姿监控已启动");
+            addHistory("已启动", "success");
+            showVoiceStatus("已启动");
         }
         
         // 停止监控
@@ -1621,8 +1621,8 @@
             // 隐藏语音提醒
             voiceAlert.classList.remove('show');
             
-            addHistory("坐姿监控已停止", "info");
-            showVoiceStatus("坐姿监控已停止");
+            addHistory("已停止", "info");
+            showVoiceStatus("已停止");
         }
         
         // 重新开始监控（从休息中恢复）
@@ -1928,7 +1928,7 @@
         
         // 测试语音
         function testVoice() {
-            const testMessage = "这是一条测试语音，坐姿监控系统工作正常。";
+            const testMessage = "这是一条测试语音，系统工作正常。";
             speak(testMessage);
             showVoiceAlert(testMessage);
             addHistory("语音测试完成", "info");

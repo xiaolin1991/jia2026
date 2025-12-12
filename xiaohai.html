@@ -200,6 +200,7 @@
             while (!success && retries < MAX_RETRIES) {
                 try {
                     console.log(`[TTS] Attempting API call (Retry ${retries + 1})...`); // Log attempt
+                    console.log("[TTS] Payload:", JSON.stringify(payload)); // Log payload for inspection
                     const response = await fetch(apiUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -209,7 +210,8 @@
                     if (!response.ok) {
                         const errorText = await response.text();
                         console.error(`[TTS] API Error Response Status: ${response.status}`, errorText);
-                        throw new Error(`API Error: ${response.statusText}`);
+                        // 抛出更详细的错误信息，包含状态码和错误文本的片段
+                        throw new Error(`API Call Failed (Status: ${response.status} ${response.statusText || 'Unknown'}): ${errorText.substring(0, 100)}...`);
                     }
                     
                     const result = await response.json();

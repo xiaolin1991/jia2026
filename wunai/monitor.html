@@ -3,86 +3,72 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>晓林技术支持——坐姿监督 - 监控</title>
+  <title>晓林技术儿童坐姿监督 - 监控</title>
   <link rel="stylesheet" href="./assets/styles.css" />
 </head>
 <body>
-  <header class="topbar">
-    <div class="container topbar-inner">
-      <div class="brand">
-        <span>无奈学习监督</span>
-        <span class="badge">晓林技术</span>
+  <div class="call-root">
+    <div class="call-video">
+      <video id="video" playsinline muted></video>
+      <canvas id="canvas"></canvas>
+    </div>
+
+    <div class="call-top">
+      <div class="call-title">
+        <strong id="titleText">儿童坐姿—晓林技术支持</strong>
+        <span class="call-chip" id="scorePill" style="display:none">
+          <span style="color:var(--muted)">问题</span>
+          <span id="issueText">-</span>
+        </span>
       </div>
-      <nav class="nav">
-        <a class="active" href="./monitor.html">宝贝</a>
-        <a href="./settings.html">设置</a>
-      </nav>
-    </div>
-  </header>
 
-  <main class="container">
-    <div class="grid">
-      <section class="card">
-        <div class="card-h">
-          <div>
-            <div style="font-weight:700">视频监控</div>
-            <div class="help">提示：首次打开微信/手机浏览器，可能需要点一次“开始”才能播放与语音。</div>
-          </div>
-          <div class="btn-row">
-            <button id="btnStart" class="primary">开始</button>
-            <button id="btnStop" class="danger" disabled>停止</button>
-            <button id="btnFlip" disabled>切换摄像头</button>
-          </div>
-        </div>
-        <div class="card-b" style="padding:0">
-          <div class="video-wrap" id="videoWrap">
-            <video id="video" playsinline muted></video>
-            <canvas id="canvas"></canvas>
-            <div class="overlay">
-              <div class="pill">
-                <span class="dot" id="statusDot"></span>
-                <span id="statusText">未开始</span>
-              </div>
-              <div class="pill" id="scorePill" style="display:none">
-                <span style="color:var(--muted)">问题</span>
-                <span id="issueText">-</span>
-              </div>
-              <div class="pill">
-                <span style="color:var(--muted)">计时</span>
-                <span id="timerText">00:00</span>
-                <span style="color:var(--muted)" id="phaseText">学习</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <aside class="card">
-        <div class="card-h">
-          <div style="font-weight:700">当前建议</div>
-          <div class="badge" id="deviceHint">需要 HTTPS 才能用摄像头</div>
-        </div>
-        <div class="card-b">
-          <div class="notice" id="suggestionBox">点击“开始”后，会在这里给出坐姿建议与提醒。</div>
-          <hr class="sep" />
-          <div class="kv">
-            <div>
-              <div style="font-weight:700">语音测试</div>
-              <small>确保开启媒体权限后，语音能在手机上播放。</small>
-            </div>
-            <button id="btnSpeak">播放一句</button>
-          </div>
-          <hr class="sep" />
-          <div class="help">
-            兼容性说明：
-            <div>1) 华为/OPPO/vivo/小米等浏览器一般可用。</div>
-            <div>2) 微信内置浏览器也可用，但有时需要用户手势触发摄像头/语音。</div>
-            <div>3) iOS Safari 对摄像头/语音策略更严格（如需要我也可以后续适配）。</div>
-          </div>
-        </div>
-      </aside>
+      <div style="display:flex;gap:10px;align-items:center">
+        <span class="call-chip">
+          <span style="color:var(--muted)">倒计时</span>
+          <span id="timerText">00:00</span>
+          <span style="color:var(--muted)" id="phaseText">学习</span>
+        </span>
+        <span class="call-chip">
+          <span class="dot" id="statusDot"></span>
+          <span id="statusText">等待启动</span>
+        </span>
+      </div>
     </div>
-  </main>
+
+    <div class="call-side">
+      <a class="fab" href="./settings.html" title="设置" style="text-decoration:none" aria-label="设置">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/>
+          <path d="M19.4 15a7.8 7.8 0 0 0 .1-2l2-1.2-2-3.5-2.3.7a7.6 7.6 0 0 0-1.7-1l-.3-2.4H9l-.3 2.4c-.6.2-1.2.6-1.7 1l-2.3-.7-2 3.5 2 1.2a7.8 7.8 0 0 0 0 2l-2 1.2 2 3.5 2.3-.7c.5.4 1.1.8 1.7 1l.3 2.4h6l.3-2.4c.6-.2 1.2-.6 1.7-1l2.3.7 2-3.5-2-1.2Z"/>
+        </svg>
+      </a>
+    </div>
+
+    <div class="hint-banner" id="suggestionBox">点击下方“开始”后，会自动检测坐姿并用女声提醒。</div>
+    <div class="hint-banner" id="deviceHint" style="display:none"></div>
+
+    <div class="call-bottom">
+      <button id="btnFlip" class="fab" title="切换摄像头" disabled aria-label="切换摄像头">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h3l2-2h8l2 2h3a2 2 0 0 1 2 2Z"/>
+          <path d="M12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/>
+        </svg>
+      </button>
+      <button id="btnStart" class="fab primary" title="开始" aria-label="开始">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7L8 5Z"/></svg>
+      </button>
+      <button id="btnStop" class="fab danger" title="停止" disabled aria-label="停止">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 7h10v10H7Z"/></svg>
+      </button>
+      <button id="btnSpeak" class="fab" title="测试语音" aria-label="测试语音">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M11 5 6 9H2v6h4l5 4V5Z"/>
+          <path d="M15.5 8.5a5 5 0 0 1 0 7"/>
+          <path d="M18 6a8 8 0 0 1 0 12"/>
+        </svg>
+      </button>
+    </div>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3/drawing_utils.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/pose.js"></script>
@@ -212,6 +198,8 @@
             : '轻轻调整：背挺直一点，头抬起一点。';
           const text = `${baseLine}${fix}`;
           if(maybeSpeak(text, settings)){
+            // 语音包会根据 issues 优先播放对应 warn_x
+            window.PG.speak(text, settings, { issues: evalRes.issues });
             badStreak = 0;
           }
         }
@@ -241,7 +229,7 @@
           if(phase === 'study'){
             phase = 'break';
             phaseRemainingSec = (settings.breakMinutes || 10) * 60;
-            window.PG.speak('学习时间到啦，休息一下吧。站起来活动活动。', settings);
+            window.PG.speakBreak(settings);
             setStatus('warn', '休息时间');
             setSuggestion('建议：站起来走一走，看看远处 20 秒，让眼睛放松。');
           }else{
@@ -344,7 +332,8 @@
 
     function updateDeviceHint(){
       const isHttps = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-      els.deviceHint.textContent = isHttps ? '已满足 HTTPS/localhost 条件' : '需要 HTTPS 才能用摄像头';
+      els.deviceHint.style.display = isHttps ? 'none' : '';
+      els.deviceHint.textContent = isHttps ? '' : '提示：手机上必须使用 HTTPS 网站才能打开摄像头。';
     }
 
     function isWeChat(){
@@ -361,10 +350,34 @@
       }
     }
 
+    function bindAudioUnlockHints(){
+      // 微信环境：WeixinJSBridgeReady 触发后更容易解锁音频
+      document.addEventListener('WeixinJSBridgeReady', () => {
+        window.PG.unlockAudio();
+      }, false);
+
+      // 首次触摸/点击时解锁
+      const once = () => {
+        window.PG.unlockAudio();
+        document.removeEventListener('touchstart', once, true);
+        document.removeEventListener('click', once, true);
+      };
+      document.addEventListener('touchstart', once, true);
+      document.addEventListener('click', once, true);
+    }
+
     els.btnStart.addEventListener('click', async () => {
       try{
         updateDeviceHint();
         warmupVoices();
+
+        // 关键：用户手势解锁音频（微信/手机浏览器更稳）
+        await window.PG.unlockAudio();
+
+        // TTS 在微信里可能需要延迟触发一次
+        if(/micromessenger/i.test(navigator.userAgent || '')){
+          setTimeout(() => { window.PG.speak('开始监督坐姿。', settings); }, 350);
+        }
 
         if(isWeChat()){
           setSuggestion('检测到微信内置浏览器：如果稍后语音不播报，请先点一次“播放一句”，再开始学习。');
@@ -405,10 +418,13 @@
     });
 
     els.btnSpeak.addEventListener('click', () => {
+      // 微信里先点一次“测试语音”能更稳定解锁播放
+      window.PG.unlockAudio();
       window.PG.speak('小朋友，坐直一点点哦。背要挺直，肩膀放松。', settings);
     });
 
     updateDeviceHint();
+    bindAudioUnlockHints();
     updateTimerUI();
     setStatus('', '未开始');
   </script>

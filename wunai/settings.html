@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>晓林技术宝贝坐姿监督 - 设置</title>
+  <title>坐姿监督 - 设置</title>
   <link rel="stylesheet" href="./assets/styles.css" />
 </head>
 <body>
@@ -11,7 +11,7 @@
     <div class="container topbar-inner">
       <div class="brand">
         <span>坐姿监督</span>
-        <span class="badge">晓林技术</span>
+        <span class="badge">晓林技术支持</span>
       </div>
       <nav class="nav">
         <a href="./monitor.html">监控</a>
@@ -57,6 +57,12 @@
               <input id="shoulderWidthRef" type="number" min="0" max="1" step="0.001" />
               <div class="help">说明：这是画面里“肩到肩”的相对宽度。想更准可在“坐姿良好”时记下一个值填这里。</div>
 
+              <label for="nearTargetRatio">太近判定（0.60 - 1.20，越大越严格）</label>
+              <input id="nearTargetRatio" type="number" min="0.60" max="1.20" step="0.01" />
+
+              <label for="nearTolerance">太近容忍度（0.06 - 0.50，越小越严格）</label>
+              <input id="nearTolerance" type="number" min="0.06" max="0.50" step="0.01" />
+
               <hr class="sep" />
 
               <div class="kv">
@@ -68,6 +74,36 @@
                   <option value="true">开启</option>
                   <option value="false">关闭</option>
                 </select>
+              </div>
+
+              <label for="voiceMode">语音模式（解决微信没声音）</label>
+              <select id="voiceMode">
+                <option value="auto">自动（微信优先语音包）</option>
+                <option value="audio">仅语音包（最稳）</option>
+                <option value="tts">仅浏览器 TTS（电脑更稳）</option>
+              </select>
+
+              <div class="notice" style="margin-top:10px">
+                建议：在微信里选择“仅语音包”，并上传一个女声 mp3 作为提醒音。
+              </div>
+
+              <hr class="sep" />
+
+              <div style="font-weight:700">语音包（mp3 / m4a）</div>
+              <div class="help">已支持“项目内置语音包”（放到 assets/audio/warn.mp3 与 break.mp3）。下面上传是可选的覆盖方案。</div>
+
+              <label for="audioWarnFile">警告提示音（女声）</label>
+              <input id="audioWarnFile" type="file" accept="audio/*" />
+              <div class="btn-row" style="margin-top:10px">
+                <button id="btnTestWarn">测试警告音</button>
+                <button id="btnDelWarn">删除警告音</button>
+              </div>
+
+              <label for="audioBreakFile">休息提示音（女声）</label>
+              <input id="audioBreakFile" type="file" accept="audio/*" />
+              <div class="btn-row" style="margin-top:10px">
+                <button id="btnTestBreak">测试休息音</button>
+                <button id="btnDelBreak">删除休息音</button>
               </div>
 
               <label for="preferFemale">优先女声</label>
@@ -111,7 +147,7 @@
               </div>
               <hr class="sep" />
               <div class="notice">
-                重要：这是“辅助监督/提醒”工具，不替代家长看护；也不要把它当作医疗建议,只是晓林技临时搭建给宝贝学习使用。
+                重要：这是“辅助监督/提醒”工具，晓林技术不替代家长看护；也不要把它当作医疗建议,只是临时给小孩子的一个辅导动作。
               </div>
             </div>
           </div>
@@ -128,7 +164,10 @@
       warningCooldownSec: document.getElementById('warningCooldownSec'),
       postureSensitivity: document.getElementById('postureSensitivity'),
       shoulderWidthRef: document.getElementById('shoulderWidthRef'),
+      nearTargetRatio: document.getElementById('nearTargetRatio'),
+      nearTolerance: document.getElementById('nearTolerance'),
       ttsEnabled: document.getElementById('ttsEnabled'),
+      voiceMode: document.getElementById('voiceMode'),
       preferFemale: document.getElementById('preferFemale'),
       ttsRate: document.getElementById('ttsRate'),
       ttsPitch: document.getElementById('ttsPitch'),
@@ -136,7 +175,13 @@
       warningLines: document.getElementById('warningLines'),
       btnSave: document.getElementById('btnSave'),
       btnReset: document.getElementById('btnReset'),
-      btnTestVoice: document.getElementById('btnTestVoice')
+      btnTestVoice: document.getElementById('btnTestVoice'),
+      audioWarnFile: document.getElementById('audioWarnFile'),
+      audioBreakFile: document.getElementById('audioBreakFile'),
+      btnTestWarn: document.getElementById('btnTestWarn'),
+      btnDelWarn: document.getElementById('btnDelWarn'),
+      btnTestBreak: document.getElementById('btnTestBreak'),
+      btnDelBreak: document.getElementById('btnDelBreak')
     };
 
     function fillForm(s){
@@ -145,7 +190,10 @@
       els.warningCooldownSec.value = s.warningCooldownSec;
       els.postureSensitivity.value = s.postureSensitivity;
       els.shoulderWidthRef.value = s.shoulderWidthRef;
+      els.nearTargetRatio.value = s.nearTargetRatio;
+      els.nearTolerance.value = s.nearTolerance;
       els.ttsEnabled.value = String(!!s.ttsEnabled);
+      els.voiceMode.value = String(s.voiceMode || 'auto');
       els.preferFemale.value = String(!!s.preferFemale);
       els.ttsRate.value = s.ttsRate;
       els.ttsPitch.value = s.ttsPitch;
@@ -160,7 +208,10 @@
         warningCooldownSec: Number(els.warningCooldownSec.value || 6),
         postureSensitivity: Number(els.postureSensitivity.value || 1.0),
         shoulderWidthRef: Number(els.shoulderWidthRef.value || 0),
+        nearTargetRatio: Number(els.nearTargetRatio.value || 0.90),
+        nearTolerance: Number(els.nearTolerance.value || 0.18),
         ttsEnabled: els.ttsEnabled.value === 'true',
+        voiceMode: String(els.voiceMode.value || 'auto'),
         preferFemale: els.preferFemale.value === 'true',
         ttsRate: Number(els.ttsRate.value || 1.0),
         ttsPitch: Number(els.ttsPitch.value || 1.2),
@@ -168,6 +219,83 @@
         warningLines: String(els.warningLines.value || '').trim()
       };
     }
+
+    els.audioWarnFile.addEventListener('change', async () => {
+      const f = els.audioWarnFile.files && els.audioWarnFile.files[0];
+      if(!f) return;
+      const s = readForm();
+      await window.PG.unlockAudio();
+      await window.PG.saveAudioClip(String(s.audioWarnKey || 'warn_female'), f);
+      window.PG.speak('警告语音已保存。', s);
+      els.audioWarnFile.value = '';
+    });
+
+    els.audioBreakFile.addEventListener('change', async () => {
+      const f = els.audioBreakFile.files && els.audioBreakFile.files[0];
+      if(!f) return;
+      const s = readForm();
+      await window.PG.unlockAudio();
+      await window.PG.saveAudioClip(String(s.audioBreakKey || 'break_female'), f);
+      window.PG.speak('休息语音已保存。', s);
+      els.audioBreakFile.value = '';
+    });
+
+    els.btnTestWarn.addEventListener('click', async () => {
+      const s = readForm();
+      await window.PG.unlockAudio();
+      try{
+        const ok = await (async () => {
+          const f = await window.PG.getAudioClip(String(s.audioWarnKey || 'warn_female'));
+          if(!f) return false;
+          const url = URL.createObjectURL(f);
+          try{
+            const a = new Audio(url);
+            a.playsInline = true;
+            await a.play();
+            return true;
+          }finally{
+            setTimeout(() => URL.revokeObjectURL(url), 1500);
+          }
+        })();
+        if(!ok) window.PG.speak('还没有上传警告语音。', s);
+      }catch(e){
+        window.PG.speak('播放失败：请在微信里先点击一次按钮再试。', s);
+      }
+    });
+
+    els.btnDelWarn.addEventListener('click', async () => {
+      const s = readForm();
+      await window.PG.deleteAudioClip(String(s.audioWarnKey || 'warn_female'));
+      window.PG.speak('警告语音已删除。', s);
+    });
+
+    els.btnTestBreak.addEventListener('click', async () => {
+      const s = readForm();
+      await window.PG.unlockAudio();
+      try{
+        const f = await window.PG.getAudioClip(String(s.audioBreakKey || 'break_female'));
+        if(!f){
+          window.PG.speak('还没有上传休息语音。', s);
+          return;
+        }
+        const url = URL.createObjectURL(f);
+        try{
+          const a = new Audio(url);
+          a.playsInline = true;
+          await a.play();
+        }finally{
+          setTimeout(() => URL.revokeObjectURL(url), 1500);
+        }
+      }catch(e){
+        window.PG.speak('播放失败：请在微信里先点击一次按钮再试。', s);
+      }
+    });
+
+    els.btnDelBreak.addEventListener('click', async () => {
+      const s = readForm();
+      await window.PG.deleteAudioClip(String(s.audioBreakKey || 'break_female'));
+      window.PG.speak('休息语音已删除。', s);
+    });
 
     els.btnSave.addEventListener('click', () => {
       const s = readForm();

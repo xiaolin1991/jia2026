@@ -118,7 +118,22 @@
     return /micromessenger/i.test(navigator.userAgent || '');
   }
 
+  function isMobile(){
+    return /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent || '');
+  }
+
   let _audioCtx = null;
+  let _sharedAudio = null;
+
+  function getSharedAudio(){
+    if(_sharedAudio) return _sharedAudio;
+    const a = new Audio();
+    a.playsInline = true;
+    a.preload = 'auto';
+    _sharedAudio = a;
+    return a;
+  }
+
   async function unlockAudio(){
     try{
       const AC = window.AudioContext || window.webkitAudioContext;
@@ -132,6 +147,20 @@
       g.connect(_audioCtx.destination);
       o.start();
       o.stop(_audioCtx.currentTime + 0.02);
+
+      // 同时解锁 HTMLAudio（部分手机仅解锁 AudioContext 不够）
+      try{
+        const SILENCE_WAV = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=';
+        const a = getSharedAudio();
+        a.src = SILENCE_WAV;
+        a.playsInline = true;
+        a.muted = true;
+        try{ a.load(); }catch(e){}
+        const p = a.play();
+        if(p && typeof p.catch === 'function') p.catch(() => {});
+      }catch(e){
+        // ignore
+      }
       return true;
     }catch(e){
       return false;
@@ -139,11 +168,17 @@
   }
 
   async function playUrl(url){
-    const a = new Audio();
-    a.src = url;
+    const a = getSharedAudio();
+    try{ a.pause(); }catch(e){}
+    try{ a.currentTime = 0; }catch(e){}
+    a.muted = false;
     a.playsInline = true;
     a.preload = 'auto';
-    await a.play();
+    a.src = url;
+    try{ a.load(); }catch(e){}
+
+    const p = a.play();
+    if(p && typeof p.then === 'function') await p;
     return true;
   }
 
@@ -161,17 +196,26 @@
 
   async function tryPlayBuiltIn(relativePath){
     try{
-      // 通过 fetch 先探测是否存在；避免直接 play 404
-      const res = await fetch(relativePath, { cache: 'no-store' });
-      if(!res.ok) return false;
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
+      // 优先 fetch -> blob（HTTPS 下较稳），但某些环境（file:// / 微信限制）会失败
       try{
-        await playUrl(url);
-        return true;
-      }finally{
-        setTimeout(() => URL.revokeObjectURL(url), 1500);
+        const res = await fetch(relativePath, { cache: 'no-store' });
+        if(res && res.ok){
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          try{
+            await playUrl(url);
+            return true;
+          }finally{
+            setTimeout(() => URL.revokeObjectURL(url), 1500);
+          }
+        }
+      }catch(e){
+        // fallback below
       }
+
+      // fallback：直接让 Audio 播放 URL（不依赖 fetch）
+      await playUrl(relativePath);
+      return true;
     }catch(e){
       return false;
     }
@@ -203,8 +247,8 @@
     const issues = opts && opts.issues ? opts.issues : null;
     const ttsText = opts && opts.ttsText ? String(opts.ttsText) : '';
 
-    // 移动端/微信优先用“语音包”方案，成功率更高
-    const preferAudio = mode === 'audio' || (mode === 'auto' && isWeChat());
+    // 手机端优先用“语音包”方案，成功率更高（不只微信）
+    const preferAudio = mode === 'audio' || (mode === 'auto' && (isWeChat() || isMobile()));
     if(preferAudio){
       try{
         await unlockAudio();
@@ -251,7 +295,7 @@
   async function speakBreak(settings){
     const s = settings || DEFAULTS;
     const mode = String(s.voiceMode || 'auto');
-    const preferAudio = mode === 'audio' || (mode === 'auto' && isWeChat());
+    const preferAudio = mode === 'audio' || (mode === 'auto' && (isWeChat() || isMobile()));
     if(preferAudio){
       try{
         await unlockAudio();

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>坐姿监督监控--晓林技术支持</title>
+  <title>坐姿监督监控-晓林技术支持</title>
   <link rel="stylesheet" href="./assets/styles.css" />
 </head>
 <body>
@@ -16,7 +16,7 @@
 
     <div class="call-top">
       <div class="call-title">
-        <strong id="titleText">坐姿监督</strong>
+        <strong id="titleText">儿童坐姿</strong>
         <span class="call-chip" id="scorePill" style="display:none">
           <span style="color:var(--muted)">问题</span>
           <span id="issueText">-</span>
@@ -132,6 +132,54 @@
     let phase = 'study';
     let phaseRemainingSec = settings.sessionMinutes * 60;
     let ticker = null;
+
+    const RUNTIME_KEY = 'pg_runtime_state_v1';
+
+    function saveRuntimeState(){
+      try{
+        localStorage.setItem(RUNTIME_KEY, JSON.stringify({
+          phase,
+          phaseRemainingSec,
+          savedAt: Date.now(),
+        }));
+      }catch(e){
+        // ignore
+      }
+    }
+
+    function restoreRuntimeState(){
+      try{
+        const raw = localStorage.getItem(RUNTIME_KEY);
+        if(!raw) return;
+        const st = JSON.parse(raw);
+        if(!st) return;
+        const p = (st.phase === 'break' || st.phase === 'study') ? st.phase : null;
+        const remain = Number(st.phaseRemainingSec);
+        const savedAt = Number(st.savedAt);
+        if(!p || !Number.isFinite(remain) || !Number.isFinite(savedAt)) return;
+
+        const elapsed = Math.max(0, Math.floor((Date.now() - savedAt) / 1000));
+
+        // 处理跨阶段（学习/休息）切换
+        let curPhase = p;
+        let curRemain = Math.max(0, remain);
+        let left = elapsed;
+        while(left > 0){
+          if(left < curRemain){
+            curRemain -= left;
+            left = 0;
+          }else{
+            left -= curRemain;
+            curPhase = curPhase === 'study' ? 'break' : 'study';
+            curRemain = (curPhase === 'study' ? (settings.sessionMinutes || 45) : (settings.breakMinutes || 10)) * 60;
+          }
+        }
+        phase = curPhase;
+        phaseRemainingSec = curRemain;
+      }catch(e){
+        // ignore
+      }
+    }
 
     function setStatus(level, text){
       els.statusDot.className = 'dot' + (level ? (' ' + level) : '');
@@ -256,6 +304,7 @@
       ticker = setInterval(() => {
         phaseRemainingSec = Math.max(0, phaseRemainingSec - 1);
         updateTimerUI();
+        saveRuntimeState();
         if(phaseRemainingSec === 0){
           if(phase === 'study'){
             phase = 'break';
@@ -270,6 +319,7 @@
             setStatus('', '继续学习');
             setSuggestion('开始新一轮学习：背挺直、肩放松、眼离书一拳。');
           }
+          saveRuntimeState();
         }
       }, 1000);
     }
@@ -441,6 +491,78 @@
       if(!wrap) return;
       wrap.style.touchAction = 'none';
 
+      // Pointer Events（在部分机型/微信上比 touch 可靠）
+      if(window.PointerEvent){
+        const pts = new Map();
+        let pPinch = false;
+        let pStartDist = 0;
+        let pStartZoom = 1;
+        let pStartDigital = 1;
+        let pDownAt = 0;
+        let pMoved = false;
+
+        const dist = (a, b) => {
+          const dx = a.x - b.x;
+          const dy = a.y - b.y;
+          return Math.sqrt(dx*dx + dy*dy);
+        };
+
+        const onPD = (e) => {
+          if(!stream) return;
+          try{ wrap.setPointerCapture(e.pointerId); }catch(err){}
+          pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+          pDownAt = Date.now();
+          pMoved = false;
+          if(pts.size === 2){
+            const arr = Array.from(pts.values());
+            pPinch = true;
+            pStartDist = dist(arr[0], arr[1]);
+            pStartZoom = currentZoom;
+            pStartDigital = digitalZoom;
+          }
+        };
+
+        const onPM = async (e) => {
+          if(!stream) return;
+          if(!pts.has(e.pointerId)) return;
+          pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+          pMoved = true;
+          if(pPinch && pts.size === 2){
+            const arr = Array.from(pts.values());
+            const d2 = dist(arr[0], arr[1]);
+            const ratio = pStartDist > 0 ? (d2 / pStartDist) : 1;
+            const target = pStartZoom * ratio;
+            const ok = await applyHardwareZoom(target);
+            if(!ok){
+              digitalZoom = clamp(pStartDigital * ratio, 1, 3);
+              applyVideoTransform();
+            }
+            e.preventDefault();
+          }
+        };
+
+        const onPU = async (e) => {
+          if(!stream) return;
+          pts.delete(e.pointerId);
+          if(pts.size < 2){
+            pPinch = false;
+            pStartDist = 0;
+          }
+          const dt = Date.now() - pDownAt;
+          const isTap = dt < 260 && !pMoved;
+          if(isTap) await tryTapToFocus(e.clientX, e.clientY);
+        };
+
+        wrap._pgPointerDown = onPD;
+        wrap._pgPointerMove = onPM;
+        wrap._pgPointerUp = onPU;
+        wrap.addEventListener('pointerdown', onPD, { passive: false });
+        wrap.addEventListener('pointermove', onPM, { passive: false });
+        wrap.addEventListener('pointerup', onPU, { passive: false });
+        wrap.addEventListener('pointercancel', onPU, { passive: false });
+        return;
+      }
+
       const onTouchStart = (e) => {
         if(!running && !stream) return;
         lastTouchAt = Date.now();
@@ -511,6 +633,15 @@
     function unbindCameraGestures(){
       const wrap = els.video && els.video.parentElement ? els.video.parentElement : null;
       if(!wrap) return;
+      if(wrap._pgPointerDown) wrap.removeEventListener('pointerdown', wrap._pgPointerDown);
+      if(wrap._pgPointerMove) wrap.removeEventListener('pointermove', wrap._pgPointerMove);
+      if(wrap._pgPointerUp){
+        wrap.removeEventListener('pointerup', wrap._pgPointerUp);
+        wrap.removeEventListener('pointercancel', wrap._pgPointerUp);
+      }
+      wrap._pgPointerDown = null;
+      wrap._pgPointerMove = null;
+      wrap._pgPointerUp = null;
       if(wrap._pgTouchStart) wrap.removeEventListener('touchstart', wrap._pgTouchStart);
       if(wrap._pgTouchMove) wrap.removeEventListener('touchmove', wrap._pgTouchMove);
       if(wrap._pgTouchEnd){
@@ -664,6 +795,8 @@
 
     updateDeviceHint();
     bindAudioUnlockHints();
+
+    restoreRuntimeState();
     updateTimerUI();
     setStatus('', '未开始');
 

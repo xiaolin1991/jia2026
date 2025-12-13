@@ -129,6 +129,7 @@ textarea{min-height:120px;resize:vertical}
   inset:0;
   overflow:hidden;
   background:#000;
+  touch-action:none;
 }
 .call-video video,
 .call-video canvas{

@@ -146,6 +146,7 @@ textarea{min-height:120px;resize:vertical}
   justify-content:space-between;
   gap:10px;
   background:linear-gradient(180deg, rgba(0,0,0,.78), rgba(0,0,0,.10));
+  flex-wrap:nowrap;
 }
 .call-title{
   display:flex;
@@ -153,7 +154,7 @@ textarea{min-height:120px;resize:vertical}
   gap:10px;
   min-width:0;
 }
-.call-title strong{font-weight:800;letter-spacing:.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.call-title strong{font-weight:800;letter-spacing:.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px;line-height:18px;max-width:38vw}
 .call-chip{
   display:inline-flex;
   align-items:center;
@@ -163,6 +164,13 @@ textarea{min-height:120px;resize:vertical}
   border:1px solid rgba(255,255,255,.18);
   background:rgba(0,0,0,.28);
   backdrop-filter: blur(10px);
+  font-size:13px;
+  line-height:18px;
+  height:32px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  max-width:44vw;
 }
 .call-chip .dot{width:9px;height:9px}
 

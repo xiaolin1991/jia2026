@@ -201,6 +201,7 @@
     const s = settings || DEFAULTS;
     const mode = String(s.voiceMode || 'auto');
     const issues = opts && opts.issues ? opts.issues : null;
+    const ttsText = opts && opts.ttsText ? String(opts.ttsText) : '';
 
     // 移动端/微信优先用“语音包”方案，成功率更高
     const preferAudio = mode === 'audio' || (mode === 'auto' && isWeChat());
@@ -209,10 +210,21 @@
         await unlockAudio();
         // 1) 内置语音包（无需用户操作）
         const builtInOk = issues ? await tryPlayWarnBuiltInByIssues(issues) : await tryPlayBuiltIn('./assets/audio/warn.mp3');
-        if(builtInOk) return;
+        if(builtInOk){
+          // 语音包只能播放固定句子；如有更具体的“调整建议”，再尝试用 TTS 朗读一次
+          if(ttsText && s.ttsEnabled && ('speechSynthesis' in window) && mode !== 'audio'){
+            try{ await speak(ttsText, { ...s, voiceMode: 'tts' }); }catch(e){ /* ignore */ }
+          }
+          return;
+        }
         // 2) 用户在设置页上传的语音包（IndexedDB）
         const ok = await playAudioClipByKey(String(s.audioWarnKey || 'warn_female'));
-        if(ok) return;
+        if(ok){
+          if(ttsText && s.ttsEnabled && ('speechSynthesis' in window) && mode !== 'audio'){
+            try{ await speak(ttsText, { ...s, voiceMode: 'tts' }); }catch(e){ /* ignore */ }
+          }
+          return;
+        }
       }catch(e){
         // fallback to tts
       }
@@ -398,12 +410,12 @@
 
   function createSpeechThrottle(){
     let lastAt = 0;
-    return function maybeSpeak(text, settings){
+    return function maybeSpeak(text, settings, opts){
       const now = Date.now();
       const cooldownMs = Math.max(1500, Number(settings.warningCooldownSec || 6) * 1000);
       if(now - lastAt < cooldownMs) return false;
       lastAt = now;
-      void speak(text, settings);
+      void speak(text, settings, opts);
       return true;
     };
   }

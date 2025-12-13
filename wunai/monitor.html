@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>晓林技术儿童坐姿监督 - 监控</title>
+  <title>坐姿监督监控——晓林技术支持</title>
   <link rel="stylesheet" href="./assets/styles.css" />
 </head>
 <body>
@@ -15,7 +15,7 @@
 
     <div class="call-top">
       <div class="call-title">
-        <strong id="titleText">坐姿</strong>
+        <strong id="titleText">坐姿监督</strong>
         <span class="call-chip" id="scorePill" style="display:none">
           <span style="color:var(--muted)">问题</span>
           <span id="issueText">-</span>
@@ -196,10 +196,13 @@
           const fix = (evalRes.level === 'danger')
             ? '现在就调整：背挺直，肩放松，眼睛离书一拳，不要趴写。'
             : '轻轻调整：背挺直一点，头抬起一点。';
-          const text = `${baseLine}${fix}`;
-          if(maybeSpeak(text, settings)){
-            // 语音包会根据 issues 优先播放对应 warn_x
-            window.PG.speak(text, settings, { issues: evalRes.issues });
+          const fallbackText = `${baseLine}${fix}`;
+
+          // 你要的效果：出现“调整建议”时，就朗读建议。
+          // 语音包负责固定警告句；TTS（如可用）补充朗读建议内容。
+          const toSpeak = String(evalRes.suggestion || fallbackText);
+
+          if(maybeSpeak(toSpeak, settings, { issues: evalRes.issues, ttsText: toSpeak })){
             badStreak = 0;
           }
         }

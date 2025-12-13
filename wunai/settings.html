@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>晓林技术宝贝坐姿监督 - 设置</title>
+  <link rel="stylesheet" href="./assets/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <div class="brand">
+        <span>坐姿监督</span>
+        <span class="badge">设置页</span>
+      </div>
+      <nav class="nav">
+        <a href="./monitor.html">监控</a>
+        <a class="active" href="./settings.html">设置</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <div class="card-h">
+        <div>
+          <div style="font-weight:700">学习计划与提醒</div>
+          <div class="help">这些设置会保存到本机浏览器（localStorage）。</div>
+        </div>
+        <div class="btn-row">
+          <button id="btnSave" class="primary">保存</button>
+          <button id="btnReset">恢复默认</button>
+        </div>
+      </div>
+      <div class="card-b">
+        <div class="grid" style="grid-template-columns:1fr;gap:12px">
+          <div class="card" style="border-radius:14px">
+            <div class="card-b">
+              <label for="sessionMinutes">学习时长（分钟）</label>
+              <input id="sessionMinutes" type="number" min="5" max="180" step="1" />
+
+              <label for="breakMinutes">休息时长（分钟）</label>
+              <input id="breakMinutes" type="number" min="1" max="60" step="1" />
+
+              <label for="warningCooldownSec">语音提醒冷却（秒）</label>
+              <input id="warningCooldownSec" type="number" min="2" max="60" step="1" />
+
+              <hr class="sep" />
+
+              <div style="font-weight:700">坐姿识别精度/校准</div>
+              <div class="help">不同手机摆放距离不同，建议先用默认值，如果误报/漏报再调。</div>
+
+              <label for="postureSensitivity">识别敏感度（0.6 - 1.6）</label>
+              <input id="postureSensitivity" type="number" min="0.6" max="1.6" step="0.05" />
+
+              <label for="shoulderWidthRef">距离基准（肩宽比例，0=默认）</label>
+              <input id="shoulderWidthRef" type="number" min="0" max="1" step="0.001" />
+              <div class="help">说明：这是画面里“肩到肩”的相对宽度。想更准可在“坐姿良好”时记下一个值填这里。</div>
+
+              <hr class="sep" />
+
+              <div class="kv">
+                <div>
+                  <div style="font-weight:700">语音播报</div>
+                  <small>需要浏览器支持 SpeechSynthesis（多数安卓支持）。</small>
+                </div>
+                <select id="ttsEnabled">
+                  <option value="true">开启</option>
+                  <option value="false">关闭</option>
+                </select>
+              </div>
+
+              <label for="preferFemale">优先女声</label>
+              <select id="preferFemale">
+                <option value="true">是</option>
+                <option value="false">否</option>
+              </select>
+
+              <label for="ttsRate">语速（0.7 - 1.3）</label>
+              <input id="ttsRate" type="number" min="0.7" max="1.3" step="0.01" />
+
+              <label for="ttsPitch">音调（0.8 - 1.8）</label>
+              <input id="ttsPitch" type="number" min="0.8" max="1.8" step="0.01" />
+
+              <label for="ttsVolume">音量（0 - 1）</label>
+              <input id="ttsVolume" type="number" min="0" max="1" step="0.05" />
+
+              <div style="margin-top:10px" class="btn-row">
+                <button id="btnTestVoice">测试语音</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="border-radius:14px">
+            <div class="card-b">
+              <div style="font-weight:700">警告语库（每行一句）</div>
+              <div class="help">后续我会做“轻微/中等/严重”分级并随机选择，让提醒更自然。</div>
+              <label for="warningLines">警告语</label>
+              <textarea id="warningLines"></textarea>
+              <div class="help">建议包含：坐直、眼距、肩颈放松、双脚着地、不要趴写等。</div>
+            </div>
+          </div>
+
+          <div class="card" style="border-radius:14px">
+            <div class="card-b">
+              <div style="font-weight:700">使用前必读</div>
+              <div class="help">
+                <div>1) 摄像头权限：首次会弹窗，请选择允许。</div>
+                <div>2) 必须是 HTTPS：线上部署请使用 https 域名，否则手机无法打开摄像头。</div>
+                <div>3) 微信内置浏览器：部分机型需要点击一次按钮后才能语音播报。</div>
+              </div>
+              <hr class="sep" />
+              <div class="notice">
+                重要：这是“辅助监督/提醒”工具，不替代家长看护；也不要把它当作医疗建议,只是晓林技临时搭建给宝贝学习使用。
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="./assets/app.js"></script>
+  <script>
+    const els = {
+      sessionMinutes: document.getElementById('sessionMinutes'),
+      breakMinutes: document.getElementById('breakMinutes'),
+      warningCooldownSec: document.getElementById('warningCooldownSec'),
+      postureSensitivity: document.getElementById('postureSensitivity'),
+      shoulderWidthRef: document.getElementById('shoulderWidthRef'),
+      ttsEnabled: document.getElementById('ttsEnabled'),
+      preferFemale: document.getElementById('preferFemale'),
+      ttsRate: document.getElementById('ttsRate'),
+      ttsPitch: document.getElementById('ttsPitch'),
+      ttsVolume: document.getElementById('ttsVolume'),
+      warningLines: document.getElementById('warningLines'),
+      btnSave: document.getElementById('btnSave'),
+      btnReset: document.getElementById('btnReset'),
+      btnTestVoice: document.getElementById('btnTestVoice')
+    };
+
+    function fillForm(s){
+      els.sessionMinutes.value = s.sessionMinutes;
+      els.breakMinutes.value = s.breakMinutes;
+      els.warningCooldownSec.value = s.warningCooldownSec;
+      els.postureSensitivity.value = s.postureSensitivity;
+      els.shoulderWidthRef.value = s.shoulderWidthRef;
+      els.ttsEnabled.value = String(!!s.ttsEnabled);
+      els.preferFemale.value = String(!!s.preferFemale);
+      els.ttsRate.value = s.ttsRate;
+      els.ttsPitch.value = s.ttsPitch;
+      els.ttsVolume.value = s.ttsVolume;
+      els.warningLines.value = s.warningLines;
+    }
+
+    function readForm(){
+      return {
+        sessionMinutes: Number(els.sessionMinutes.value || 45),
+        breakMinutes: Number(els.breakMinutes.value || 10),
+        warningCooldownSec: Number(els.warningCooldownSec.value || 6),
+        postureSensitivity: Number(els.postureSensitivity.value || 1.0),
+        shoulderWidthRef: Number(els.shoulderWidthRef.value || 0),
+        ttsEnabled: els.ttsEnabled.value === 'true',
+        preferFemale: els.preferFemale.value === 'true',
+        ttsRate: Number(els.ttsRate.value || 1.0),
+        ttsPitch: Number(els.ttsPitch.value || 1.2),
+        ttsVolume: Number(els.ttsVolume.value || 1.0),
+        warningLines: String(els.warningLines.value || '').trim()
+      };
+    }
+
+    els.btnSave.addEventListener('click', () => {
+      const s = readForm();
+      window.PG.saveSettings(s);
+      window.PG.speak('设置已保存。', s);
+      els.btnSave.textContent = '已保存';
+      setTimeout(() => els.btnSave.textContent = '保存', 900);
+    });
+
+    els.btnReset.addEventListener('click', () => {
+      window.PG.saveSettings(window.PG.DEFAULTS);
+      fillForm(window.PG.DEFAULTS);
+      window.PG.speak('已恢复默认设置。', window.PG.DEFAULTS);
+    });
+
+    els.btnTestVoice.addEventListener('click', () => {
+      const s = readForm();
+      window.PG.speak('小朋友，坐直一点哦。背挺直，肩膀放松，眼睛离书一拳。', s);
+    });
+
+    fillForm(window.PG.loadSettings());
+  </script>
+</body>
+</html>

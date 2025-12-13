@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>晓林技术支持——坐姿监督 - 监控</title>
+  <link rel="stylesheet" href="./assets/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <div class="brand">
+        <span>无奈学习监督</span>
+        <span class="badge">晓林技术</span>
+      </div>
+      <nav class="nav">
+        <a class="active" href="./monitor.html">宝贝</a>
+        <a href="./settings.html">设置</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="grid">
+      <section class="card">
+        <div class="card-h">
+          <div>
+            <div style="font-weight:700">视频监控</div>
+            <div class="help">提示：首次打开微信/手机浏览器，可能需要点一次“开始”才能播放与语音。</div>
+          </div>
+          <div class="btn-row">
+            <button id="btnStart" class="primary">开始</button>
+            <button id="btnStop" class="danger" disabled>停止</button>
+            <button id="btnFlip" disabled>切换摄像头</button>
+          </div>
+        </div>
+        <div class="card-b" style="padding:0">
+          <div class="video-wrap" id="videoWrap">
+            <video id="video" playsinline muted></video>
+            <canvas id="canvas"></canvas>
+            <div class="overlay">
+              <div class="pill">
+                <span class="dot" id="statusDot"></span>
+                <span id="statusText">未开始</span>
+              </div>
+              <div class="pill" id="scorePill" style="display:none">
+                <span style="color:var(--muted)">问题</span>
+                <span id="issueText">-</span>
+              </div>
+              <div class="pill">
+                <span style="color:var(--muted)">计时</span>
+                <span id="timerText">00:00</span>
+                <span style="color:var(--muted)" id="phaseText">学习</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="card">
+        <div class="card-h">
+          <div style="font-weight:700">当前建议</div>
+          <div class="badge" id="deviceHint">需要 HTTPS 才能用摄像头</div>
+        </div>
+        <div class="card-b">
+          <div class="notice" id="suggestionBox">点击“开始”后，会在这里给出坐姿建议与提醒。</div>
+          <hr class="sep" />
+          <div class="kv">
+            <div>
+              <div style="font-weight:700">语音测试</div>
+              <small>确保开启媒体权限后，语音能在手机上播放。</small>
+            </div>
+            <button id="btnSpeak">播放一句</button>
+          </div>
+          <hr class="sep" />
+          <div class="help">
+            兼容性说明：
+            <div>1) 华为/OPPO/vivo/小米等浏览器一般可用。</div>
+            <div>2) 微信内置浏览器也可用，但有时需要用户手势触发摄像头/语音。</div>
+            <div>3) iOS Safari 对摄像头/语音策略更严格（如需要我也可以后续适配）。</div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3/drawing_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/pose.js"></script>
+  <script src="./assets/app.js"></script>
+  <script>
+    const settings = window.PG.loadSettings();
+
+    const els = {
+      video: document.getElementById('video'),
+      canvas: document.getElementById('canvas'),
+      statusDot: document.getElementById('statusDot'),
+      statusText: document.getElementById('statusText'),
+      timerText: document.getElementById('timerText'),
+      phaseText: document.getElementById('phaseText'),
+      suggestionBox: document.getElementById('suggestionBox'),
+      deviceHint: document.getElementById('deviceHint'),
+      btnStart: document.getElementById('btnStart'),
+      btnStop: document.getElementById('btnStop'),
+      btnFlip: document.getElementById('btnFlip'),
+      btnSpeak: document.getElementById('btnSpeak'),
+      scorePill: document.getElementById('scorePill'),
+      issueText: document.getElementById('issueText')
+    };
+
+    let stream = null;
+    let facingMode = settings.cameraFacingMode || 'user';
+
+    const warningPool = window.PG.linesToArray(settings.warningLines);
+    const maybeSpeak = window.PG.createSpeechThrottle();
+
+    let pose = null;
+    let running = false;
+    let rafId = 0;
+    let badStreak = 0;
+    let lastEval = null;
+
+    // 计时器（先搭骨架，后面会与坐姿检测联动）
+    let phase = 'study';
+    let phaseRemainingSec = settings.sessionMinutes * 60;
+    let ticker = null;
+
+    function setStatus(level, text){
+      els.statusDot.className = 'dot' + (level ? (' ' + level) : '');
+      els.statusText.textContent = text;
+    }
+
+    function setSuggestion(text){
+      els.suggestionBox.textContent = text;
+    }
+
+    function drawOverlay(results){
+      const ctx = els.canvas.getContext('2d');
+      const w = els.canvas.width;
+      const h = els.canvas.height;
+      ctx.save();
+      ctx.clearRect(0, 0, w, h);
+
+      // 镜像显示时（前置摄像头），只镜像视频，不镜像画布更直观？
+      // 这里保持画布与视频同向：对前置摄像头进行镜像绘制。
+      if(facingMode === 'user'){
+        ctx.translate(w, 0);
+        ctx.scale(-1, 1);
+      }
+
+      if(results && results.poseLandmarks){
+        try{
+          window.drawConnectors(ctx, results.poseLandmarks, window.POSE_CONNECTIONS,
+            {color:'rgba(93,214,255,.9)', lineWidth:3});
+          window.drawLandmarks(ctx, results.poseLandmarks,
+            {color:'rgba(255,255,255,.85)', lineWidth:2, radius:2});
+        }catch(e){
+          // ignore draw errors
+        }
+      }
+      ctx.restore();
+    }
+
+    function ensurePose(){
+      if(pose) return pose;
+      if(!(window.Pose)) throw new Error('Pose 库加载失败，请检查网络/HTTPS');
+      pose = new window.Pose({
+        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/${file}`
+      });
+      pose.setOptions({
+        modelComplexity: 0,
+        smoothLandmarks: true,
+        enableSegmentation: false,
+        smoothSegmentation: false,
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5,
+      });
+      pose.onResults((results) => {
+        drawOverlay(results);
+        const evalRes = window.PG.postureEvaluate(results && results.poseLandmarks, settings);
+        lastEval = evalRes;
+
+        if(!running) return;
+
+        // 只在学习阶段提醒
+        if(phase !== 'study'){
+          setStatus('warn', '休息时间');
+          return;
+        }
+
+        setStatus(evalRes.level || '', evalRes.statusText || '');
+        setSuggestion(evalRes.suggestion || '');
+
+        if(evalRes && evalRes.issues && evalRes.issues.length){
+          els.scorePill.style.display = '';
+          els.issueText.textContent = `${evalRes.issues.join('、')}  ${Math.round((evalRes.score || 0)*100)}%`;
+        }else{
+          els.scorePill.style.display = 'none';
+          els.issueText.textContent = '-';
+        }
+
+        if(evalRes.level === 'warn' || evalRes.level === 'danger'){
+          badStreak++;
+        }else{
+          badStreak = 0;
+        }
+
+        // 连续多帧不良再提醒，避免抖动
+        if(badStreak >= 10 && (evalRes.level === 'warn' || evalRes.level === 'danger')){
+          const baseLine = window.PG.pickRandom(warningPool) || '小朋友，坐直一点哦。';
+          const fix = (evalRes.level === 'danger')
+            ? '现在就调整：背挺直，肩放松，眼睛离书一拳，不要趴写。'
+            : '轻轻调整：背挺直一点，头抬起一点。';
+          const text = `${baseLine}${fix}`;
+          if(maybeSpeak(text, settings)){
+            badStreak = 0;
+          }
+        }
+      });
+      return pose;
+    }
+
+    function updateTimerUI(){
+      els.timerText.textContent = window.PG.formatMMSS(phaseRemainingSec);
+      els.phaseText.textContent = phase === 'study' ? '学习' : '休息';
+    }
+
+    function stopTicker(){
+      if(ticker){
+        clearInterval(ticker);
+        ticker = null;
+      }
+    }
+
+    function startTicker(){
+      stopTicker();
+      updateTimerUI();
+      ticker = setInterval(() => {
+        phaseRemainingSec = Math.max(0, phaseRemainingSec - 1);
+        updateTimerUI();
+        if(phaseRemainingSec === 0){
+          if(phase === 'study'){
+            phase = 'break';
+            phaseRemainingSec = (settings.breakMinutes || 10) * 60;
+            window.PG.speak('学习时间到啦，休息一下吧。站起来活动活动。', settings);
+            setStatus('warn', '休息时间');
+            setSuggestion('建议：站起来走一走，看看远处 20 秒，让眼睛放松。');
+          }else{
+            phase = 'study';
+            phaseRemainingSec = (settings.sessionMinutes || 45) * 60;
+            window.PG.speak('休息结束，我们继续认真写作业。坐直喔。', settings);
+            setStatus('', '继续学习');
+            setSuggestion('开始新一轮学习：背挺直、肩放松、眼离书一拳。');
+          }
+        }
+      }, 1000);
+    }
+
+    async function startCamera(){
+      if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+        throw new Error('当前浏览器不支持 getUserMedia');
+      }
+
+      const constraints = {
+        audio: false,
+        video: {
+          facingMode: { ideal: facingMode },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
+      };
+
+      stream = await navigator.mediaDevices.getUserMedia(constraints);
+      els.video.srcObject = stream;
+      await els.video.play();
+
+      els.btnFlip.disabled = false;
+      setStatus('ok', '摄像头已开启（坐姿识别接入中）');
+      setSuggestion('已开启摄像头。下一步会进行坐姿识别与语音提醒。');
+
+      // 画布大小同步
+      const resize = () => {
+        const w = els.video.videoWidth || 1280;
+        const h = els.video.videoHeight || 720;
+        els.canvas.width = w;
+        els.canvas.height = h;
+      };
+      els.video.addEventListener('loadedmetadata', resize, { once: true });
+      resize();
+
+      // 前置摄像头体验更像“镜子”：仅对 video 进行镜像
+      els.video.style.transform = facingMode === 'user' ? 'scaleX(-1)' : 'none';
+    }
+
+    function stopCamera(){
+      if(stream){
+        for(const t of stream.getTracks()) t.stop();
+      }
+      stream = null;
+      els.video.srcObject = null;
+      els.btnFlip.disabled = true;
+      setStatus('', '已停止');
+      setSuggestion('已停止监控。');
+    }
+
+    async function startPoseLoop(){
+      ensurePose();
+      running = true;
+      badStreak = 0;
+
+      const tick = async () => {
+        if(!running) return;
+        if(!stream || els.video.readyState < 2){
+          rafId = requestAnimationFrame(tick);
+          return;
+        }
+        try{
+          await pose.send({ image: els.video });
+        }catch(e){
+          // ignore inference errors
+        }
+        rafId = requestAnimationFrame(tick);
+      };
+      rafId = requestAnimationFrame(tick);
+    }
+
+    function stopPoseLoop(){
+      running = false;
+      if(rafId){
+        cancelAnimationFrame(rafId);
+        rafId = 0;
+      }
+      const ctx = els.canvas.getContext('2d');
+      ctx.clearRect(0, 0, els.canvas.width, els.canvas.height);
+    }
+
+    async function flipCamera(){
+      facingMode = facingMode === 'user' ? 'environment' : 'user';
+      window.PG.saveSettings({ ...settings, cameraFacingMode: facingMode });
+      stopPoseLoop();
+      stopCamera();
+      await startCamera();
+      await startPoseLoop();
+    }
+
+    function updateDeviceHint(){
+      const isHttps = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+      els.deviceHint.textContent = isHttps ? '已满足 HTTPS/localhost 条件' : '需要 HTTPS 才能用摄像头';
+    }
+
+    function isWeChat(){
+      return /micromessenger/i.test(navigator.userAgent || '');
+    }
+
+    function warmupVoices(){
+      if(!('speechSynthesis' in window)) return;
+      // 触发 voices 初始化（部分浏览器需用户手势）
+      try{
+        speechSynthesis.getVoices();
+      }catch(e){
+        // ignore
+      }
+    }
+
+    els.btnStart.addEventListener('click', async () => {
+      try{
+        updateDeviceHint();
+        warmupVoices();
+
+        if(isWeChat()){
+          setSuggestion('检测到微信内置浏览器：如果稍后语音不播报，请先点一次“播放一句”，再开始学习。');
+        }
+
+        els.btnStart.disabled = true;
+        await startCamera();
+        await startPoseLoop();
+        startTicker();
+        els.btnStop.disabled = false;
+      }catch(e){
+        els.btnStart.disabled = false;
+        setStatus('danger', '启动失败');
+        const msg = e && e.message ? e.message : '无法启动摄像头';
+        const httpsHint = (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1')
+          ? '（提示：手机上必须使用 HTTPS 网站才能打开摄像头）'
+          : '';
+        const cdnHint = msg.includes('Pose') ? '（提示：可能是网络拦截 CDN，请换网络或稍后重试）' : '';
+        setSuggestion(`${msg}${httpsHint}${cdnHint}`);
+      }
+    });
+
+    els.btnStop.addEventListener('click', () => {
+      stopTicker();
+      stopPoseLoop();
+      stopCamera();
+      els.btnStart.disabled = false;
+      els.btnStop.disabled = true;
+    });
+
+    els.btnFlip.addEventListener('click', async () => {
+      try{
+        els.btnFlip.disabled = true;
+        await flipCamera();
+      }finally{
+        els.btnFlip.disabled = false;
+      }
+    });
+
+    els.btnSpeak.addEventListener('click', () => {
+      window.PG.speak('小朋友，坐直一点点哦。背要挺直，肩膀放松。', settings);
+    });
+
+    updateDeviceHint();
+    updateTimerUI();
+    setStatus('', '未开始');
+  </script>
+</body>
+</html>

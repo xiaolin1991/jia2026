@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>坐姿监督监控——晓林技术支持</title>
+  <title>坐姿监督监控--晓林技术支持</title>
   <link rel="stylesheet" href="./assets/styles.css" />
 </head>
 <body>
@@ -11,6 +11,7 @@
     <div class="call-video">
       <video id="video" playsinline muted></video>
       <canvas id="canvas"></canvas>
+      <div id="focusRing" class="focus-ring" style="display:none"></div>
     </div>
 
     <div class="call-top">
@@ -23,6 +24,10 @@
       </div>
 
       <div style="display:flex;gap:10px;align-items:center">
+        <span class="call-chip" id="zoomPill" title="缩放倍率">
+          <span style="color:var(--muted)">倍率</span>
+          <span id="zoomText">1.0x</span>
+        </span>
         <span class="call-chip">
           <span style="color:var(--muted)">倒计时</span>
           <span id="timerText">00:00</span>
@@ -36,7 +41,7 @@
     </div>
 
     <div class="call-side">
-      <a class="fab" href="./settings.html" title="设置" style="text-decoration:none" aria-label="设置">
+      <a class="fab" href="./settings.html" target="_blank" rel="noopener" title="设置（新窗口打开，监控不中断）" style="text-decoration:none" aria-label="设置">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/>
           <path d="M19.4 15a7.8 7.8 0 0 0 .1-2l2-1.2-2-3.5-2.3.7a7.6 7.6 0 0 0-1.7-1l-.3-2.4H9l-.3 2.4c-.6.2-1.2.6-1.7 1l-2.3-.7-2 3.5 2 1.2a7.8 7.8 0 0 0 0 2l-2 1.2 2 3.5 2.3-.7c.5.4 1.1.8 1.7 1l.3 2.4h6l.3-2.4c.6-.2 1.2-.6 1.7-1l2.3.7 2-3.5-2-1.2Z"/>
@@ -81,6 +86,7 @@
       canvas: document.getElementById('canvas'),
       statusDot: document.getElementById('statusDot'),
       statusText: document.getElementById('statusText'),
+      zoomText: document.getElementById('zoomText'),
       timerText: document.getElementById('timerText'),
       phaseText: document.getElementById('phaseText'),
       suggestionBox: document.getElementById('suggestionBox'),
@@ -96,6 +102,22 @@
     let stream = null;
     let facingMode = settings.cameraFacingMode || 'user';
 
+    let videoTrack = null;
+    let trackCaps = null;
+    let trackSettings = null;
+    let zoomMin = 1;
+    let zoomMax = 1;
+    let zoomStep = 0.1;
+    let currentZoom = 1;
+    let digitalZoom = 1;
+
+    let gestureActive = false;
+    let pinchStartDist = 0;
+    let pinchStartZoom = 1;
+    let pinchStartDigitalZoom = 1;
+    let lastTouchAt = 0;
+    let tapMoved = false;
+
     const warningPool = window.PG.linesToArray(settings.warningLines);
     const maybeSpeak = window.PG.createSpeechThrottle();
 
@@ -104,6 +126,7 @@
     let rafId = 0;
     let badStreak = 0;
     let lastEval = null;
+    const WARN_STREAK_THRESHOLD = 3;
 
     // 计时器（先搭骨架，后面会与坐姿检测联动）
     let phase = 'study';
@@ -117,6 +140,14 @@
 
     function setSuggestion(text){
       els.suggestionBox.textContent = text;
+    }
+
+    function updateZoomUI(){
+      // 有硬件 zoom 时，倍率 = 硬件 zoom * 数字缩放兜底
+      const hz = (trackCaps && typeof trackCaps.zoom === 'object') ? (Number(currentZoom) || 1) : 1;
+      const dz = Number(digitalZoom) || 1;
+      const z = Math.max(1, hz * dz);
+      els.zoomText.textContent = `${z.toFixed(1)}x`;
     }
 
     function drawOverlay(results){
@@ -191,17 +222,14 @@
         }
 
         // 连续多帧不良再提醒，避免抖动
-        if(badStreak >= 10 && (evalRes.level === 'warn' || evalRes.level === 'danger')){
+        if(badStreak >= WARN_STREAK_THRESHOLD && (evalRes.level === 'warn' || evalRes.level === 'danger')){
           const baseLine = window.PG.pickRandom(warningPool) || '小朋友，坐直一点哦。';
           const fix = (evalRes.level === 'danger')
             ? '现在就调整：背挺直，肩放松，眼睛离书一拳，不要趴写。'
             : '轻轻调整：背挺直一点，头抬起一点。';
           const fallbackText = `${baseLine}${fix}`;
 
-          // 你要的效果：出现“调整建议”时，就朗读建议。
-          // 语音包负责固定警告句；TTS（如可用）补充朗读建议内容。
           const toSpeak = String(evalRes.suggestion || fallbackText);
-
           if(maybeSpeak(toSpeak, settings, { issues: evalRes.issues, ttsText: toSpeak })){
             badStreak = 0;
           }
@@ -264,6 +292,34 @@
       els.video.srcObject = stream;
       await els.video.play();
 
+      videoTrack = stream.getVideoTracks && stream.getVideoTracks()[0] ? stream.getVideoTracks()[0] : null;
+      trackCaps = null;
+      trackSettings = null;
+      zoomMin = 1;
+      zoomMax = 1;
+      zoomStep = 0.1;
+      currentZoom = 1;
+      digitalZoom = 1;
+      if(videoTrack && videoTrack.getCapabilities){
+        try{ trackCaps = videoTrack.getCapabilities(); }catch(e){ trackCaps = null; }
+      }
+      if(videoTrack && videoTrack.getSettings){
+        try{ trackSettings = videoTrack.getSettings(); }catch(e){ trackSettings = null; }
+      }
+      if(trackCaps && typeof trackCaps.zoom === 'object'){
+        zoomMin = Number(trackCaps.zoom.min ?? 1) || 1;
+        zoomMax = Number(trackCaps.zoom.max ?? 1) || 1;
+        zoomStep = Number(trackCaps.zoom.step ?? 0.1) || 0.1;
+      }
+      if(trackSettings && typeof trackSettings.zoom === 'number'){
+        currentZoom = Number(trackSettings.zoom) || 1;
+      }else{
+        currentZoom = zoomMin;
+      }
+      updateZoomUI();
+      applyVideoTransform();
+      bindCameraGestures();
+
       els.btnFlip.disabled = false;
       setStatus('ok', '摄像头已开启（坐姿识别接入中）');
       setSuggestion('已开启摄像头。下一步会进行坐姿识别与语音提醒。');
@@ -279,18 +335,194 @@
       resize();
 
       // 前置摄像头体验更像“镜子”：仅对 video 进行镜像
-      els.video.style.transform = facingMode === 'user' ? 'scaleX(-1)' : 'none';
+      applyVideoTransform();
     }
 
     function stopCamera(){
+      unbindCameraGestures();
       if(stream){
         for(const t of stream.getTracks()) t.stop();
       }
       stream = null;
+      videoTrack = null;
+      trackCaps = null;
+      trackSettings = null;
       els.video.srcObject = null;
       els.btnFlip.disabled = true;
       setStatus('', '已停止');
       setSuggestion('已停止监控。');
+    }
+
+    function clamp(n, a, b){
+      return Math.min(b, Math.max(a, n));
+    }
+
+    function roundToStep(v, step){
+      if(!step || step <= 0) return v;
+      return Math.round(v / step) * step;
+    }
+
+    function applyVideoTransform(){
+      const mirror = facingMode === 'user' ? -1 : 1;
+      const scale = digitalZoom > 1 ? digitalZoom : 1;
+      // transform 顺序：镜像 + 数字缩放
+      els.video.style.transform = mirror === -1 ? `scaleX(-1) scale(${scale})` : `scale(${scale})`;
+      els.video.style.transformOrigin = 'center center';
+      updateZoomUI();
+    }
+
+    async function applyHardwareZoom(z){
+      if(!videoTrack || !videoTrack.applyConstraints) return false;
+      if(!(trackCaps && typeof trackCaps.zoom === 'object')) return false;
+      const nz = clamp(roundToStep(z, zoomStep), zoomMin, zoomMax);
+      try{
+        await videoTrack.applyConstraints({ advanced: [{ zoom: nz }] });
+        currentZoom = nz;
+        updateZoomUI();
+        return true;
+      }catch(e){
+        return false;
+      }
+    }
+
+    function getTouchDist(t1, t2){
+      const dx = t1.clientX - t2.clientX;
+      const dy = t1.clientY - t2.clientY;
+      return Math.sqrt(dx*dx + dy*dy);
+    }
+
+    function showFocusRing(x, y){
+      const ring = document.getElementById('focusRing');
+      ring.style.left = `${x}px`;
+      ring.style.top = `${y}px`;
+      ring.style.display = '';
+      ring.classList.remove('show');
+      // 触发 reflow
+      void ring.offsetWidth;
+      ring.classList.add('show');
+      setTimeout(() => {
+        ring.classList.remove('show');
+        ring.style.display = 'none';
+      }, 650);
+    }
+
+    async function tryTapToFocus(clientX, clientY){
+      if(!videoTrack || !videoTrack.applyConstraints) return false;
+      const wrap = els.video.parentElement;
+      const rect = wrap.getBoundingClientRect();
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
+
+      showFocusRing(x, y);
+
+      // pointsOfInterest / focusMode 支持情况很碎，尽力而为
+      try{
+        const adv = [];
+        if(trackCaps && trackCaps.focusMode){
+          const modes = Array.isArray(trackCaps.focusMode) ? trackCaps.focusMode : [];
+          if(modes.includes('continuous')) adv.push({ focusMode: 'continuous' });
+          else if(modes.includes('single-shot')) adv.push({ focusMode: 'single-shot' });
+        }
+        if(trackCaps && trackCaps.pointsOfInterest){
+          const nx = clamp(x / rect.width, 0, 1);
+          const ny = clamp(y / rect.height, 0, 1);
+          adv.push({ pointsOfInterest: [{ x: nx, y: ny }] });
+        }
+        if(!adv.length) return false;
+        await videoTrack.applyConstraints({ advanced: adv });
+        return true;
+      }catch(e){
+        return false;
+      }
+    }
+
+    function bindCameraGestures(){
+      const wrap = els.video.parentElement;
+      if(!wrap) return;
+      wrap.style.touchAction = 'none';
+
+      const onTouchStart = (e) => {
+        if(!running && !stream) return;
+        lastTouchAt = Date.now();
+        tapMoved = false;
+        if(e.touches && e.touches.length === 2){
+          gestureActive = true;
+          pinchStartDist = getTouchDist(e.touches[0], e.touches[1]);
+          pinchStartZoom = currentZoom;
+          pinchStartDigitalZoom = digitalZoom;
+        }
+      };
+
+      const onTouchMove = async (e) => {
+        if(!stream) return;
+        if(e.touches && e.touches.length === 2 && gestureActive){
+          tapMoved = true;
+          const d = getTouchDist(e.touches[0], e.touches[1]);
+          const ratio = pinchStartDist > 0 ? (d / pinchStartDist) : 1;
+
+          // 映射：捏合比例 -> zoom（尽量温和）
+          const target = pinchStartZoom * ratio;
+          const ok = await applyHardwareZoom(target);
+          if(!ok){
+            // 数字缩放兜底（最大到 3 倍）
+            digitalZoom = clamp(pinchStartDigitalZoom * ratio, 1, 3);
+            applyVideoTransform();
+          }
+          e.preventDefault();
+        }else if(e.touches && e.touches.length === 1){
+          // 手指拖动算移动，避免误触点按
+          tapMoved = true;
+        }
+      };
+
+      const onTouchEnd = async (e) => {
+        if(!stream) return;
+        const dt = Date.now() - lastTouchAt;
+        const isTap = dt < 300 && !tapMoved;
+        gestureActive = false;
+        pinchStartDist = 0;
+        if(isTap){
+          const t = (e.changedTouches && e.changedTouches[0]) ? e.changedTouches[0] : null;
+          if(t) await tryTapToFocus(t.clientX, t.clientY);
+        }
+      };
+
+      wrap._pgTouchStart = onTouchStart;
+      wrap._pgTouchMove = onTouchMove;
+      wrap._pgTouchEnd = onTouchEnd;
+      wrap.addEventListener('touchstart', onTouchStart, { passive: false });
+      wrap.addEventListener('touchmove', onTouchMove, { passive: false });
+      wrap.addEventListener('touchend', onTouchEnd, { passive: false });
+      wrap.addEventListener('touchcancel', onTouchEnd, { passive: false });
+
+      const onClick = async (e) => {
+        if(!stream) return;
+        // 非触屏/桌面也允许点击触发对焦（支持就生效）
+        await tryTapToFocus(e.clientX, e.clientY);
+      };
+      wrap._pgClick = onClick;
+      wrap.addEventListener('click', onClick);
+
+      if(trackCaps && typeof trackCaps.zoom === 'object'){
+        els.deviceHint.style.display = 'none';
+      }
+    }
+
+    function unbindCameraGestures(){
+      const wrap = els.video && els.video.parentElement ? els.video.parentElement : null;
+      if(!wrap) return;
+      if(wrap._pgTouchStart) wrap.removeEventListener('touchstart', wrap._pgTouchStart);
+      if(wrap._pgTouchMove) wrap.removeEventListener('touchmove', wrap._pgTouchMove);
+      if(wrap._pgTouchEnd){
+        wrap.removeEventListener('touchend', wrap._pgTouchEnd);
+        wrap.removeEventListener('touchcancel', wrap._pgTouchEnd);
+      }
+      if(wrap._pgClick) wrap.removeEventListener('click', wrap._pgClick);
+      wrap._pgTouchStart = null;
+      wrap._pgTouchMove = null;
+      wrap._pgTouchEnd = null;
+      wrap._pgClick = null;
+      wrap.style.touchAction = '';
     }
 
     async function startPoseLoop(){
@@ -391,6 +623,8 @@
         await startPoseLoop();
         startTicker();
         els.btnStop.disabled = false;
+
+        try{ localStorage.setItem('pg_running', '1'); }catch(e){}
       }catch(e){
         els.btnStart.disabled = false;
         setStatus('danger', '启动失败');
@@ -409,6 +643,8 @@
       stopCamera();
       els.btnStart.disabled = false;
       els.btnStop.disabled = true;
+
+      try{ localStorage.setItem('pg_running', '0'); }catch(e){}
     });
 
     els.btnFlip.addEventListener('click', async () => {
@@ -430,6 +666,18 @@
     bindAudioUnlockHints();
     updateTimerUI();
     setStatus('', '未开始');
+
+    // 兜底：如果用户返回本页且之前处于运行状态，尝试自动恢复。
+    // 注意：部分手机浏览器仍然可能要求一次用户手势，这里尽力而为。
+    try{
+      const wasRunning = localStorage.getItem('pg_running') === '1';
+      if(wasRunning){
+        setTimeout(() => {
+          if(!els.btnStart.disabled && !els.btnStop.disabled) return;
+          if(!els.btnStart.disabled) els.btnStart.click();
+        }, 400);
+      }
+    }catch(e){}
   </script>
 </body>
 </html>

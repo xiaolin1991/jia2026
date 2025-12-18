@@ -3,7 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>晓林影院,一个在线电影观看系统,简单没有广告.</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="CloudTV">
+    
+    <title>晓林影视</title>
+    
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
@@ -12,50 +17,29 @@
         /* === 1. 样式变量 === */
         :root { --sidebar-width: 240px; --header-height: 64px; }
 
-        /* --- 主题定义 --- */
-        
-        /* 1. 暗黑 (默认) */
+        /* 主题定义 */
         body.theme-dark {
             --bg-body: #121212; --bg-sidebar: #1e1e1e; --bg-card: #2c2c2c;
             --text-main: #fff; --text-sub: #aaa; --accent: #3ea6ff;
             --border: rgba(255,255,255,0.1); --hover: #333;
+            --pwa-bg: rgba(30,30,30,0.95);
         }
-        /* 2. 亮色 */
         body.theme-light {
             --bg-body: #f5f7fa; --bg-sidebar: #fff; --bg-card: #fff;
             --text-main: #333; --text-sub: #666; --accent: #0984e3;
             --border: #e0e0e0; --hover: #f0f0f0;
+            --pwa-bg: rgba(255,255,255,0.95);
         }
-        /* 3. 网飞红 */
         body.theme-red {
             --bg-body: #000; --bg-sidebar: #141414; --bg-card: #1f1f1f;
             --text-main: #e5e5e5; --text-sub: #999; --accent: #e50914;
             --border: #333; --hover: #333;
+            --pwa-bg: rgba(20,20,20,0.95);
         }
-        /* 4. 科技蓝 */
-        body.theme-blue {
-            --bg-body: #0f172a; --bg-sidebar: #1e293b; --bg-card: #334155;
-            --text-main: #e2e8f0; --text-sub: #94a3b8; --accent: #38bdf8;
-            --border: #475569; --hover: #475569;
-        }
-        /* 5. 清新绿 */
-        body.theme-green {
-            --bg-body: #f0fdf4; --bg-sidebar: #ffffff; --bg-card: #ffffff;
-            --text-main: #14532d; --text-sub: #4ade80; --accent: #16a34a;
-            --border: #bbf7d0; --hover: #dcfce7;
-        }
-        /* 6. 高贵紫 */
-        body.theme-purple {
-            --bg-body: #2e1065; --bg-sidebar: #4c1d95; --bg-card: #5b21b6;
-            --text-main: #ddd6fe; --text-sub: #a78bfa; --accent: #c084fc;
-            --border: #6d28d9; --hover: #7c3aed;
-        }
-        /* 7. 黑金 */
-        body.theme-gold {
-            --bg-body: #1c1c1c; --bg-sidebar: #2b2b2b; --bg-card: #383838;
-            --text-main: #f1c40f; --text-sub: #bf953f; --accent: #f39c12;
-            --border: #444; --hover: #4a4a4a;
-        }
+        body.theme-blue { --bg-body: #0f172a; --bg-sidebar: #1e293b; --bg-card: #334155; --text-main: #e2e8f0; --text-sub: #94a3b8; --accent: #38bdf8; --border: #475569; --hover: #475569; --pwa-bg: rgba(30,41,59,0.95); }
+        body.theme-green { --bg-body: #f0fdf4; --bg-sidebar: #ffffff; --bg-card: #ffffff; --text-main: #14532d; --text-sub: #4ade80; --accent: #16a34a; --border: #bbf7d0; --hover: #dcfce7; --pwa-bg: rgba(255,255,255,0.95); }
+        body.theme-purple { --bg-body: #2e1065; --bg-sidebar: #4c1d95; --bg-card: #5b21b6; --text-main: #ddd6fe; --text-sub: #a78bfa; --accent: #c084fc; --border: #6d28d9; --hover: #7c3aed; --pwa-bg: rgba(76,29,149,0.95); }
+        body.theme-gold { --bg-body: #1c1c1c; --bg-sidebar: #2b2b2b; --bg-card: #383838; --text-main: #f1c40f; --text-sub: #bf953f; --accent: #f39c12; --border: #444; --hover: #4a4a4a; --pwa-bg: rgba(43,43,43,0.95); }
 
         body { margin: 0; background: var(--bg-body); color: var(--text-main); font-family: sans-serif; height: 100vh; overflow: hidden; transition: background 0.3s; }
         
@@ -68,7 +52,6 @@
             display: flex; align-items: center; padding: 0 20px;
             position: relative; z-index: 5000; 
         }
-
         .left-area { display: flex; align-items: center; gap: 15px; z-index: 5001; }
         .menu-toggle { font-size: 20px; cursor: pointer; padding: 5px; }
         .logo { font-size: 20px; font-weight: bold; display: flex; align-items: center; gap: 8px; cursor: pointer; white-space: nowrap; }
@@ -85,7 +68,6 @@
         }
         .search-icon { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: var(--text-sub); }
 
-        /* 右侧按钮 */
         .header-right { 
             position: absolute; right: 20px; top: 0; bottom: 0;
             display: flex; gap: 12px; align-items: center; 
@@ -95,11 +77,9 @@
             width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--border);
             display: flex; align-items: center; justify-content: center; cursor: pointer;
             background: var(--bg-body); color: var(--text-main); transition: 0.2s;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            pointer-events: auto; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2); pointer-events: auto; 
         }
         .btn-icon:hover { border-color: var(--accent); color: var(--accent); transform: scale(1.1); background: var(--hover); }
-        .btn-icon:active { transform: scale(0.95); }
 
         /* === 3. 侧边栏 === */
         .sidebar {
@@ -107,9 +87,7 @@
             display: flex; flex-direction: column; flex-shrink: 0;
             transition: transform 0.3s; z-index: 4000;
         }
-        
         .sidebar-scroll { flex: 1; overflow-y: auto; padding: 10px 0; }
-        
         .group-name { font-size: 12px; color: var(--text-sub); padding: 15px 15px 5px; font-weight: bold; }
         .nav-item {
             padding: 12px 15px; margin: 2px 10px; border-radius: 6px; cursor: pointer;
@@ -119,13 +97,8 @@
         .nav-item.active { background: var(--accent); color: white; }
         .nav-item i { width: 18px; text-align: center; }
 
-        /* 侧边栏底部联系区 */
-        .sidebar-footer {
-            padding: 15px; border-top: 1px solid var(--border); background: var(--bg-sidebar);
-            display: flex; flex-direction: column; gap: 10px;
-        }
+        .sidebar-footer { padding: 15px; border-top: 1px solid var(--border); background: var(--bg-sidebar); display: flex; flex-direction: column; gap: 10px; }
         .contact-title { font-size: 12px; color: var(--text-sub); font-weight: bold; margin-bottom: 5px; }
-        
         .contact-link {
             display: flex; align-items: center; gap: 10px; padding: 8px 12px;
             background: var(--bg-card); border-radius: 8px; color: var(--text-main);
@@ -133,22 +106,12 @@
             cursor: pointer; transition: 0.2s;
         }
         .contact-link:hover { border-color: var(--accent); color: var(--accent); background: var(--hover); }
-        .contact-link i { width: 16px; text-align: center; }
-
-        .wechat-box {
-            background: #fff; padding: 5px; border-radius: 8px; margin-top: 5px;
-            animation: fadeIn 0.3s;
-        }
+        .wechat-box { background: #fff; padding: 5px; border-radius: 8px; margin-top: 5px; animation: fadeIn 0.3s; }
         .wechat-box img { width: 100%; display: block; border-radius: 4px; }
-        
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
         /* === 4. 内容区 === */
-        .content { 
-            flex: 1; overflow-y: auto; padding: 20px; position: relative; 
-            scroll-behavior: auto;
-        }
-        
+        .content { flex: 1; overflow-y: auto; padding: 20px; position: relative; scroll-behavior: auto; }
         .cats { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
         .cat-btn {
             padding: 6px 18px; border-radius: 20px; border: 1px solid var(--border); background: var(--bg-card);
@@ -156,38 +119,74 @@
         }
         .cat-btn.active { background: var(--text-main); color: var(--bg-body); border-color: var(--text-main); font-weight: bold; }
 
+        /* 网格布局 */
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; }
-        .card { cursor: pointer; position: relative; }
-        .card:hover .poster { transform: scale(1.05); }
-        .poster-wrap { width: 100%; aspect-ratio: 2/3; border-radius: 8px; overflow: hidden; background: #000; position: relative; margin-bottom: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        
+        .card { cursor: pointer; position: relative; width: 100%; overflow: hidden; } /* 防止卡片溢出 */
+        .poster-wrap { 
+            width: 100%; aspect-ratio: 2/3; border-radius: 8px; overflow: hidden; background: #000; 
+            position: relative; margin-bottom: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); 
+        }
         .poster { width: 100%; height: 100%; object-fit: cover; transition: 0.3s; }
+        .card:hover .poster { transform: scale(1.05); }
+        
         .badge { position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.8); color: #fbbf24; font-size: 10px; padding: 2px 5px; border-radius: 4px; }
         .title { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
-
         .load-status { text-align: center; padding: 30px; color: var(--text-sub); font-size: 13px; width: 100%; clear: both; }
 
         /* === 5. 播放器 === */
         .player-page { max-width: 1000px; margin: 0 auto; animation: fade 0.3s; padding-bottom: 50px; }
         @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
-        
         .video-box { width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 10px; overflow: hidden; margin-top: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
         video { width: 100%; height: 100%; }
         .controls { padding: 20px 0; }
         .back-btn { display: inline-flex; align-items: center; gap: 5px; padding: 8px 16px; background: var(--bg-card); border-radius: 6px; cursor: pointer; font-size: 14px; margin-bottom: 15px; border: 1px solid var(--border); }
-        .back-btn:hover { border-color: var(--accent); color: var(--accent); }
-
         .ep-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px; margin-top: 15px; max-height: 250px; overflow-y: auto; }
         .ep-item { text-align: center; padding: 8px; background: var(--bg-card); border-radius: 4px; font-size: 13px; cursor: pointer; border: 1px solid transparent; }
-        .ep-item:hover { border-color: var(--accent); color: var(--text-main); }
         .ep-item.active { background: var(--accent); color: white; border-color: var(--accent); }
 
+        /* === 6. 移动端安装提示弹窗 (PWA) === */
+        .pwa-toast {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            width: 90%; max-width: 400px;
+            background: var(--pwa-bg); color: var(--text-main);
+            padding: 15px 20px; border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            z-index: 10000; display: flex; flex-direction: column; gap: 10px;
+            backdrop-filter: blur(10px); border: 1px solid var(--border);
+            animation: slideUp 0.5s ease-out;
+        }
+        @keyframes slideUp { from { transform: translate(-50%, 100%); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+
+        .pwa-header { display: flex; justify-content: space-between; align-items: start; }
+        .pwa-title { font-weight: bold; font-size: 15px; margin-bottom: 5px; color: var(--accent); }
+        .pwa-text { font-size: 13px; color: var(--text-sub); line-height: 1.4; }
+        .pwa-close { cursor: pointer; padding: 5px; opacity: 0.7; }
+        .pwa-btn {
+            background: var(--accent); color: #fff; border: none; padding: 8px;
+            border-radius: 6px; cursor: pointer; font-size: 13px; margin-top: 5px;
+        }
+        .ios-guide { display: flex; align-items: center; gap: 5px; font-weight: bold; color: var(--text-main); }
+
+        /* === 7. 移动端完美适配 === */
         @media (max-width: 768px) {
             .sidebar { position: fixed; left: 0; top: var(--header-height); bottom: 0; z-index: 6000; transform: translateX(-100%); }
             .sidebar.open { transform: translateX(0); box-shadow: 10px 0 20px rgba(0,0,0,0.5); }
             .search-box { display: none; } 
-            .grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+            
+            /* ⭐ 移动端改为2列布局，防止图片过大乱排 ⭐ */
+            .grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+            
+            /* 强制图片不超出容器 */
+            .poster-wrap { margin-bottom: 5px; }
+            .card { width: 100%; } 
+            
             .content { padding: 15px; }
-            .video-box { border-radius: 0; margin: 0 -15px; width: auto; }
+            /* 播放器适应宽度 */
+            .video-box { border-radius: 0; margin: 0 -15px; width: calc(100% + 30px); }
+            
+            /* 侧边栏层级提高 */
+            .sidebar-footer { padding-bottom: 40px; } /* 防止被手机底部条遮挡 */
         }
     </style>
 </head>
@@ -199,7 +198,7 @@
         <div class="left-area">
             <i class="fa-solid fa-bars menu-toggle" @click="toggleSidebar"></i>
             <div class="logo" @click="goHome">
-                <i class="fa-solid fa-cloud"></i> 晓林影院
+                <i class="fa-solid fa-cloud"></i> 晓林影视
             </div>
         </div>
 
@@ -244,18 +243,15 @@
             </div>
 
             <div class="sidebar-footer">
-                <div class="contact-title">有问题联系我</div>
-                
+                <div class="contact-title">有问题找到我</div>
                 <a href="https://github.com/xiaolin1991" target="_blank" class="contact-link">
                     <i class="fa-brands fa-github"></i> GitHub
                 </a>
-                
                 <div class="contact-link" @click="toggleWechat">
                     <i class="fa-brands fa-weixin"></i> 微信咨询
                 </div>
-
                 <div v-if="showWechat" class="wechat-box">
-                    <img src="./wechat.png" alt="wechat.png">
+                    <img src="./wechat.png" alt="请上传 wechat.png">
                 </div>
             </div>
         </aside>
@@ -297,17 +293,14 @@
                 <div class="back-btn" @click="closePlayer">
                     <i class="fa-solid fa-arrow-left"></i> 返回列表
                 </div>
-
                 <div class="video-box">
                     <video id="player" controls autoplay playsinline></video>
                 </div>
-
                 <div class="controls">
                     <h2 style="margin:0;">{{ currentVod.vod_name }}</h2>
                     <div style="font-size:13px; color:var(--text-sub); margin-top:5px;">
                         正在播放: {{ currentEpName }} <span style="margin-left:10px; color:var(--accent)">({{ currentSourceName }})</span>
                     </div>
-
                     <div class="ep-list">
                         <div v-for="(url, name) in episodes" :key="name" 
                              class="ep-item" :class="{active: currentPlayUrl === url}"
@@ -316,7 +309,6 @@
                         </div>
                     </div>
                 </div>
-
                 <h3 style="margin-top:30px;">猜你喜欢</h3>
                 <div class="grid">
                     <div class="card" v-for="item in recommendList" :key="item.vod_id" @click="openPlayer(item)">
@@ -331,6 +323,25 @@
 
         </main>
     </div>
+
+    <div v-if="showPwaModal" class="pwa-toast">
+        <div class="pwa-header">
+            <div class="pwa-title">📱 添加到手机桌面</div>
+            <div class="pwa-close" @click="closePwaModal"><i class="fa-solid fa-xmark"></i></div>
+        </div>
+        
+        <div class="pwa-text">
+            <div v-if="isIOS">
+                点击下方工具栏的 <span class="ios-guide"><i class="fa-solid fa-arrow-up-from-bracket"></i> 分享</span> 按钮，然后选择 <strong>“添加到主屏幕”</strong>
+            </div>
+            <div v-else>
+                点击浏览器右上角菜单，选择 <strong>“添加到主屏幕”</strong> 或 <strong>“安装应用”</strong>
+            </div>
+        </div>
+        
+        <button class="pwa-btn" @click="closePwaModal">知道了，去试试</button>
+    </div>
+
 </div>
 
 <script>
@@ -338,13 +349,14 @@
 
     createApp({
         setup() {
-            // ⭐⭐⭐ 你的专用 API ⭐⭐⭐
+            // API
             const API_PROXY = 'https://cf-dianying.xiaolin4914.workers.dev/'; 
-            // ⭐⭐⭐ 隐藏福利区的开关 ⭐⭐⭐
-            // true = 显示 (开启福利)
-            // false = 隐藏 (关闭福利)
-            const showSpecialSection = ref(true); // 福利区开关
-            const showWechat = ref(false); // 微信二维码开关
+            
+            // 开关
+            const showSpecialSection = ref(true); 
+            const showWechat = ref(false);
+            const showPwaModal = ref(false);
+            const isIOS = ref(false);
 
             // 状态
             const isSidebarOpen = ref(false);
@@ -425,13 +437,40 @@
             const currentEpName = ref('');
             let hls = null;
 
-            // 换肤逻辑
+            // PWA 检测逻辑
+            const checkPWA = () => {
+                // 1. 检查是否在 Standalone 模式 (已经安装了)
+                const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+                if (isStandalone) return; 
+
+                // 2. 检查是否是手机
+                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                if (!isMobile) return;
+
+                // 3. 检查是否是首次访问 (LocalStorage)
+                const hasPrompted = localStorage.getItem('cloudtv_pwa_shown_v11');
+                if (hasPrompted) return;
+
+                // 4. 检测 iOS
+                isIOS.value = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+                // 5. 显示弹窗
+                setTimeout(() => {
+                    showPwaModal.value = true;
+                }, 2000); // 延迟2秒显示，体验更好
+            };
+
+            const closePwaModal = () => {
+                showPwaModal.value = false;
+                localStorage.setItem('cloudtv_pwa_shown_v11', 'true'); // 记录已显示
+            };
+
+            // 换肤
             const applyTheme = (theme) => {
                 currentTheme.value = theme;
                 document.body.className = theme; 
-                localStorage.setItem('cloudtv_theme_v9', theme);
+                localStorage.setItem('cloudtv_theme_v10', theme);
             };
-
             const switchTheme = () => {
                 let idx = themes.indexOf(currentTheme.value);
                 if(idx === -1) idx = 0;
@@ -516,7 +555,6 @@
                 fetchData(false);
             };
 
-            // 打开播放器
             const openPlayer = (item) => {
                 currentVod.value = item;
                 const urlStr = item.vod_play_url;
@@ -588,13 +626,14 @@
             const imgError = (e) => e.target.src = 'https://via.placeholder.com/300x450?text=No+Cover';
 
             onMounted(() => {
-                const saved = localStorage.getItem('cloudtv_theme_v9');
+                const saved = localStorage.getItem('cloudtv_theme_v10');
                 if(saved && themes.includes(saved)) {
                     applyTheme(saved);
                 } else {
                     applyTheme('theme-dark');
                 }
                 fetchData(false);
+                checkPWA(); // 启动时检查是否显示安装提示
             });
 
             return {
@@ -607,7 +646,8 @@
                 openPlayer, closePlayer, goHome,
                 currentVod, episodes, currentPlayUrl, currentEpName, switchEp,
                 recommendList, imgError,
-                handleScroll, page, hasMore
+                handleScroll, page, hasMore,
+                showPwaModal, closePwaModal, isIOS
             };
         }
     }).mount('#app');

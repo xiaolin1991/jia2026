@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>晓林在线影院</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        /* === 1. 全局样式变量 === */
+        :root {
+            --sidebar-width: 250px;
+            --header-height: 64px;
+        }
+
+        /* 暗黑模式 (Dark) */
+        body.theme-dark {
+            --bg-body: #121212;
+            --bg-sidebar: #1e1e1e;
+            --bg-header: #1e1e1e;
+            --bg-card: #2c2c2c;
+            --text-main: #ffffff;
+            --text-sub: #aaaaaa;
+            --accent: #3ea6ff;
+            --hover: #383838;
+            --border: rgba(255,255,255,0.1);
+        }
+
+        /* 亮色模式 (Light) */
+        body.theme-light {
+            --bg-body: #f5f7fa;
+            --bg-sidebar: #ffffff;
+            --bg-header: #ffffff;
+            --bg-card: #ffffff;
+            --text-main: #333333;
+            --text-sub: #666666;
+            --accent: #0984e3;
+            --hover: #f0f0f0;
+            --border: #e0e0e0;
+        }
+
+        /* 网飞红模式 (Netflix) */
+        body.theme-red {
+            --bg-body: #000000;
+            --bg-sidebar: #141414;
+            --bg-header: #000000; 
+            --bg-card: #1f1f1f;
+            --text-main: #e5e5e5;
+            --text-sub: #999999;
+            --accent: #e50914; 
+            --hover: #333333;
+            --border: #333;
+        }
+
+        body { 
+            margin: 0; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            background: var(--bg-body); 
+            color: var(--text-main); 
+            height: 100vh; 
+            overflow: hidden; 
+            transition: background 0.3s ease, color 0.3s ease; 
+        }
+        
+        .app-container { display: flex; height: 100%; flex-direction: column; }
+        .main-wrapper { display: flex; flex: 1; overflow: hidden; position: relative; }
+
+        /* === 2. 顶部导航栏 === */
+        .header {
+            height: var(--header-height); background: var(--bg-header); border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between; padding: 0 24px;
+            position: relative; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .brand { font-size: 22px; font-weight: 800; display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; }
+        .brand i { color: var(--accent); }
+        
+        .search-wrap { flex: 1; max-width: 500px; margin: 0 40px; position: relative; }
+        .search-wrap input {
+            width: 100%; background: var(--bg-body); border: 1px solid var(--border); color: var(--text-main);
+            padding: 10px 40px 10px 15px; border-radius: 50px; outline: none; transition: 0.3s;
+        }
+        .search-wrap input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(62,166,255,0.2); }
+        .search-icon { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: var(--text-sub); cursor: pointer; }
+
+        /* 修复点击问题的按钮样式 */
+        .header-actions { display: flex; align-items: center; gap: 15px; z-index: 1001; }
+        .action-btn {
+            width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; background: var(--bg-body); color: var(--text-main); border: 1px solid var(--border); 
+            transition: all 0.2s; position: relative; overflow: hidden;
+        }
+        .action-btn:hover { background: var(--hover); color: var(--accent); border-color: var(--accent); transform: scale(1.05); }
+        .menu-btn { display: none; font-size: 20px; cursor: pointer; padding: 10px; }
+
+        /* === 3. 左侧导航栏 === */
+        .sidebar {
+            width: var(--sidebar-width); background: var(--bg-sidebar); border-right: 1px solid var(--border);
+            display: flex; flex-direction: column; flex-shrink: 0; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .sidebar-scroll { flex: 1; overflow-y: auto; padding: 10px; }
+        .sidebar-scroll::-webkit-scrollbar { width: 4px; }
+        .sidebar-scroll::-webkit-scrollbar-thumb { background: #555; border-radius: 2px; }
+
+        .group-title { font-size: 12px; color: var(--text-sub); padding: 15px 12px 8px; font-weight: bold; letter-spacing: 0.5px; text-transform: uppercase; }
+        
+        .nav-item {
+            display: flex; align-items: center; gap: 12px; padding: 12px 16px; margin-bottom: 4px;
+            border-radius: 8px; cursor: pointer; color: var(--text-sub); font-size: 14px; transition: 0.2s;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .nav-item:hover { background: var(--hover); color: var(--text-main); }
+        .nav-item.active { background: var(--accent); color: #fff; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .nav-item i { width: 20px; text-align: center; }
+
+        /* === 4. 内容区域 === */
+        .content { flex: 1; overflow-y: auto; padding: 24px; position: relative; }
+        
+        .tags-bar { display: flex; gap: 10px; margin-bottom: 25px; flex-wrap: wrap; }
+        .tag {
+            padding: 6px 18px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 100px;
+            font-size: 13px; cursor: pointer; transition: 0.2s; color: var(--text-main);
+        }
+        .tag:hover { border-color: var(--accent); }
+        .tag.active { background: var(--text-main); color: var(--bg-body); border-color: var(--text-main); font-weight: bold; }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 24px; row-gap: 32px; }
+        .card { cursor: pointer; }
+        .poster-box {
+            width: 100%; aspect-ratio: 2/3; border-radius: 10px; overflow: hidden; position: relative;
+            background: var(--bg-card); box-shadow: 0 4px 8px rgba(0,0,0,0.1); transition: transform 0.3s;
+        }
+        .card:hover .poster-box { transform: translateY(-6px); box-shadow: 0 10px 20px rgba(0,0,0,0.25); }
+        .poster-box img { width: 100%; height: 100%; object-fit: cover; }
+        .badge { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.75); color: #f1c40f; font-size: 11px; padding: 3px 6px; border-radius: 4px; backdrop-filter: blur(2px); }
+        .meta { margin-top: 10px; }
+        .title { font-size: 15px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .sub { font-size: 12px; color: var(--text-sub); margin-top: 4px; }
+
+        /* === 5. 播放器 === */
+        .player-layer { display: flex; flex-direction: column; max-width: 1100px; margin: 0 auto; animation: fadeUp 0.4s ease; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .video-wrapper { width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 12px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.3); }
+        video { width: 100%; height: 100%; outline: none; }
+        
+        .info-panel { padding: 20px 0; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+        .play-head { display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px; }
+        .btn-back { padding: 8px 16px; background: var(--bg-card); border-radius: 6px; cursor: pointer; color: var(--text-sub); font-size: 14px; }
+        .btn-back:hover { color: var(--text-main); background: var(--hover); }
+        
+        .ep-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px; max-height: 200px; overflow-y: auto; margin-top: 15px; padding: 5px; }
+        .ep-item { 
+            text-align: center; padding: 8px; background: var(--bg-card); border-radius: 6px; font-size: 13px; cursor: pointer; color: var(--text-sub); transition: 0.2s; 
+            border: 1px solid transparent;
+        }
+        .ep-item:hover { border-color: var(--accent); color: var(--text-main); }
+        .ep-item.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+        /* === 移动端适配 === */
+        @media (max-width: 768px) {
+            .menu-btn { display: block; }
+            .sidebar { position: fixed; top: var(--header-height); bottom: 0; left: 0; z-index: 999; transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); box-shadow: 10px 0 30px rgba(0,0,0,0.5); }
+            .search-wrap { display: none; }
+            .grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+            .content { padding: 15px; }
+            .video-wrapper { border-radius: 0; margin: 0 -15px; width: auto; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="app" class="app-container">
+    
+    <header class="header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <i class="fa-solid fa-bars menu-btn" @click="toggleSidebar"></i>
+            <div class="brand" @click="goHome">
+                <i class="fa-solid fa-cloud-bolt"></i> 
+                <span>晓林影院</span>
+            </div>
+        </div>
+
+        <div class="search-wrap">
+            <input v-model="keyword" @keyup.enter="doSearch" placeholder="输入片名搜索...">
+            <i class="fa-solid fa-magnifying-glass search-icon" @click="doSearch"></i>
+        </div>
+
+        <div class="header-actions">
+            <div class="action-btn" @click="switchTheme" title="切换主题">
+                <i class="fa-solid fa-palette"></i>
+            </div>
+            <div class="action-btn">
+                <i class="fa-regular fa-user"></i>
+            </div>
+        </div>
+    </header>
+
+    <div class="main-wrapper">
+        
+        <aside class="sidebar" :class="{ open: isSidebarOpen }">
+            <div class="sidebar-scroll">
+                
+                <div class="group-title">当前线路</div>
+                <div class="nav-item active">
+                    <i class="fa-solid fa-tower-broadcast"></i>
+                    <span>{{ currentSourceName }}</span>
+                </div>
+
+                <div class="group-title">综合资源</div>
+                <div v-for="s in generalSources" :key="s.key" 
+                     class="nav-item" :class="{active: currentSourceKey === s.key}"
+                     @click="changeSource(s)">
+                    <i :class="s.icon"></i>
+                    <span>{{ s.name }}</span>
+                </div>
+
+                <template v-if="showSpecial">
+                    <div class="group-title" style="margin-top:20px; color:#e74c3c;">特殊/福利</div>
+                    <div v-for="s in specialSources" :key="s.key" 
+                         class="nav-item" :class="{active: currentSourceKey === s.key}"
+                         @click="changeSource(s)">
+                        <i :class="s.icon"></i>
+                        <span>{{ s.name }}</span>
+                    </div>
+                </template>
+
+            </div>
+        </aside>
+
+        <div v-if="isSidebarOpen" @click="toggleSidebar" 
+             style="position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:900;"></div>
+
+        <main class="content">
+            <div v-if="!playerMode">
+                <div class="tags-bar">
+                    <div class="tag" :class="{active: currentCat==='latest'}" @click="changeCat('latest')">最新更新</div>
+                    <div class="tag" :class="{active: currentCat==='movie'}" @click="changeCat('movie')">电影</div>
+                    <div class="tag" :class="{active: currentCat==='tv'}" @click="changeCat('tv')">电视剧</div>
+                    <div class="tag" :class="{active: currentCat==='anime'}" @click="changeCat('anime')">动漫</div>
+                    <div class="tag" :class="{active: currentCat==='variety'}" @click="changeCat('variety')">综艺</div>
+                </div>
+
+                <div v-if="loading" style="text-align:center; padding:50px; color:var(--accent);">
+                    <i class="fa-solid fa-circle-notch fa-spin fa-2x"></i>
+                </div>
+
+                <div class="grid">
+                    <div class="card" v-for="item in list" :key="item.vod_id" @click="openPlayer(item)">
+                        <div class="poster-box">
+                            <img :src="item.vod_pic" @error="imgError" loading="lazy">
+                            <div class="badge">{{ item.vod_remarks || item.vod_year }}</div>
+                        </div>
+                        <div class="meta">
+                            <div class="title">{{ item.vod_name }}</div>
+                            <div class="sub">{{ item.type_name }} · {{ item.vod_time?.split(' ')[0] }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="!loading && list.length === 0" style="text-align:center; margin-top:80px; color:var(--text-sub);">
+                    <i class="fa-solid fa-box-open" style="font-size:40px; margin-bottom:15px;"></i>
+                    <p>暂无数据</p>
+                </div>
+            </div>
+
+            <div v-else class="player-layer">
+                <div class="play-head">
+                    <div class="btn-back" @click="closePlayer">
+                        <i class="fa-solid fa-arrow-left"></i> 返回列表
+                    </div>
+                </div>
+
+                <div class="video-wrapper">
+                    <video id="player" controls autoplay playsinline></video>
+                </div>
+
+                <div class="info-panel">
+                    <h2 style="margin:0 0 10px 0;">{{ currentVod.vod_name }}</h2>
+                    <div style="font-size:13px; color:var(--text-sub);">
+                        <span style="color:var(--accent)">{{ currentSourceName }}</span> 
+                        <span style="margin:0 10px;">/</span> 
+                        {{ currentEpName }}
+                    </div>
+
+                    <div class="ep-grid">
+                        <div v-for="(url, name) in episodes" :key="name" 
+                             class="ep-item" :class="{active: currentPlayUrl === url}"
+                             @click="switchEp(name, url)">
+                            {{ name }}
+                        </div>
+                    </div>
+                </div>
+                
+                <h3 style="margin-top:20px;">猜你喜欢</h3>
+                <div class="grid">
+                    <div class="card" v-for="item in recommendList" :key="item.vod_id" @click="openPlayer(item)">
+                        <div class="poster-box">
+                            <img :src="item.vod_pic" @error="imgError" loading="lazy">
+                            <div class="badge">{{ item.vod_remarks }}</div>
+                        </div>
+                        <div class="meta">
+                            <div class="title">{{ item.vod_name }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<script>
+    const { createApp, ref, computed, onMounted } = Vue;
+
+    createApp({
+        setup() {
+            // 🛑 必须在这里填你的地址 🛑
+            const API_PROXY = 'https://cf-dianying.xiaolin4914.workers.dev/'; 
+
+            // ==========================================
+            // 🔒【隐私开关】在这里控制是否显示特殊福利资源
+            // true = 显示, false = 隐藏
+            // ==========================================
+            const showSpecial = ref(true); 
+
+
+            // 状态变量
+            const isSidebarOpen = ref(false);
+            const themeList = ['theme-dark', 'theme-light', 'theme-red'];
+            const currentTheme = ref('theme-dark');
+            
+            const playerMode = ref(false);
+            const loading = ref(false);
+            const list = ref([]);
+            const recommendList = ref([]);
+            const keyword = ref('');
+            const currentCat = ref('latest');
+
+            // 资源列表 (综合)
+            const generalSources = ref([
+                { key: 'guangsu', name: '光速资源', icon: 'fa-solid fa-bolt' },
+                { key: 'liangzi', name: '量子资源', icon: 'fa-solid fa-atom' },
+                { key: 'hongniu', name: '红牛资源', icon: 'fa-solid fa-bullhorn' },
+                { key: 'ikun', name: 'iKun资源', icon: 'fa-solid fa-basketball' },
+                { key: 'tianya', name: '天涯影视', icon: 'fa-solid fa-mountain-sun' },
+                { key: 'kuaiche', name: '快车资源', icon: 'fa-solid fa-truck-fast' },
+                { key: 'wujin', name: '无尽资源', icon: 'fa-solid fa-infinity' },
+                { key: 'zuidazy', name: '最大资源', icon: 'fa-solid fa-maximize' },
+                { key: 'yinghua', name: '樱花资源', icon: 'fa-solid fa-fan' },
+                { key: 'douban', name: '豆瓣资源', icon: 'fa-brands fa-douban' },
+                { key: 'subo', name: '速播资源', icon: 'fa-solid fa-forward' },
+                { key: 'uku', name: 'U酷资源', icon: 'fa-solid fa-u' },
+                { key: 'shanhai', name: '山海资源', icon: 'fa-solid fa-water' },
+                { key: 'xinlang', name: '新浪资源', icon: 'fa-brands fa-weibo' },
+                { key: 'wangwang', name: '旺旺资源', icon: 'fa-solid fa-dog' },
+                { key: 'baofeng', name: '暴风资源', icon: 'fa-solid fa-wind' },
+                { key: 'jisu', name: '极速资源', icon: 'fa-solid fa-gauge-high' },
+                { key: 'maoyan', name: '猫眼资源', icon: 'fa-solid fa-cat' },
+                { key: 'suoni', name: '索尼资源', icon: 'fa-solid fa-gamepad' },
+                { key: 'maotai', name: '茅台资源', icon: 'fa-solid fa-wine-bottle' },
+                { key: 'huya', name: '虎牙资源', icon: 'fa-solid fa-paw' },
+                { key: 'jinying', name: '金鹰资源', icon: 'fa-solid fa-feather' },
+                { key: 'shandian', name: '闪电资源', icon: 'fa-solid fa-bolt-lightning' },
+                { key: 'feifan', name: '非凡资源', icon: 'fa-solid fa-plane' },
+                { key: 'piaoling', name: '飘零资源', icon: 'fa-solid fa-snowflake' },
+                { key: 'modu', name: '魔都资源', icon: 'fa-solid fa-city' },
+                { key: 'yaya', name: '鸭鸭资源', icon: 'fa-solid fa-kiwi-bird' },
+                { key: 'ckzy', name: 'CK资源', icon: 'fa-solid fa-cube' }
+            ]);
+
+            // 资源列表 (特殊)
+            const specialSources = ref([
+                { key: '91madou', name: '91麻豆', icon: 'fa-solid fa-fire' },
+                { key: 'jkun', name: 'JKUN资源', icon: 'fa-solid fa-music' },
+                { key: 'siwa', name: '丝袜资源', icon: 'fa-solid fa-socks' },
+                { key: 'cl', name: '百万资源', icon: 'fa-solid fa-leaf' },
+                { key: '155zy', name: '155资源', icon: 'fa-solid fa-1' },
+                { key: 'souav', name: 'SouAV', icon: 'fa-solid fa-video' },
+                { key: 'youyou', name: '优优资源', icon: 'fa-solid fa-y' },
+                { key: 'zuise', name: '最色资源', icon: 'fa-solid fa-heart' },
+                { key: 'aosika', name: '奥斯卡', icon: 'fa-solid fa-trophy' },
+                { key: 'xiaoji', name: '小鸡资源', icon: 'fa-solid fa-egg' },
+                { key: 'xing', name: '幸资源', icon: 'fa-solid fa-star' },
+                { key: 'xingba', name: '杏吧资源', icon: 'fa-solid fa-lemon' },
+                { key: 'didi', name: '滴滴资源', icon: 'fa-solid fa-car' },
+                { key: 'yutu', name: '玉兔资源', icon: 'fa-solid fa-rabbit' },
+                { key: 'baipiao', name: '白嫖资源', icon: 'fa-solid fa-gift' },
+                { key: 'meishaonv', name: '美少女', icon: 'fa-solid fa-person-dress' },
+                { key: 'lebo', name: '乐播资源', icon: 'fa-solid fa-play' },
+                { key: 'taohua', name: '桃花资源', icon: 'fa-solid fa-spa' }
+            ]);
+
+            const currentSourceKey = ref('guangsu');
+            const currentSourceName = ref('光速资源');
+
+            // 播放器状态
+            const currentVod = ref(null);
+            const episodes = ref({});
+            const currentPlayUrl = ref('');
+            const currentEpName = ref('');
+            let hls = null;
+
+            // 核心功能：换肤 (修复版)
+            // 直接操作 document.body，确保 100% 生效
+            const switchTheme = () => {
+                let index = themeList.indexOf(currentTheme.value);
+                index = (index + 1) % themeList.length;
+                currentTheme.value = themeList[index];
+                
+                // 强制应用到 body
+                document.body.className = currentTheme.value;
+                localStorage.setItem('cloudtv_theme_v3', currentTheme.value);
+            };
+
+            const toggleSidebar = () => isSidebarOpen.value = !isSidebarOpen.value;
+
+            // 获取数据
+            const fetchData = async () => {
+                if(loading.value) return;
+                loading.value = true;
+                list.value = [];
+                
+                try {
+                    const target = currentSourceKey.value;
+                    let url = `${API_PROXY}?from=${target}&ac=detail`;
+                    
+                    if(keyword.value) {
+                        url += `&wd=${encodeURIComponent(keyword.value)}`;
+                    } else if (currentCat.value !== 'latest') {
+                        const map = { movie:'电影', tv:'电视剧', anime:'动漫', variety:'综艺' };
+                        url += `&wd=${encodeURIComponent(map[currentCat.value])}`;
+                    }
+
+                    const res = await fetch(url);
+                    const data = await res.json();
+                    if(data.list) list.value = data.list;
+                } catch(e) { console.error(e); }
+                loading.value = false;
+            };
+
+            const changeSource = (s) => {
+                currentSourceKey.value = s.key;
+                currentSourceName.value = s.name;
+                keyword.value = '';
+                playerMode.value = false;
+                fetchData();
+                if(window.innerWidth < 768) isSidebarOpen.value = false;
+            };
+
+            const changeCat = (cat) => {
+                currentCat.value = cat;
+                keyword.value = '';
+                fetchData();
+            };
+
+            const doSearch = () => {
+                if(!keyword.value) return;
+                currentCat.value = 'search';
+                fetchData();
+            };
+
+            // 播放
+            const openPlayer = (item) => {
+                currentVod.value = item;
+                const urlStr = item.vod_play_url;
+                const eps = {};
+                const splitChar = urlStr.includes('$$$') ? '$$$' : '#';
+                const arr = urlStr.split(splitChar);
+                let first = null;
+
+                arr.forEach(seg => {
+                    const p = seg.split('$');
+                    if(p.length >= 2) {
+                        const name = p[0];
+                        const url = p[p.length-1];
+                        if(url.includes('.m3u8') || url.includes('.mp4')) {
+                            eps[name] = url;
+                            if(!first) first = {name, url};
+                        }
+                    }
+                });
+
+                if(!first && arr.length > 0) {
+                     const p = arr[0].split('$');
+                     first = { name:'在线播放', url: p[p.length-1] };
+                     eps['在线播放'] = first.url;
+                }
+
+                episodes.value = eps;
+                if(first) switchEp(first.name, first.url);
+
+                recommendList.value = list.value.filter(v => v.vod_id !== item.vod_id).slice(0, 12);
+                playerMode.value = true;
+                window.scrollTo(0,0);
+            };
+
+            const switchEp = (name, url) => {
+                currentEpName.value = name;
+                currentPlayUrl.value = url;
+                setTimeout(() => {
+                    const video = document.getElementById('player');
+                    if(!video) return;
+                    if (Hls.isSupported()) {
+                        if(hls) hls.destroy();
+                        hls = new Hls();
+                        hls.loadSource(url);
+                        hls.attachMedia(video);
+                        hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
+                    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                        video.src = url;
+                        video.play();
+                    }
+                }, 100);
+            };
+
+            const closePlayer = () => {
+                playerMode.value = false;
+                if(hls) hls.destroy();
+            };
+
+            const goHome = () => {
+                keyword.value = '';
+                playerMode.value = false;
+                currentCat.value = 'latest';
+                fetchData();
+            };
+
+            const imgError = (e) => {
+                e.target.src = 'https://via.placeholder.com/300x450?text=No+Cover';
+            };
+
+            onMounted(() => {
+                // 初始化主题
+                const saved = localStorage.getItem('cloudtv_theme_v3');
+                if(saved && themeList.includes(saved)) {
+                    currentTheme.value = saved;
+                }
+                document.body.className = currentTheme.value; // 确保初始化时Body样式正确
+                
+                fetchData();
+            });
+
+            return {
+                showSpecial, // 导出开关变量
+                API_PROXY,
+                isSidebarOpen, toggleSidebar,
+                currentTheme, switchTheme,
+                generalSources, specialSources, currentSourceKey, currentSourceName, changeSource,
+                currentCat, changeCat, keyword, doSearch,
+                list, loading, playerMode,
+                openPlayer, closePlayer, goHome,
+                currentVod, episodes, currentPlayUrl, currentEpName, switchEp,
+                recommendList, imgError
+            };
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>

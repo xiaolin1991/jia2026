@@ -12,7 +12,7 @@
     <meta name="apple-mobile-web-app-title" content="CloudTV">
     <link rel="apple-touch-icon" href="https://via.placeholder.com/192x192/3ea6ff/ffffff?text=TV"> 
     
-    <title>晓林电影城,专门为电影,电视直播而生服务平台.</title>
+    <title>晓林电影城,专门为电影,电视直播而生服务平台</title>
     
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
@@ -30,7 +30,7 @@
         body.theme-purple { --bg-body: #2e1065; --bg-sidebar: #4c1d95; --bg-card: #5b21b6; --text-main: #ddd6fe; --text-sub: #a78bfa; --accent: #c084fc; --border: #6d28d9; --hover: #7c3aed; --pwa-bg: rgba(76,29,149,0.95); --live-bg: linear-gradient(135deg, #834d9b 0%, #d04ed6 100%); }
         body.theme-gold { --bg-body: #1c1c1c; --bg-sidebar: #2b2b2b; --bg-card: #383838; --text-main: #f1c40f; --text-sub: #bf953f; --accent: #f39c12; --border: #444; --hover: #4a4a4a; --pwa-bg: rgba(43,43,43,0.95); --live-bg: linear-gradient(135deg, #F0C27B 0%, #4B1248 100%); }
 
-        /* 全局样式 */
+        /* 禁止左右滑动 */
         html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: sans-serif; background: var(--bg-body); color: var(--text-main); transition: background 0.3s; }
         .app-layout { display: flex; flex-direction: column; height: 100%; width: 100%; overflow: hidden; }
         .main-container { display: flex; flex: 1; overflow: hidden; position: relative; width: 100%; }
@@ -179,7 +179,7 @@
                 </div>
             </div>
             <div class="sidebar-footer">
-                <div class="contact-title">有问题找到技术支持!</div>
+                <div class="contact-title">有问题找到我</div>
                 <a href="https://github.com/xiaolin1991" target="_blank" class="contact-link"><i class="fa-brands fa-github"></i> GitHub</a>
                 <div class="contact-link" @click="toggleWechat"><i class="fa-brands fa-weixin"></i> 微信咨询</div>
                 <div v-if="showWechat" class="wechat-box"><img src="./wechat.png" alt="请上传 wechat.png"></div>
@@ -211,13 +211,17 @@
                     <span v-if="loading && page===1">初始化中...</span>
                     <span v-else-if="loading"><i class="fa-solid fa-spinner fa-spin"></i> 加载中...</span>
                     <span v-else-if="!hasMore">🎉 已加载全部</span>
+                    <span v-else-if="list.length===0 && !loading" style="display:flex; flex-direction:column; align-items:center; gap:10px;">
+                        <div>暂无数据或加载失败</div>
+                        <button class="pwa-btn" style="width:auto; padding:8px 20px;" @click="fetchData(false)">重试连接</button>
+                    </span>
                     <span v-else>向上滑动加载更多</span>
                 </div>
             </div>
 
             <div v-if="!isPlayerMode && currentSourceKey === 'live'">
                 <div v-if="loading" style="text-align:center; padding:50px; color:var(--accent);"><i class="fa-solid fa-satellite-dish fa-spin fa-2x"></i><p>正在获取直播信号...</p></div>
-                <div v-else>
+                <div v-else-if="Object.keys(liveGroups).length > 0">
                     <div class="cats">
                         <div v-for="group in Object.keys(liveGroups)" :key="group" 
                              class="cat-btn" :class="{active: currentLiveGroup === group}"
@@ -232,6 +236,11 @@
                             <div class="live-name">{{ channel.vod_name }}</div>
                         </div>
                     </div>
+                </div>
+                <div v-else style="text-align:center; margin-top:50px;">
+                    <i class="fa-solid fa-triangle-exclamation fa-3x" style="color:var(--text-sub); margin-bottom:20px;"></i>
+                    <p style="color:var(--text-sub)">暂未获取到数据</p>
+                    <button class="pwa-btn" style="width:auto; padding:10px 30px;" @click="enterLiveMode">强制刷新重试</button>
                 </div>
             </div>
 
@@ -268,11 +277,25 @@
 
     createApp({
         setup() {
-            // === 配置 ===
+            // ===============================================
+            // ⭐⭐⭐ 【用户配置区】 ⭐⭐⭐
+            // ===============================================
+            
+            // 1. 你的 API 转发地址 (Worker)
             const API_PROXY = 'https://cf-dianying.xiaolin4914.workers.dev/'; 
-            const showSpecialSection = ref(true); 
+
+            // 2. 特殊/福利区开关 (重要！)
+            // true  = 显示 (开启福利区)
+            // false = 隐藏 (关闭福利区)
+            const showSpecialSection = ref(false); 
+
+            // 3. 微信图片开关 (默认关闭)
             const showWechat = ref(false);
             
+            // ===============================================
+            // ⭐⭐⭐ 【配置结束】 ⭐⭐⭐
+            // ===============================================
+
             // PWA
             const showPwaModal = ref(false);
             const isIOS = ref(false);
@@ -357,59 +380,31 @@
             const currentEpName = ref('');
             let hls = null;
 
-            // PWA
-            const initPWA = () => {
-                window.addEventListener('beforeinstallprompt', (e) => {
-                    e.preventDefault();
-                    installPrompt.value = e;
-                    checkShow();
-                });
-                checkShow();
-            };
-            const checkShow = () => {
-                const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-                if (isStandalone) return; 
-                const hasShown = localStorage.getItem('pwa_prompt_v13');
-                if (hasShown) return;
-                isIOS.value = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-                if (isMobile) setTimeout(() => showPwaModal.value = true, 2000);
-            };
-            const installPwa = () => {
-                if (installPrompt.value) {
-                    installPrompt.value.prompt();
-                    installPrompt.value.userChoice.then((choice) => { if (choice.outcome === 'accepted') closePwaModal(); });
-                }
-            };
+            const initPWA = () => { window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installPrompt.value = e; checkShow(); }); checkShow(); };
+            const checkShow = () => { if (localStorage.getItem('pwa_prompt_v13')) return; isIOS.value = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream; const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent); if (isMobile) setTimeout(() => showPwaModal.value = true, 2000); };
+            const installPwa = () => { if (installPrompt.value) { installPrompt.value.prompt(); installPrompt.value.userChoice.then((choice) => { if (choice.outcome === 'accepted') closePwaModal(); }); } };
             const closePwaModal = () => { showPwaModal.value = false; localStorage.setItem('pwa_prompt_v13', 'true'); };
 
-            // Theme
             const applyTheme = (theme) => { currentTheme.value = theme; document.body.className = theme; localStorage.setItem('cloudtv_theme_v10', theme); };
-            const switchTheme = () => {
-                let idx = themes.indexOf(currentTheme.value);
-                if(idx === -1) idx = 0;
-                idx = (idx + 1) % themes.length;
-                applyTheme(themes[idx]);
-            };
-
+            const switchTheme = () => { let idx = themes.indexOf(currentTheme.value); if(idx === -1) idx = 0; idx = (idx + 1) % themes.length; applyTheme(themes[idx]); };
             const toggleSidebar = () => isSidebarOpen.value = !isSidebarOpen.value;
             const toggleWechat = () => showWechat.value = !showWechat.value;
 
-            // 进入直播 (拉取 Worker 清洗后的数据)
+            // 直播模式 (带时间戳防缓存)
             const enterLiveMode = async () => {
                 currentSourceKey.value = 'live';
                 currentSourceName.value = '电视直播';
                 isPlayerMode.value = false;
                 if(window.innerWidth < 768) isSidebarOpen.value = false;
                 
-                if (Object.keys(liveGroups.value).length > 0) return; // 缓存
-
                 loading.value = true;
+                liveGroups.value = {}; 
+                
                 try {
-                    const res = await fetch(`${API_PROXY}?from=live`);
+                    // ⭐⭐⭐ 加上时间戳 timestamp 防缓存 ⭐⭐⭐
+                    const res = await fetch(`${API_PROXY}?from=live&t=${new Date().getTime()}`);
                     const data = await res.json();
                     
-                    // 分组逻辑
                     const groups = {};
                     if(data.list) {
                         data.list.forEach(item => {
@@ -419,8 +414,9 @@
                         });
                     }
                     liveGroups.value = groups;
-                    currentLiveGroup.value = Object.keys(groups)[0] || '';
-                } catch (e) { alert('直播源加载失败'); }
+                    if(groups['精选高清']) currentLiveGroup.value = '精选高清';
+                    else currentLiveGroup.value = Object.keys(groups)[0] || '';
+                } catch (e) { console.error('直播加载失败', e); }
                 loading.value = false;
             };
 
@@ -441,7 +437,8 @@
                 if (!isLoadMore) { page.value = 1; list.value = []; hasMore.value = true; if(contentRef.value) contentRef.value.scrollTop = 0; }
                 try {
                     const target = currentSourceKey.value;
-                    let url = `${API_PROXY}?from=${target}&ac=detail&pg=${page.value}`;
+                    // ⭐⭐⭐ 加上时间戳 timestamp 防缓存 ⭐⭐⭐
+                    let url = `${API_PROXY}?from=${target}&ac=detail&pg=${page.value}&t=${new Date().getTime()}`;
                     if(keyword.value) url += `&wd=${encodeURIComponent(keyword.value)}`;
                     else if (currentCat.value !== 'latest') {
                         const map = { movie:'电影', tv:'电视剧', anime:'动漫', variety:'综艺' };
@@ -506,6 +503,7 @@
                 if(!first && arr.length > 0) { const p = arr[0].split('$'); first = { n:'播放', u: p[p.length-1] }; eps['播放'] = first.u; }
                 episodes.value = eps;
                 if(first) switchEp(first.n, first.u);
+                recommendList.value = list.value.filter(v=>v.vod_id!==item.vod_id).slice(0, 12);
                 isPlayerMode.value = true;
                 nextTick(() => { if(contentRef.value) contentRef.value.scrollTop = 0; });
             };
@@ -518,10 +516,7 @@
                     if(!video) return;
                     if (Hls.isSupported()) {
                         if(hls) hls.destroy();
-                        hls = new Hls({
-                            // HLS 配置: 允许跨域和不安全内容
-                            xhrSetup: function (xhr, url) { xhr.withCredentials = false; }
-                        });
+                        hls = new Hls({ xhrSetup: function (xhr, url) { xhr.withCredentials = false; } });
                         hls.loadSource(url);
                         hls.attachMedia(video);
                         hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
@@ -552,7 +547,7 @@
                 recommendList, imgError,
                 handleScroll, page, hasMore,
                 showPwaModal, closePwaModal, isIOS, installPwa, installPrompt,
-                enterLiveMode, liveGroups, currentLiveGroup, playLive
+                enterLiveMode, liveGroups, currentLiveGroup, playLive, fetchData
             };
         }
     }).mount('#app');

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
     <meta name="referrer" content="no-referrer">
+    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -18,7 +19,6 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     
     <style>
-        /* === 1. 样式变量 === */
         :root { --sidebar-width: 240px; --header-height: 64px; }
 
         /* 主题定义 */
@@ -30,12 +30,12 @@
         body.theme-purple { --bg-body: #2e1065; --bg-sidebar: #4c1d95; --bg-card: #5b21b6; --text-main: #ddd6fe; --text-sub: #a78bfa; --accent: #c084fc; --border: #6d28d9; --hover: #7c3aed; --pwa-bg: rgba(76,29,149,0.95); --live-bg: linear-gradient(135deg, #834d9b 0%, #d04ed6 100%); }
         body.theme-gold { --bg-body: #1c1c1c; --bg-sidebar: #2b2b2b; --bg-card: #383838; --text-main: #f1c40f; --text-sub: #bf953f; --accent: #f39c12; --border: #444; --hover: #4a4a4a; --pwa-bg: rgba(43,43,43,0.95); --live-bg: linear-gradient(135deg, #F0C27B 0%, #4B1248 100%); }
 
-        /* 禁止左右滑动 */
+        /* 全局样式 */
         html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: sans-serif; background: var(--bg-body); color: var(--text-main); transition: background 0.3s; }
         .app-layout { display: flex; flex-direction: column; height: 100%; width: 100%; overflow: hidden; }
         .main-container { display: flex; flex: 1; overflow: hidden; position: relative; width: 100%; }
 
-        /* === 顶部 === */
+        /* Header */
         .header { height: var(--header-height); background: var(--bg-sidebar); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 20px; position: relative; z-index: 5000; box-sizing: border-box; }
         .left-area { display: flex; align-items: center; gap: 15px; z-index: 5001; }
         .menu-toggle { font-size: 20px; cursor: pointer; padding: 5px; }
@@ -48,7 +48,7 @@
         .btn-icon { width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; background: var(--bg-body); color: var(--text-main); transition: 0.2s; pointer-events: auto; }
         .btn-icon:hover { border-color: var(--accent); color: var(--accent); transform: scale(1.1); }
 
-        /* === 侧边栏 === */
+        /* Sidebar */
         .sidebar { width: var(--sidebar-width); background: var(--bg-sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; transition: transform 0.3s; z-index: 4000; }
         .sidebar-scroll { flex: 1; overflow-y: auto; padding: 10px 0; }
         .group-name { font-size: 12px; color: var(--text-sub); padding: 15px 15px 5px; font-weight: bold; }
@@ -62,13 +62,13 @@
         .wechat-box { background: #fff; padding: 5px; border-radius: 8px; margin-top: 5px; }
         .wechat-box img { width: 100%; display: block; border-radius: 4px; }
 
-        /* === 内容区 === */
+        /* Content */
         .content { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 20px; position: relative; scroll-behavior: auto; width: 100%; box-sizing: border-box; }
         .cats { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-        .cat-btn { padding: 6px 18px; border-radius: 20px; border: 1px solid var(--border); background: var(--bg-card); font-size: 13px; cursor: pointer; color: var(--text-main); transition: 0.2s; }
+        .cat-btn { padding: 6px 18px; border-radius: 20px; border: 1px solid var(--border); background: var(--bg-card); font-size: 13px; cursor: pointer; color: var(--text-main); transition: 0.2s; white-space: nowrap;}
         .cat-btn.active { background: var(--text-main); color: var(--bg-body); border-color: var(--text-main); font-weight: bold; }
 
-        /* 网格 */
+        /* Grid */
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; }
         .card { cursor: pointer; position: relative; width: 100%; overflow: hidden; }
         .poster-wrap { width: 100%; aspect-ratio: 2/3; border-radius: 8px; overflow: hidden; background: #000; position: relative; margin-bottom: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
@@ -77,31 +77,25 @@
         .badge { position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.8); color: #fbbf24; font-size: 10px; padding: 2px 5px; border-radius: 4px; }
         .title { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
 
-        /* 直播专用样式 */
+        /* Live Grid */
         .live-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; }
         .live-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; cursor: pointer; overflow: hidden; transition: 0.2s; text-align: center; }
         .live-card:hover { transform: translateY(-5px); border-color: var(--accent); }
         .live-cover { height: 90px; width: 100%; background: var(--live-bg); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 20px; font-weight: bold; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
         .live-name { padding: 12px 5px; font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        /* 播放器 */
+        .load-status { text-align: center; padding: 30px; color: var(--text-sub); font-size: 13px; width: 100%; clear: both; }
+
+        /* Player */
         .player-page { max-width: 1000px; margin: 0 auto; animation: fade 0.3s; padding-bottom: 50px; width: 100%; box-sizing: border-box; }
         @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
-        .video-box { width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 10px; overflow: hidden; margin-top: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); position: relative; }
+        .video-box { width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 10px; overflow: hidden; margin-top: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
         video { width: 100%; height: 100%; }
         .controls { padding: 20px 0; }
         .back-btn { display: inline-flex; align-items: center; gap: 5px; padding: 8px 16px; background: var(--bg-card); border-radius: 6px; cursor: pointer; font-size: 14px; margin-bottom: 15px; border: 1px solid var(--border); }
         .ep-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px; margin-top: 15px; max-height: 250px; overflow-y: auto; }
         .ep-item { text-align: center; padding: 8px; background: var(--bg-card); border-radius: 4px; font-size: 13px; cursor: pointer; border: 1px solid transparent; }
         .ep-item.active { background: var(--accent); color: white; }
-
-        /* 错误提示层 */
-        .error-overlay {
-            position: absolute; top:0; left:0; width:100%; height:100%;
-            background: rgba(0,0,0,0.8); color: white;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            z-index: 10; text-align: center; padding: 20px; box-sizing: border-box;
-        }
 
         /* PWA */
         .pwa-toast { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--pwa-bg); color: var(--text-main); padding: 20px; border-radius: 20px 20px 0 0; box-shadow: 0 -5px 40px rgba(0,0,0,0.5); z-index: 10000; display: flex; flex-direction: column; gap: 15px; backdrop-filter: blur(10px); border-top: 1px solid var(--border); animation: slideUp 0.4s ease-out; box-sizing: border-box; }
@@ -113,7 +107,7 @@
         .pwa-arrow { position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); color: var(--text-main); animation: bounce 2s infinite; display: none; z-index: 10001; }
         @keyframes bounce { 0%, 20%, 50%, 80%, 100% {transform:translateX(-50%) translateY(0);} 40% {transform:translateX(-50%) translateY(-10px);} 60% {transform:translateX(-50%) translateY(-5px);} }
 
-        /* 移动端 */
+        /* Mobile */
         @media (max-width: 768px) {
             .sidebar { position: fixed; left: 0; top: var(--header-height); bottom: 0; z-index: 6000; transform: translateX(-100%); }
             .sidebar.open { transform: translateX(0); box-shadow: 10px 0 20px rgba(0,0,0,0.5); }
@@ -159,7 +153,6 @@
     <div class="main-container">
         <aside class="sidebar" :class="{ open: isSidebarOpen }">
             <div class="sidebar-scroll">
-                
                 <div class="group-name">功能模式</div>
                 <div class="nav-item" :class="{active: currentSourceKey !== 'live'}" @click="changeSource(generalSources[0])">
                     <i class="fa-solid fa-film"></i> 影视点播
@@ -173,12 +166,10 @@
                     <div class="nav-item active">
                         <i class="fa-solid fa-tower-broadcast"></i> {{ currentSourceName }}
                     </div>
-
                     <div class="group-name">综合资源</div>
                     <div v-for="s in generalSources" :key="s.key" class="nav-item" @click="changeSource(s)">
                         <i :class="s.icon"></i> {{ s.name }}
                     </div>
-
                     <div v-if="showSpecialSection">
                         <div class="group-name" style="color:#e74c3c; margin-top:20px;">特殊 / 福利</div>
                         <div v-for="s in specialSources" :key="s.key" class="nav-item" @click="changeSource(s)">
@@ -187,23 +178,15 @@
                     </div>
                 </div>
             </div>
-
             <div class="sidebar-footer">
-                <div class="contact-title">有问题找到我</div>
-                <a href="https://github.com/xiaolin1991" target="_blank" class="contact-link">
-                    <i class="fa-brands fa-github"></i> GitHub
-                </a>
-                <div class="contact-link" @click="toggleWechat">
-                    <i class="fa-brands fa-weixin"></i> 微信咨询
-                </div>
-                <div v-if="showWechat" class="wechat-box">
-                    <img src="./wechat.png" alt="请上传 wechat.png">
-                </div>
+                <div class="contact-title">有问题找到技术支持!</div>
+                <a href="https://github.com/xiaolin1991" target="_blank" class="contact-link"><i class="fa-brands fa-github"></i> GitHub</a>
+                <div class="contact-link" @click="toggleWechat"><i class="fa-brands fa-weixin"></i> 微信咨询</div>
+                <div v-if="showWechat" class="wechat-box"><img src="./wechat.png" alt="请上传 wechat.png"></div>
             </div>
         </aside>
 
-        <div v-if="isSidebarOpen" @click="toggleSidebar" 
-             style="position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:5500;"></div>
+        <div v-if="isSidebarOpen" @click="toggleSidebar" style="position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:5500;"></div>
 
         <main class="content" ref="contentRef" @scroll="handleScroll">
             
@@ -215,7 +198,6 @@
                     <div class="cat-btn" :class="{active: currentCat==='anime'}" @click="changeCat('anime')">动漫</div>
                     <div class="cat-btn" :class="{active: currentCat==='variety'}" @click="changeCat('variety')">综艺</div>
                 </div>
-
                 <div class="grid">
                     <div class="card" v-for="item in list" :key="item.vod_id" @click="openPlayer(item)">
                         <div class="poster-wrap">
@@ -225,7 +207,6 @@
                         <div class="title">{{ item.vod_name }}</div>
                     </div>
                 </div>
-                
                 <div class="load-status">
                     <span v-if="loading && page===1">初始化中...</span>
                     <span v-else-if="loading"><i class="fa-solid fa-spinner fa-spin"></i> 加载中...</span>
@@ -235,54 +216,33 @@
             </div>
 
             <div v-if="!isPlayerMode && currentSourceKey === 'live'">
-                <div v-if="loading" style="text-align:center; padding:50px; color:var(--accent);">
-                    <i class="fa-solid fa-satellite-dish fa-spin fa-2x"></i>
-                    <p>正在获取直播信号...</p>
-                </div>
-                
+                <div v-if="loading" style="text-align:center; padding:50px; color:var(--accent);"><i class="fa-solid fa-satellite-dish fa-spin fa-2x"></i><p>正在获取直播信号...</p></div>
                 <div v-else>
                     <div class="cats">
-                        <div v-for="(channels, group) in liveGroups" :key="group" 
+                        <div v-for="group in Object.keys(liveGroups)" :key="group" 
                              class="cat-btn" :class="{active: currentLiveGroup === group}"
                              @click="currentLiveGroup = group">
                             {{ group }}
                         </div>
                     </div>
-
                     <div class="live-grid">
-                        <div v-for="channel in liveGroups[currentLiveGroup]" :key="channel.name" 
+                        <div v-for="channel in liveGroups[currentLiveGroup]" :key="channel.vod_name" 
                              class="live-card" @click="playLive(channel)">
-                            <div class="live-cover">{{ channel.name.substring(0,4) }}</div>
-                            <div class="live-name">{{ channel.name }}</div>
+                            <div class="live-cover">{{ channel.vod_name.substring(0,4) }}</div>
+                            <div class="live-name">{{ channel.vod_name }}</div>
                         </div>
                     </div>
                 </div>
             </div>
 
             <div v-else-if="isPlayerMode" class="player-page">
-                <div class="back-btn" @click="closePlayer">
-                    <i class="fa-solid fa-arrow-left"></i> 返回列表
-                </div>
-                <div class="video-box">
-                    <video id="player" controls autoplay playsinline></video>
-                    <div v-if="playError" class="error-overlay">
-                        <i class="fa-solid fa-triangle-exclamation fa-2x" style="margin-bottom:10px; color:#f39c12"></i>
-                        <div style="font-weight:bold; margin-bottom:5px">播放失败</div>
-                        <div style="font-size:12px; color:#ccc">该电视台限制了网页跨域播放<br>或者是 HTTP 源被浏览器拦截</div>
-                    </div>
-                </div>
+                <div class="back-btn" @click="closePlayer"><i class="fa-solid fa-arrow-left"></i> 返回列表</div>
+                <div class="video-box"><video id="player" controls autoplay playsinline></video></div>
                 <div class="controls">
                     <h2 style="margin:0;">{{ currentVod.vod_name }}</h2>
-                    <div style="font-size:13px; color:var(--text-sub); margin-top:5px;">
-                        正在播放: {{ currentEpName }} <span style="margin-left:10px; color:var(--accent)">({{ currentSourceName }})</span>
-                    </div>
-                    
+                    <div style="font-size:13px; color:var(--text-sub); margin-top:5px;">正在播放: {{ currentEpName }} <span style="margin-left:10px; color:var(--accent)">({{ currentSourceName }})</span></div>
                     <div v-if="currentSourceKey !== 'live'" class="ep-list">
-                        <div v-for="(url, name) in episodes" :key="name" 
-                             class="ep-item" :class="{active: currentPlayUrl === url}"
-                             @click="switchEp(name, url)">
-                            {{ name }}
-                        </div>
+                        <div v-for="(url, name) in episodes" :key="name" class="ep-item" :class="{active: currentPlayUrl === url}" @click="switchEp(name, url)">{{ name }}</div>
                     </div>
                 </div>
             </div>
@@ -291,10 +251,7 @@
     </div>
 
     <div v-if="showPwaModal" class="pwa-toast" :class="{ 'show-arrow': isIOS }">
-        <div class="pwa-header">
-            <div class="pwa-title"><i class="fa-solid fa-download"></i> 安装应用到桌面</div>
-            <div class="pwa-close" @click="closePwaModal"><i class="fa-solid fa-xmark"></i></div>
-        </div>
+        <div class="pwa-header"><div class="pwa-title"><i class="fa-solid fa-download"></i> 安装应用到桌面</div><div class="pwa-close" @click="closePwaModal"><i class="fa-solid fa-xmark"></i></div></div>
         <div class="pwa-desc">
             <div v-if="isIOS">点击下方工具栏 <i class="fa-solid fa-arrow-up-from-bracket"></i> 分享按钮，<br>选择 <strong>“添加到主屏幕”</strong>。</div>
             <div v-else>点击下方按钮即可安装到桌面，体验更佳。</div>
@@ -311,23 +268,11 @@
 
     createApp({
         setup() {
-            // ===============================================
-            // ⭐⭐⭐ 【用户配置区】 ⭐⭐⭐
-            // ===============================================
-            
-            // 你的 API 转发地址
+            // === 配置 ===
             const API_PROXY = 'https://cf-dianying.xiaolin4914.workers.dev/'; 
-
-            // 1. 特殊/福利区开关 (true=显示, false=隐藏)
-            const showSpecialSection = ref(false); 
-
-            // 2. 微信图片开关 (默认关闭)
+            const showSpecialSection = ref(true); 
             const showWechat = ref(false);
             
-            // ===============================================
-            // ⭐⭐⭐ 【配置结束】 ⭐⭐⭐
-            // ===============================================
-
             // PWA
             const showPwaModal = ref(false);
             const isIOS = ref(false);
@@ -337,7 +282,6 @@
             const themes = ['theme-dark', 'theme-light', 'theme-red', 'theme-blue', 'theme-green', 'theme-purple', 'theme-gold'];
             const currentTheme = ref('theme-dark');
             const isPlayerMode = ref(false);
-            const playError = ref(false);
             const loading = ref(false);
             const contentRef = ref(null);
 
@@ -413,7 +357,7 @@
             const currentEpName = ref('');
             let hls = null;
 
-            // PWA Logic
+            // PWA
             const initPWA = () => {
                 window.addEventListener('beforeinstallprompt', (e) => {
                     e.preventDefault();
@@ -422,7 +366,6 @@
                 });
                 checkShow();
             };
-
             const checkShow = () => {
                 const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
                 if (isStandalone) return; 
@@ -432,26 +375,16 @@
                 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
                 if (isMobile) setTimeout(() => showPwaModal.value = true, 2000);
             };
-
             const installPwa = () => {
                 if (installPrompt.value) {
                     installPrompt.value.prompt();
-                    installPrompt.value.userChoice.then((choice) => {
-                        if (choice.outcome === 'accepted') closePwaModal();
-                    });
+                    installPrompt.value.userChoice.then((choice) => { if (choice.outcome === 'accepted') closePwaModal(); });
                 }
             };
+            const closePwaModal = () => { showPwaModal.value = false; localStorage.setItem('pwa_prompt_v13', 'true'); };
 
-            const closePwaModal = () => {
-                showPwaModal.value = false;
-                localStorage.setItem('pwa_prompt_v13', 'true');
-            };
-
-            const applyTheme = (theme) => {
-                currentTheme.value = theme;
-                document.body.className = theme; 
-                localStorage.setItem('cloudtv_theme_v10', theme);
-            };
+            // Theme
+            const applyTheme = (theme) => { currentTheme.value = theme; document.body.className = theme; localStorage.setItem('cloudtv_theme_v10', theme); };
             const switchTheme = () => {
                 let idx = themes.indexOf(currentTheme.value);
                 if(idx === -1) idx = 0;
@@ -462,40 +395,29 @@
             const toggleSidebar = () => isSidebarOpen.value = !isSidebarOpen.value;
             const toggleWechat = () => showWechat.value = !showWechat.value;
 
-            // M3U解析
-            const parseM3u = (text) => {
-                const lines = text.split('\n');
-                const groups = {};
-                let currentGroup = '其他频道';
-                lines.forEach(line => {
-                    line = line.trim();
-                    if (line.startsWith('#EXTINF')) {
-                        const groupMatch = line.match(/group-title="([^"]*)"/);
-                        if (groupMatch) currentGroup = groupMatch[1];
-                        const nameParts = line.split(',');
-                        const name = nameParts[nameParts.length - 1].trim();
-                        if (!groups[currentGroup]) groups[currentGroup] = [];
-                        groups[currentGroup].push({ name, url: '' });
-                    } else if (line.startsWith('http')) {
-                        if (groups[currentGroup] && groups[currentGroup].length > 0) {
-                            groups[currentGroup][groups[currentGroup].length - 1].url = line;
-                        }
-                    }
-                });
-                return groups;
-            };
-
+            // 进入直播 (拉取 Worker 清洗后的数据)
             const enterLiveMode = async () => {
                 currentSourceKey.value = 'live';
                 currentSourceName.value = '电视直播';
                 isPlayerMode.value = false;
                 if(window.innerWidth < 768) isSidebarOpen.value = false;
-                if (Object.keys(liveGroups.value).length > 0) return;
+                
+                if (Object.keys(liveGroups.value).length > 0) return; // 缓存
+
                 loading.value = true;
                 try {
                     const res = await fetch(`${API_PROXY}?from=live`);
-                    const text = await res.text();
-                    const groups = parseM3u(text);
+                    const data = await res.json();
+                    
+                    // 分组逻辑
+                    const groups = {};
+                    if(data.list) {
+                        data.list.forEach(item => {
+                            const gName = item.type_name || '其他';
+                            if(!groups[gName]) groups[gName] = [];
+                            groups[gName].push(item);
+                        });
+                    }
                     liveGroups.value = groups;
                     currentLiveGroup.value = Object.keys(groups)[0] || '';
                 } catch (e) { alert('直播源加载失败'); }
@@ -503,12 +425,12 @@
             };
 
             const playLive = (channel) => {
-                currentVod.value = { vod_name: channel.name };
+                currentVod.value = channel;
                 currentEpName.value = '直播中';
                 currentSourceName.value = '电视直播';
                 isPlayerMode.value = true;
-                playError.value = false; // 重置错误
-                switchEp('Live', channel.url);
+                const url = channel.vod_play_url.split('$')[1];
+                switchEp('Live', url);
                 nextTick(() => { if(contentRef.value) contentRef.value.scrollTop = 0; });
             };
 
@@ -584,57 +506,26 @@
                 if(!first && arr.length > 0) { const p = arr[0].split('$'); first = { n:'播放', u: p[p.length-1] }; eps['播放'] = first.u; }
                 episodes.value = eps;
                 if(first) switchEp(first.n, first.u);
-                recommendList.value = list.value.filter(v=>v.vod_id!==item.vod_id).slice(0, 12);
                 isPlayerMode.value = true;
-                playError.value = false; 
                 nextTick(() => { if(contentRef.value) contentRef.value.scrollTop = 0; });
             };
 
             const switchEp = (name, url) => {
                 currentEpName.value = name;
                 currentPlayUrl.value = url;
-                playError.value = false;
-                
                 setTimeout(() => {
                     const video = document.getElementById('player');
                     if(!video) return;
                     if (Hls.isSupported()) {
                         if(hls) hls.destroy();
                         hls = new Hls({
-                            // 强化配置：容错
-                            manifestLoadingTimeOut: 10000,
-                            manifestLoadingMaxRetry: 3,
-                            levelLoadingTimeOut: 10000,
-                            levelLoadingMaxRetry: 3,
-                            fragLoadingTimeOut: 20000,
-                            fragLoadingMaxRetry: 3
+                            // HLS 配置: 允许跨域和不安全内容
+                            xhrSetup: function (xhr, url) { xhr.withCredentials = false; }
                         });
                         hls.loadSource(url);
                         hls.attachMedia(video);
                         hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
-                        hls.on(Hls.Events.ERROR, function (event, data) {
-                            if (data.fatal) {
-                                console.log('HLS Error:', data);
-                                switch (data.type) {
-                                    case Hls.ErrorTypes.NETWORK_ERROR:
-                                        console.log("fatal network error encountered, try to recover");
-                                        hls.startLoad();
-                                        break;
-                                    case Hls.ErrorTypes.MEDIA_ERROR:
-                                        console.log("fatal media error encountered, try to recover");
-                                        hls.recoverMediaError();
-                                        break;
-                                    default:
-                                        hls.destroy();
-                                        playError.value = true; // 显示错误提示
-                                        break;
-                                }
-                            }
-                        });
-                    } else if (video.canPlayType('application/vnd.apple.mpegurl')) { 
-                        video.src = url; 
-                        video.play(); 
-                    }
+                    } else if (video.canPlayType('application/vnd.apple.mpegurl')) { video.src = url; video.play(); }
                 }, 100);
             };
 
@@ -655,7 +546,7 @@
                 currentTheme, switchTheme,
                 generalSources, specialSources, currentSourceKey, currentSourceName, changeSource,
                 currentCat, changeCat, keyword, doSearch,
-                list, loading, isPlayerMode, playError,
+                list, loading, isPlayerMode,
                 openPlayer, closePlayer, goHome,
                 currentVod, episodes, currentPlayUrl, currentEpName, switchEp,
                 recommendList, imgError,

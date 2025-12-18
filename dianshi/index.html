@@ -12,7 +12,7 @@
     <meta name="apple-mobile-web-app-title" content="CloudTV">
     <link rel="apple-touch-icon" href="https://via.placeholder.com/192x192/3ea6ff/ffffff?text=TV"> 
     
-    <title>晓林电影城,专门为电影,电视直播而生服务平台</title>
+    <title>CloudTV Ultimate</title>
     
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
@@ -133,13 +133,15 @@
         <div class="left-area">
             <i class="fa-solid fa-bars menu-toggle" @click="toggleSidebar"></i>
             <div class="logo" @click="goHome">
-                <i class="fa-solid fa-cloud"></i> 晓林电影城
+                <i class="fa-solid fa-cloud"></i> CloudTV
             </div>
         </div>
+
         <div class="search-box">
             <input v-model="keyword" @keyup.enter="doSearch" placeholder="搜索全网资源...">
             <i class="fa-solid fa-magnifying-glass search-icon" @click="doSearch"></i>
         </div>
+
         <div class="header-right">
             <div class="btn-icon" @click.stop="switchTheme" title="切换颜色">
                 <i class="fa-solid fa-palette"></i>
@@ -153,6 +155,7 @@
     <div class="main-container">
         <aside class="sidebar" :class="{ open: isSidebarOpen }">
             <div class="sidebar-scroll">
+                
                 <div class="group-name">功能模式</div>
                 <div class="nav-item" :class="{active: currentSourceKey !== 'live'}" @click="changeSource(generalSources[0])">
                     <i class="fa-solid fa-film"></i> 影视点播
@@ -166,27 +169,41 @@
                     <div class="nav-item active">
                         <i class="fa-solid fa-tower-broadcast"></i> {{ currentSourceName }}
                     </div>
+
                     <div class="group-name">综合资源</div>
-                    <div v-for="s in generalSources" :key="s.key" class="nav-item" @click="changeSource(s)">
+                    <div v-for="s in generalSources" :key="s.key" 
+                         class="nav-item" :class="{active: currentSourceKey === s.key}"
+                         @click="changeSource(s)">
                         <i :class="s.icon"></i> {{ s.name }}
                     </div>
+
                     <div v-if="showSpecialSection">
                         <div class="group-name" style="color:#e74c3c; margin-top:20px;">特殊 / 福利</div>
-                        <div v-for="s in specialSources" :key="s.key" class="nav-item" @click="changeSource(s)">
+                        <div v-for="s in specialSources" :key="s.key" 
+                             class="nav-item" :class="{active: currentSourceKey === s.key}"
+                             @click="changeSource(s)">
                             <i :class="s.icon"></i> {{ s.name }}
                         </div>
                     </div>
                 </div>
             </div>
+
             <div class="sidebar-footer">
                 <div class="contact-title">有问题找到我</div>
-                <a href="https://github.com/xiaolin1991" target="_blank" class="contact-link"><i class="fa-brands fa-github"></i> GitHub</a>
-                <div class="contact-link" @click="toggleWechat"><i class="fa-brands fa-weixin"></i> 微信咨询</div>
-                <div v-if="showWechat" class="wechat-box"><img src="./wechat.png" alt="请上传 wechat.png"></div>
+                <a href="https://github.com/xiaolin1991" target="_blank" class="contact-link">
+                    <i class="fa-brands fa-github"></i> GitHub
+                </a>
+                <div class="contact-link" @click="toggleWechat">
+                    <i class="fa-brands fa-weixin"></i> 微信咨询
+                </div>
+                <div v-if="showWechat" class="wechat-box">
+                    <img src="./wechat.png" alt="请上传 wechat.png">
+                </div>
             </div>
         </aside>
 
-        <div v-if="isSidebarOpen" @click="toggleSidebar" style="position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:5500;"></div>
+        <div v-if="isSidebarOpen" @click="toggleSidebar" 
+             style="position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:5500;"></div>
 
         <main class="content" ref="contentRef" @scroll="handleScroll">
             
@@ -198,6 +215,7 @@
                     <div class="cat-btn" :class="{active: currentCat==='anime'}" @click="changeCat('anime')">动漫</div>
                     <div class="cat-btn" :class="{active: currentCat==='variety'}" @click="changeCat('variety')">综艺</div>
                 </div>
+
                 <div class="grid">
                     <div class="card" v-for="item in list" :key="item.vod_id" @click="openPlayer(item)">
                         <div class="poster-wrap">
@@ -207,6 +225,7 @@
                         <div class="title">{{ item.vod_name }}</div>
                     </div>
                 </div>
+
                 <div class="load-status">
                     <span v-if="loading && page===1">初始化中...</span>
                     <span v-else-if="loading"><i class="fa-solid fa-spinner fa-spin"></i> 加载中...</span>
@@ -220,7 +239,11 @@
             </div>
 
             <div v-if="!isPlayerMode && currentSourceKey === 'live'">
-                <div v-if="loading" style="text-align:center; padding:50px; color:var(--accent);"><i class="fa-solid fa-satellite-dish fa-spin fa-2x"></i><p>正在获取直播信号...</p></div>
+                <div v-if="loading" style="text-align:center; padding:50px; color:var(--accent);">
+                    <i class="fa-solid fa-satellite-dish fa-spin fa-2x"></i>
+                    <p>正在获取直播信号...</p>
+                </div>
+                
                 <div v-else-if="Object.keys(liveGroups).length > 0">
                     <div class="cats">
                         <div v-for="group in Object.keys(liveGroups)" :key="group" 
@@ -229,6 +252,7 @@
                             {{ group }}
                         </div>
                     </div>
+
                     <div class="live-grid">
                         <div v-for="channel in liveGroups[currentLiveGroup]" :key="channel.vod_name" 
                              class="live-card" @click="playLive(channel)">
@@ -245,13 +269,37 @@
             </div>
 
             <div v-else-if="isPlayerMode" class="player-page">
-                <div class="back-btn" @click="closePlayer"><i class="fa-solid fa-arrow-left"></i> 返回列表</div>
-                <div class="video-box"><video id="player" controls autoplay playsinline></video></div>
+                <div class="back-btn" @click="closePlayer">
+                    <i class="fa-solid fa-arrow-left"></i> 返回列表
+                </div>
+
+                <div class="video-box">
+                    <video id="player" controls autoplay playsinline></video>
+                </div>
+
                 <div class="controls">
                     <h2 style="margin:0;">{{ currentVod.vod_name }}</h2>
-                    <div style="font-size:13px; color:var(--text-sub); margin-top:5px;">正在播放: {{ currentEpName }} <span style="margin-left:10px; color:var(--accent)">({{ currentSourceName }})</span></div>
+                    <div style="font-size:13px; color:var(--text-sub); margin-top:5px;">
+                        正在播放: {{ currentEpName }} <span style="margin-left:10px; color:var(--accent)">({{ currentSourceName }})</span>
+                    </div>
+
                     <div v-if="currentSourceKey !== 'live'" class="ep-list">
-                        <div v-for="(url, name) in episodes" :key="name" class="ep-item" :class="{active: currentPlayUrl === url}" @click="switchEp(name, url)">{{ name }}</div>
+                        <div v-for="(url, name) in episodes" :key="name" 
+                             class="ep-item" :class="{active: currentPlayUrl === url}"
+                             @click="switchEp(name, url)">
+                            {{ name }}
+                        </div>
+                    </div>
+                </div>
+
+                <h3 style="margin-top:30px;">猜你喜欢</h3>
+                <div class="grid">
+                    <div class="card" v-for="item in recommendList" :key="item.vod_id" @click="openPlayer(item)">
+                        <div class="poster-wrap">
+                            <img :src="item.vod_pic" class="poster" @error="imgError">
+                            <div class="badge">{{ item.vod_remarks }}</div>
+                        </div>
+                        <div class="title">{{ item.vod_name }}</div>
                     </div>
                 </div>
             </div>
@@ -260,7 +308,10 @@
     </div>
 
     <div v-if="showPwaModal" class="pwa-toast" :class="{ 'show-arrow': isIOS }">
-        <div class="pwa-header"><div class="pwa-title"><i class="fa-solid fa-download"></i> 安装应用到桌面</div><div class="pwa-close" @click="closePwaModal"><i class="fa-solid fa-xmark"></i></div></div>
+        <div class="pwa-header">
+            <div class="pwa-title"><i class="fa-solid fa-download"></i> 安装应用到桌面</div>
+            <div class="pwa-close" @click="closePwaModal"><i class="fa-solid fa-xmark"></i></div>
+        </div>
         <div class="pwa-desc">
             <div v-if="isIOS">点击下方工具栏 <i class="fa-solid fa-arrow-up-from-bracket"></i> 分享按钮，<br>选择 <strong>“添加到主屏幕”</strong>。</div>
             <div v-else>点击下方按钮即可安装到桌面，体验更佳。</div>
@@ -282,16 +333,12 @@
             // ===============================================
             
             // 1. 你的 API 转发地址 (Worker)
-<<<<<<< HEAD
-            const API_PROXY = 'https://api.hanglinkj.com/'; 
-=======
             const API_PROXY = 'https://cf-dianying.xiaolin4914.workers.dev/'; 
->>>>>>> 8eab7606ba859f4ed2de6cffcb92dd627594c903
 
             // 2. 特殊/福利区开关 (重要！)
             // true  = 显示 (开启福利区)
             // false = 隐藏 (关闭福利区)
-            const showSpecialSection = ref(false); 
+            const showSpecialSection = ref(true); 
 
             // 3. 微信图片开关 (默认关闭)
             const showWechat = ref(false);
@@ -441,8 +488,9 @@
                 if (!isLoadMore) { page.value = 1; list.value = []; hasMore.value = true; if(contentRef.value) contentRef.value.scrollTop = 0; }
                 try {
                     const target = currentSourceKey.value;
-                    // ⭐⭐⭐ 加上时间戳 timestamp 防缓存 ⭐⭐⭐
-                    let url = `${API_PROXY}?from=${target}&ac=detail&pg=${page.value}&t=${new Date().getTime()}`;
+                    // ⭐⭐⭐ 移除 t 参数，避免采集站报错 ⭐⭐⭐
+                    let url = `${API_PROXY}?from=${target}&ac=detail&pg=${page.value}`;
+                    
                     if(keyword.value) url += `&wd=${encodeURIComponent(keyword.value)}`;
                     else if (currentCat.value !== 'latest') {
                         const map = { movie:'电影', tv:'电视剧', anime:'动漫', variety:'综艺' };

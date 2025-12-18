@@ -12,7 +12,7 @@
     <meta name="apple-mobile-web-app-title" content="CloudTV">
     <link rel="apple-touch-icon" href="https://via.placeholder.com/192x192/3ea6ff/ffffff?text=TV"> 
     
-    <title>晓林影视城,为美好生活出发的平台</title>
+    <title>晓林影视城,专门提供电影电影观看而生.</title>
     
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
@@ -107,34 +107,49 @@
         .pwa-arrow { position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); color: var(--text-main); animation: bounce 2s infinite; display: none; z-index: 10001; }
         @keyframes bounce { 0%, 20%, 50%, 80%, 100% {transform:translateX(-50%) translateY(0);} 40% {transform:translateX(-50%) translateY(-10px);} 60% {transform:translateX(-50%) translateY(-5px);} }
 
+        /* --- 新增：手机端搜索框样式 --- */
+        .mobile-search-trigger { display: none; }
+        
+        .mobile-search-panel {
+            background: var(--bg-sidebar);
+            height: 0;
+            overflow: hidden;
+            transition: height 0.3s ease;
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            border-bottom: 1px solid var(--border);
+            position: relative;
+            z-index: 4500;
+        }
+        .mobile-search-panel.open { height: 60px; }
+        
+        .mobile-input-group {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            background: var(--bg-body);
+            border-radius: 30px;
+            padding: 5px 15px;
+            border: 1px solid var(--border);
+        }
+        .mobile-input-group input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            padding: 5px;
+            outline: none;
+            font-size: 14px;
+        }
+        .mobile-input-group i { color: var(--accent); margin-left: 10px; cursor: pointer;}
+
         /* Mobile */
         @media (max-width: 768px) {
+            .mobile-search-trigger { display: flex; } /* 手机端显示搜索按钮 */
             .sidebar { position: fixed; left: 0; top: var(--header-height); bottom: 0; z-index: 6000; transform: translateX(-100%); }
             .sidebar.open { transform: translateX(0); box-shadow: 10px 0 20px rgba(0,0,0,0.5); }
-            
-            /* 修改区域：强制手机显示搜索框并调整位置 */
-            .search-box { 
-                display: flex; 
-                position: absolute;
-                top: 50%; /* 垂直定位 */
-                width: auto;
-                left: 130px;  /* 避开左侧LOGO */
-                right: 90px;  /* 避开右侧按钮 */
-                transform: translateY(-50%); /* 垂直居中 */
-                max-width: none;
-            }
-            .search-box input {
-                padding: 6px 30px 6px 10px;
-                font-size: 12px;
-                height: 32px;
-            }
-            .search-icon {
-                font-size: 12px;
-                right: 10px;
-            }
-            .logo { font-size: 16px; max-width: 100px; } /* 缩小手机端Logo防止拥挤 */
-            /* 修改结束 */
-
+            .search-box { display: none; }
             .grid { grid-template-columns: repeat(4, 1fr); gap: 8px; }
             .live-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
             .title { font-size: 11px; margin-top: 4px; }
@@ -161,11 +176,15 @@
         </div>
 
         <div class="search-box">
-            <input v-model="keyword" @keyup.enter="doSearch" placeholder="搜索...">
+            <input v-model="keyword" @keyup.enter="doSearch" placeholder="搜索全网资源...">
             <i class="fa-solid fa-magnifying-glass search-icon" @click="doSearch"></i>
         </div>
 
         <div class="header-right">
+            <div class="btn-icon mobile-search-trigger" @click="toggleMobileSearch">
+                <i class="fa-solid fa-magnifying-glass"></i>
+            </div>
+
             <div class="btn-icon" @click.stop="switchTheme" title="切换颜色">
                 <i class="fa-solid fa-palette"></i>
             </div>
@@ -174,6 +193,13 @@
             </div>
         </div>
     </header>
+
+    <div class="mobile-search-panel" :class="{ open: showMobileSearch }">
+        <div class="mobile-input-group">
+            <input v-model="keyword" @keyup.enter="doSearch" placeholder="输入片名搜索..." ref="mobileInputRef">
+            <i class="fa-solid fa-paper-plane" @click="doSearch"></i>
+        </div>
+    </div>
 
     <div class="main-container">
         <aside class="sidebar" :class="{ open: isSidebarOpen }">
@@ -356,7 +382,7 @@
             // ===============================================
             
             // 1. 你的 API 转发地址 (Worker)
-            const API_PROXY = 'https://api.hanglinkj.com/'; 
+            const API_PROXY = 'https://cf-dianying.xiaolin4914.workers.dev/'; 
 
             // 2. 特殊/福利区开关 (重要！)
             // true  = 显示 (开启福利区)
@@ -376,6 +402,10 @@
             const installPrompt = ref(null);
 
             const isSidebarOpen = ref(false);
+            // 手机端搜索框控制变量
+            const showMobileSearch = ref(false);
+            const mobileInputRef = ref(null);
+
             const themes = ['theme-dark', 'theme-light', 'theme-red', 'theme-blue', 'theme-green', 'theme-purple', 'theme-gold'];
             const currentTheme = ref('theme-dark');
             const isPlayerMode = ref(false);
@@ -463,6 +493,14 @@
             const switchTheme = () => { let idx = themes.indexOf(currentTheme.value); if(idx === -1) idx = 0; idx = (idx + 1) % themes.length; applyTheme(themes[idx]); };
             const toggleSidebar = () => isSidebarOpen.value = !isSidebarOpen.value;
             const toggleWechat = () => showWechat.value = !showWechat.value;
+            
+            // 切换手机端搜索框
+            const toggleMobileSearch = () => {
+                showMobileSearch.value = !showMobileSearch.value;
+                if(showMobileSearch.value) {
+                    nextTick(() => mobileInputRef.value && mobileInputRef.value.focus());
+                }
+            };
 
             // 直播模式 (带时间戳防缓存)
             const enterLiveMode = async () => {
@@ -475,7 +513,6 @@
                 liveGroups.value = {}; 
                 
                 try {
-                    // ⭐⭐⭐ 加上时间戳 timestamp 防缓存 ⭐⭐⭐
                     const res = await fetch(`${API_PROXY}?from=live&t=${new Date().getTime()}`);
                     const data = await res.json();
                     
@@ -511,7 +548,6 @@
                 if (!isLoadMore) { page.value = 1; list.value = []; hasMore.value = true; if(contentRef.value) contentRef.value.scrollTop = 0; }
                 try {
                     const target = currentSourceKey.value;
-                    // ⭐⭐⭐ 移除 t 参数，避免采集站报错 ⭐⭐⭐
                     let url = `${API_PROXY}?from=${target}&ac=detail&pg=${page.value}`;
                     
                     if(keyword.value) url += `&wd=${encodeURIComponent(keyword.value)}`;
@@ -555,6 +591,10 @@
 
             const doSearch = () => {
                 if(!keyword.value) return;
+                
+                // 搜索后自动收起手机搜索框
+                showMobileSearch.value = false;
+
                 if(currentSourceKey.value === 'live') { currentSourceKey.value = 'guangsu'; currentSourceName.value = '光速资源'; }
                 currentCat.value = 'search';
                 fetchData(false);
@@ -622,7 +662,9 @@
                 recommendList, imgError,
                 handleScroll, page, hasMore,
                 showPwaModal, closePwaModal, isIOS, installPwa, installPrompt,
-                enterLiveMode, liveGroups, currentLiveGroup, playLive, fetchData
+                enterLiveMode, liveGroups, currentLiveGroup, playLive, fetchData,
+                // 导出手机搜索相关的变量和方法
+                showMobileSearch, toggleMobileSearch, mobileInputRef
             };
         }
     }).mount('#app');

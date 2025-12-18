@@ -12,7 +12,7 @@
     <meta name="apple-mobile-web-app-title" content="CloudTV">
     <link rel="apple-touch-icon" href="https://via.placeholder.com/192x192/3ea6ff/ffffff?text=TV"> 
     
-    <title>CloudTV Ultimate</title>
+    <title>晓林影视城,为美好生活出发的平台</title>
     
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
@@ -111,7 +111,30 @@
         @media (max-width: 768px) {
             .sidebar { position: fixed; left: 0; top: var(--header-height); bottom: 0; z-index: 6000; transform: translateX(-100%); }
             .sidebar.open { transform: translateX(0); box-shadow: 10px 0 20px rgba(0,0,0,0.5); }
-            .search-box { display: none; }
+            
+            /* 修改区域：强制手机显示搜索框并调整位置 */
+            .search-box { 
+                display: flex; 
+                position: absolute;
+                top: 50%; /* 垂直定位 */
+                width: auto;
+                left: 130px;  /* 避开左侧LOGO */
+                right: 90px;  /* 避开右侧按钮 */
+                transform: translateY(-50%); /* 垂直居中 */
+                max-width: none;
+            }
+            .search-box input {
+                padding: 6px 30px 6px 10px;
+                font-size: 12px;
+                height: 32px;
+            }
+            .search-icon {
+                font-size: 12px;
+                right: 10px;
+            }
+            .logo { font-size: 16px; max-width: 100px; } /* 缩小手机端Logo防止拥挤 */
+            /* 修改结束 */
+
             .grid { grid-template-columns: repeat(4, 1fr); gap: 8px; }
             .live-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
             .title { font-size: 11px; margin-top: 4px; }
@@ -133,12 +156,12 @@
         <div class="left-area">
             <i class="fa-solid fa-bars menu-toggle" @click="toggleSidebar"></i>
             <div class="logo" @click="goHome">
-                <i class="fa-solid fa-cloud"></i> CloudTV
+                <i class="fa-solid fa-cloud"></i> 晓林影视城
             </div>
         </div>
 
         <div class="search-box">
-            <input v-model="keyword" @keyup.enter="doSearch" placeholder="搜索全网资源...">
+            <input v-model="keyword" @keyup.enter="doSearch" placeholder="搜索...">
             <i class="fa-solid fa-magnifying-glass search-icon" @click="doSearch"></i>
         </div>
 
@@ -333,12 +356,12 @@
             // ===============================================
             
             // 1. 你的 API 转发地址 (Worker)
-            const API_PROXY = 'https://cf-dianying.xiaolin4914.workers.dev/'; 
+            const API_PROXY = 'https://api.hanglinkj.com/'; 
 
             // 2. 特殊/福利区开关 (重要！)
             // true  = 显示 (开启福利区)
             // false = 隐藏 (关闭福利区)
-            const showSpecialSection = ref(true); 
+            const showSpecialSection = ref(false); 
 
             // 3. 微信图片开关 (默认关闭)
             const showWechat = ref(false);

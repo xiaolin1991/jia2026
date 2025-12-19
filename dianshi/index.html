@@ -3,9 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    
     <meta name="referrer" content="no-referrer">
-    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -30,7 +28,7 @@
         body.theme-purple { --bg-body: #2e1065; --bg-sidebar: #4c1d95; --bg-card: #5b21b6; --text-main: #ddd6fe; --text-sub: #a78bfa; --accent: #c084fc; --border: #6d28d9; --hover: #7c3aed; --pwa-bg: rgba(76,29,149,0.95); --live-bg: linear-gradient(135deg, #834d9b 0%, #d04ed6 100%); }
         body.theme-gold { --bg-body: #1c1c1c; --bg-sidebar: #2b2b2b; --bg-card: #383838; --text-main: #f1c40f; --text-sub: #bf953f; --accent: #f39c12; --border: #444; --hover: #4a4a4a; --pwa-bg: rgba(43,43,43,0.95); --live-bg: linear-gradient(135deg, #F0C27B 0%, #4B1248 100%); }
 
-        /* 禁止左右滑动 */
+        /* 基础样式 */
         html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: sans-serif; background: var(--bg-body); color: var(--text-main); transition: background 0.3s; }
         .app-layout { display: flex; flex-direction: column; height: 100%; width: 100%; overflow: hidden; }
         .main-container { display: flex; flex: 1; overflow: hidden; position: relative; width: 100%; }
@@ -97,7 +95,7 @@
         .ep-item { text-align: center; padding: 8px; background: var(--bg-card); border-radius: 4px; font-size: 13px; cursor: pointer; border: 1px solid transparent; }
         .ep-item.active { background: var(--accent); color: white; }
 
-        /* PWA */
+        /* PWA Toast */
         .pwa-toast { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--pwa-bg); color: var(--text-main); padding: 20px; border-radius: 20px 20px 0 0; box-shadow: 0 -5px 40px rgba(0,0,0,0.5); z-index: 10000; display: flex; flex-direction: column; gap: 15px; backdrop-filter: blur(10px); border-top: 1px solid var(--border); animation: slideUp 0.4s ease-out; box-sizing: border-box; }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         .pwa-header { display: flex; justify-content: space-between; align-items: center; }
@@ -107,50 +105,33 @@
         .pwa-arrow { position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); color: var(--text-main); animation: bounce 2s infinite; display: none; z-index: 10001; }
         @keyframes bounce { 0%, 20%, 50%, 80%, 100% {transform:translateX(-50%) translateY(0);} 40% {transform:translateX(-50%) translateY(-10px);} 60% {transform:translateX(-50%) translateY(-5px);} }
 
-        /* --- 新增：手机端搜索框样式 --- */
+        /* Download App Modal */
+        .app-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 20000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); animation: fade 0.3s; }
+        .app-modal-box { background: var(--bg-sidebar); width: 90%; max-width: 500px; border-radius: 20px; padding: 25px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); border: 1px solid var(--border); position: relative; }
+        .app-modal-title { font-size: 20px; font-weight: bold; text-align: center; margin-bottom: 20px; color: var(--text-main); }
+        .app-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .app-item { background: var(--bg-card); border: 1px solid var(--border); padding: 20px 10px; border-radius: 12px; text-align: center; cursor: pointer; transition: 0.2s; text-decoration: none; color: var(--text-main); }
+        .app-item:hover { transform: translateY(-5px); border-color: var(--accent); background: var(--hover); }
+        .app-item i { font-size: 30px; margin-bottom: 10px; color: var(--accent); }
+        .app-item div { font-size: 14px; font-weight: 500; }
+        .app-close { position: absolute; top: 15px; right: 15px; cursor: pointer; color: var(--text-sub); font-size: 20px; }
+        .app-close:hover { color: var(--accent); }
+
+        /* Mobile Search Panel */
         .mobile-search-trigger { display: none; }
-        
-        .mobile-search-panel {
-            background: var(--bg-sidebar);
-            height: 0;
-            overflow: hidden;
-            transition: height 0.3s ease;
-            display: flex;
-            align-items: center;
-            padding: 0 15px;
-            border-bottom: 1px solid var(--border);
-            position: relative;
-            z-index: 4500;
-        }
+        .mobile-search-panel { background: var(--bg-sidebar); height: 0; overflow: hidden; transition: height 0.3s ease; display: flex; align-items: center; padding: 0 15px; border-bottom: 1px solid var(--border); position: relative; z-index: 4500; }
         .mobile-search-panel.open { height: 60px; }
-        
-        .mobile-input-group {
-            width: 100%;
-            display: flex;
-            align-items: center;
-            background: var(--bg-body);
-            border-radius: 30px;
-            padding: 5px 15px;
-            border: 1px solid var(--border);
-        }
-        .mobile-input-group input {
-            flex: 1;
-            background: transparent;
-            border: none;
-            color: var(--text-main);
-            padding: 5px;
-            outline: none;
-            font-size: 14px;
-        }
+        .mobile-input-group { width: 100%; display: flex; align-items: center; background: var(--bg-body); border-radius: 30px; padding: 5px 15px; border: 1px solid var(--border); }
+        .mobile-input-group input { flex: 1; background: transparent; border: none; color: var(--text-main); padding: 5px; outline: none; font-size: 14px; }
         .mobile-input-group i { color: var(--accent); margin-left: 10px; cursor: pointer;}
 
         /* Mobile */
         @media (max-width: 768px) {
-            .mobile-search-trigger { display: flex; } /* 手机端显示搜索按钮 */
+            .mobile-search-trigger { display: flex; }
             .sidebar { position: fixed; left: 0; top: var(--header-height); bottom: 0; z-index: 6000; transform: translateX(-100%); }
             .sidebar.open { transform: translateX(0); box-shadow: 10px 0 20px rgba(0,0,0,0.5); }
             .search-box { display: none; }
-            .grid { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+            .grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
             .live-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
             .title { font-size: 11px; margin-top: 4px; }
             .poster-wrap { margin-bottom: 4px; border-radius: 4px; }
@@ -184,12 +165,11 @@
             <div class="btn-icon mobile-search-trigger" @click="toggleMobileSearch">
                 <i class="fa-solid fa-magnifying-glass"></i>
             </div>
-
+            <div class="btn-icon" @click="openAppModal" title="APP下载">
+                <i class="fa-solid fa-download"></i>
+            </div>
             <div class="btn-icon" @click.stop="switchTheme" title="切换颜色">
                 <i class="fa-solid fa-palette"></i>
-            </div>
-            <div class="btn-icon">
-                <i class="fa-regular fa-user"></i>
             </div>
         </div>
     </header>
@@ -206,14 +186,17 @@
             <div class="sidebar-scroll">
                 
                 <div class="group-name">功能模式</div>
-                <div class="nav-item" :class="{active: currentSourceKey !== 'live'}" @click="changeSource(generalSources[0])">
-                    <i class="fa-solid fa-film"></i> 影视点播
+                <div class="nav-item" :class="{active: currentSourceKey !== 'live' && currentSourceKey !== 'history'}" @click="changeSource(generalSources[0])">
+                    <i class="fa-solid fa-film"></i> 首页
                 </div>
                 <div class="nav-item" :class="{active: currentSourceKey === 'live'}" @click="enterLiveMode">
                     <i class="fa-solid fa-tv"></i> 直播电视
                 </div>
+                <div class="nav-item" :class="{active: currentSourceKey === 'history'}" @click="enterHistoryMode">
+                    <i class="fa-solid fa-clock-rotate-left"></i> 播放记录
+                </div>
 
-                <div v-if="currentSourceKey !== 'live'">
+                <div v-if="currentSourceKey !== 'live' && currentSourceKey !== 'history'">
                     <div class="group-name">当前线路</div>
                     <div class="nav-item active">
                         <i class="fa-solid fa-tower-broadcast"></i> {{ currentSourceName }}
@@ -257,12 +240,19 @@
         <main class="content" ref="contentRef" @scroll="handleScroll">
             
             <div v-if="!isPlayerMode && currentSourceKey !== 'live'">
-                <div class="cats">
+                <div class="cats" v-if="currentSourceKey !== 'history'">
                     <div class="cat-btn" :class="{active: currentCat==='latest'}" @click="changeCat('latest')">最新</div>
                     <div class="cat-btn" :class="{active: currentCat==='movie'}" @click="changeCat('movie')">电影</div>
                     <div class="cat-btn" :class="{active: currentCat==='tv'}" @click="changeCat('tv')">剧集</div>
                     <div class="cat-btn" :class="{active: currentCat==='anime'}" @click="changeCat('anime')">动漫</div>
                     <div class="cat-btn" :class="{active: currentCat==='variety'}" @click="changeCat('variety')">综艺</div>
+                </div>
+
+                <div v-if="currentSourceKey === 'history'" style="margin-bottom:20px; display:flex; justify-content:space-between; align-items:center;">
+                    <div style="font-weight:bold;">我的观看历史</div>
+                    <button class="pwa-btn" style="width:auto; padding:5px 15px; font-size:12px; background:#e74c3c;" @click="clearHistory">
+                        <i class="fa-solid fa-trash"></i> 清空记录
+                    </button>
                 </div>
 
                 <div class="grid">
@@ -272,18 +262,23 @@
                             <div class="badge">{{ item.vod_remarks || item.vod_year }}</div>
                         </div>
                         <div class="title">{{ item.vod_name }}</div>
+                        <div v-if="currentSourceKey === 'history' && item.lastEpName" 
+                             style="font-size:11px; color:var(--text-sub); margin-top:2px;">
+                             看到: {{ item.lastEpName }}
+                        </div>
                     </div>
                 </div>
 
                 <div class="load-status">
                     <span v-if="loading && page===1">初始化中...</span>
                     <span v-else-if="loading"><i class="fa-solid fa-spinner fa-spin"></i> 加载中...</span>
-                    <span v-else-if="!hasMore">🎉 已加载全部</span>
+                    <span v-else-if="currentSourceKey === 'history' && list.length===0">暂无观看记录</span>
+                    <span v-else-if="!hasMore && list.length>0">🎉 已加载全部</span>
                     <span v-else-if="list.length===0 && !loading" style="display:flex; flex-direction:column; align-items:center; gap:10px;">
                         <div>暂无数据或加载失败</div>
                         <button class="pwa-btn" style="width:auto; padding:8px 20px;" @click="fetchData(false)">重试连接</button>
                     </span>
-                    <span v-else>向上滑动加载更多</span>
+                    <span v-else-if="currentSourceKey !== 'history'">向上滑动加载更多</span>
                 </div>
             </div>
 
@@ -370,6 +365,34 @@
         <div v-if="isIOS" class="pwa-arrow"><i class="fa-solid fa-arrow-down fa-2x"></i></div>
     </div>
 
+    <div v-if="showAppModal && enableAppModal" class="app-modal-overlay">
+        <div class="app-modal-box">
+            <div class="app-close" @click="closeAppModal"><i class="fa-solid fa-xmark"></i></div>
+            <div class="app-modal-title">下载客户端，体验更流畅</div>
+            <div class="app-grid">
+                <a href="#" class="app-item">
+                    <i class="fa-brands fa-windows"></i>
+                    <div>电脑端下载</div>
+                </a>
+                <a href="#" class="app-item">
+                    <i class="fa-brands fa-android"></i>
+                    <div>安卓端下载</div>
+                </a>
+                <a href="#" class="app-item">
+                    <i class="fa-brands fa-apple"></i>
+                    <div>苹果端下载</div>
+                </a>
+                <a href="#" class="app-item">
+                    <i class="fa-solid fa-tv"></i>
+                    <div>TV端下载</div>
+                </a>
+            </div>
+            <div style="text-align:center; margin-top:20px; font-size:12px; color:var(--text-sub);">
+                推荐使用 APP 观看，无广告、更稳定
+            </div>
+        </div>
+    </div>
+
 </div>
 
 <script>
@@ -381,28 +404,34 @@
             // ⭐⭐⭐ 【用户配置区】 ⭐⭐⭐
             // ===============================================
             
+<<<<<<< HEAD
+            // 1. 你的 API 转发地址
+=======
             // 1. 你的 API 转发地址 (Worker)
+>>>>>>> b15bd24923d624776d67829f5625e891ad9256c2
             const API_PROXY = 'https://api.hanglinkj.com/'; 
 
-            // 2. 特殊/福利区开关 (重要！)
-            // true  = 显示 (开启福利区)
-            // false = 隐藏 (关闭福利区)
+            // 2. 特殊/福利区开关
             const showSpecialSection = ref(false); 
 
-            // 3. 微信图片开关 (默认关闭)
+            // 3. 微信图片开关
             const showWechat = ref(false);
+
+            // 4. APP下载弹窗开关 (新增功能)
+            // true = 开启首次进入弹窗; false = 彻底关闭
+            const enableAppModal = ref(true);
             
             // ===============================================
             // ⭐⭐⭐ 【配置结束】 ⭐⭐⭐
             // ===============================================
 
-            // PWA
+            // PWA & APP Modal
             const showPwaModal = ref(false);
+            const showAppModal = ref(false);
             const isIOS = ref(false);
             const installPrompt = ref(null);
 
             const isSidebarOpen = ref(false);
-            // 手机端搜索框控制变量
             const showMobileSearch = ref(false);
             const mobileInputRef = ref(null);
 
@@ -484,6 +513,63 @@
             const currentEpName = ref('');
             let hls = null;
 
+            // --- 新增：APP下载弹窗逻辑 ---
+            const initAppModal = () => {
+                if(!enableAppModal.value) return;
+                // 使用 sessionStorage，这样每次关闭浏览器重开都会弹，但在同一会话中不重复弹
+                // 如果想永久不弹，改成 localStorage
+                const hasShown = sessionStorage.getItem('app_modal_shown_v1');
+                if(!hasShown) {
+                    setTimeout(() => { showAppModal.value = true; }, 800);
+                }
+            };
+            const closeAppModal = () => {
+                showAppModal.value = false;
+                sessionStorage.setItem('app_modal_shown_v1', 'true');
+            };
+            const openAppModal = () => {
+                showAppModal.value = true;
+            };
+
+            // --- 新增：历史记录逻辑 ---
+            const saveHistory = (item, epName, playUrl) => {
+                if(currentSourceKey.value === 'live') return; // 直播不记
+                try {
+                    let history = JSON.parse(localStorage.getItem('cloudtv_history_v1') || '[]');
+                    // 删除旧的同ID记录
+                    history = history.filter(h => h.vod_id !== item.vod_id);
+                    // 添加新的到头部
+                    history.unshift({
+                        ...item,
+                        lastEpName: epName,
+                        lastPlayUrl: playUrl,
+                        lastSourceKey: currentSourceKey.value,
+                        lastSourceName: currentSourceName.value,
+                        timestamp: new Date().getTime()
+                    });
+                    // 限制最大50条
+                    if(history.length > 50) history.pop();
+                    localStorage.setItem('cloudtv_history_v1', JSON.stringify(history));
+                } catch(e) { console.error('Save history failed', e); }
+            };
+
+            const enterHistoryMode = () => {
+                currentSourceKey.value = 'history';
+                currentSourceName.value = '播放记录';
+                keyword.value = '';
+                isPlayerMode.value = false;
+                if(window.innerWidth < 768) isSidebarOpen.value = false;
+                fetchData(false);
+            };
+
+            const clearHistory = () => {
+                if(confirm('确定要清空所有观看记录吗？')) {
+                    localStorage.removeItem('cloudtv_history_v1');
+                    list.value = [];
+                }
+            };
+
+            // PWA
             const initPWA = () => { window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installPrompt.value = e; checkShow(); }); checkShow(); };
             const checkShow = () => { if (localStorage.getItem('pwa_prompt_v13')) return; isIOS.value = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream; const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent); if (isMobile) setTimeout(() => showPwaModal.value = true, 2000); };
             const installPwa = () => { if (installPrompt.value) { installPrompt.value.prompt(); installPrompt.value.userChoice.then((choice) => { if (choice.outcome === 'accepted') closePwaModal(); }); } };
@@ -494,7 +580,6 @@
             const toggleSidebar = () => isSidebarOpen.value = !isSidebarOpen.value;
             const toggleWechat = () => showWechat.value = !showWechat.value;
             
-            // 切换手机端搜索框
             const toggleMobileSearch = () => {
                 showMobileSearch.value = !showMobileSearch.value;
                 if(showMobileSearch.value) {
@@ -502,7 +587,6 @@
                 }
             };
 
-            // 直播模式 (带时间戳防缓存)
             const enterLiveMode = async () => {
                 currentSourceKey.value = 'live';
                 currentSourceName.value = '电视直播';
@@ -544,6 +628,17 @@
             const fetchData = async (isLoadMore = false) => {
                 if(loading.value) return; 
                 if(!hasMore.value && isLoadMore) return; 
+                
+                // 历史记录模式特殊处理
+                if(currentSourceKey.value === 'history') {
+                    loading.value = true;
+                    const history = JSON.parse(localStorage.getItem('cloudtv_history_v1') || '[]');
+                    list.value = history;
+                    hasMore.value = false; 
+                    loading.value = false;
+                    return;
+                }
+
                 loading.value = true;
                 if (!isLoadMore) { page.value = 1; list.value = []; hasMore.value = true; if(contentRef.value) contentRef.value.scrollTop = 0; }
                 try {
@@ -567,7 +662,7 @@
             };
 
             const handleScroll = (e) => {
-                if (currentSourceKey.value === 'live') return;
+                if (currentSourceKey.value === 'live' || currentSourceKey.value === 'history') return;
                 const { scrollTop, scrollHeight, clientHeight } = e.target;
                 if (scrollTop + clientHeight >= scrollHeight - 100) {
                     if (!loading.value && hasMore.value) fetchData(true);
@@ -591,17 +686,23 @@
 
             const doSearch = () => {
                 if(!keyword.value) return;
-                
-                // 搜索后自动收起手机搜索框
                 showMobileSearch.value = false;
-
-                if(currentSourceKey.value === 'live') { currentSourceKey.value = 'guangsu'; currentSourceName.value = '光速资源'; }
+                if(currentSourceKey.value === 'live' || currentSourceKey.value === 'history') { 
+                    currentSourceKey.value = 'guangsu'; 
+                    currentSourceName.value = '光速资源'; 
+                }
                 currentCat.value = 'search';
                 fetchData(false);
             };
 
             const openPlayer = (item) => {
                 currentVod.value = item;
+                // 如果是从历史记录点进来的，需要恢复源
+                if(currentSourceKey.value === 'history' && item.lastSourceKey) {
+                    // 仅显示用，不真正切换全局源，以免返回列表乱了
+                    // 但为了解析正确，这里我们直接解析 vod_play_url 即可
+                }
+
                 const urlStr = item.vod_play_url;
                 const eps = {};
                 const split = urlStr.includes('$$$') ? '$$$' : '#';
@@ -617,7 +718,14 @@
                 });
                 if(!first && arr.length > 0) { const p = arr[0].split('$'); first = { n:'播放', u: p[p.length-1] }; eps['播放'] = first.u; }
                 episodes.value = eps;
-                if(first) switchEp(first.n, first.u);
+                
+                // 优先播放历史记录的集数
+                if(currentSourceKey.value === 'history' && item.lastEpName && eps[item.lastEpName]) {
+                    switchEp(item.lastEpName, eps[item.lastEpName]);
+                } else if(first) {
+                    switchEp(first.n, first.u);
+                }
+                
                 recommendList.value = list.value.filter(v=>v.vod_id!==item.vod_id).slice(0, 12);
                 isPlayerMode.value = true;
                 nextTick(() => { if(contentRef.value) contentRef.value.scrollTop = 0; });
@@ -626,6 +734,12 @@
             const switchEp = (name, url) => {
                 currentEpName.value = name;
                 currentPlayUrl.value = url;
+                
+                // 记录历史
+                if(currentVod.value) {
+                    saveHistory(currentVod.value, name, url);
+                }
+
                 setTimeout(() => {
                     const video = document.getElementById('player');
                     if(!video) return;
@@ -640,7 +754,16 @@
             };
 
             const closePlayer = () => { isPlayerMode.value = false; if(hls) hls.destroy(); };
-            const goHome = () => { keyword.value = ''; isPlayerMode.value = false; currentCat.value = 'latest'; if(currentSourceKey.value === 'live') { currentSourceKey.value = 'guangsu'; currentSourceName.value = '光速资源'; } fetchData(false); };
+            const goHome = () => { 
+                keyword.value = ''; 
+                isPlayerMode.value = false; 
+                currentCat.value = 'latest'; 
+                if(currentSourceKey.value === 'live' || currentSourceKey.value === 'history') { 
+                    currentSourceKey.value = 'guangsu'; 
+                    currentSourceName.value = '光速资源'; 
+                } 
+                fetchData(false); 
+            };
             const imgError = (e) => e.target.src = 'https://via.placeholder.com/300x450?text=No+Cover';
 
             onMounted(() => {
@@ -648,10 +771,11 @@
                 if(saved && themes.includes(saved)) applyTheme(saved); else applyTheme('theme-dark');
                 fetchData(false);
                 initPWA();
+                initAppModal(); // 初始化 APP 弹窗
             });
 
             return {
-                contentRef, showSpecialSection, showWechat,
+                contentRef, showSpecialSection, showWechat, enableAppModal,
                 isSidebarOpen, toggleSidebar, toggleWechat,
                 currentTheme, switchTheme,
                 generalSources, specialSources, currentSourceKey, currentSourceName, changeSource,
@@ -663,8 +787,10 @@
                 handleScroll, page, hasMore,
                 showPwaModal, closePwaModal, isIOS, installPwa, installPrompt,
                 enterLiveMode, liveGroups, currentLiveGroup, playLive, fetchData,
-                // 导出手机搜索相关的变量和方法
-                showMobileSearch, toggleMobileSearch, mobileInputRef
+                showMobileSearch, toggleMobileSearch, mobileInputRef,
+                // App Modal & History
+                showAppModal, closeAppModal, openAppModal,
+                enterHistoryMode, clearHistory
             };
         }
     }).mount('#app');

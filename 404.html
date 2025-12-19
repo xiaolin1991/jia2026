@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>404 - 正在紧急抢修 | 晓林技术支持</title>
+<script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+<style>
+    :root {
+        --bg-color: #1a1a2e; /* 深蓝黑背景 */
+        --accent-color: #e94560; /* 强调色 */
+        --text-color: #edf2f4;
+        --secondary-text: #8d99ae;
+    }
+
+    body {
+        margin: 0;
+        padding: 0;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        background-color: var(--bg-color);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        color: var(--text-color);
+        overflow: hidden;
+        position: relative; /* 为绝对定位元素提供参考 */
+    }
+
+    /* --- 左上角 Logo 样式 --- */
+    .brand-logo {
+        position: absolute;
+        top: 25px;
+        left: 30px;
+        font-size: 1.5rem;
+        font-weight: 900; /* 特粗字体 */
+        text-decoration: none;
+        letter-spacing: 1px;
+        z-index: 100;
+        
+        /* 五颜六色流光渐变核心代码 */
+        background: linear-gradient(
+            45deg, 
+            #ff0000, #ff7300, #fffb00, #48ff00, #00ffd5, #002bff, #7a00ff, #ff00c8, #ff0000
+        );
+        background-size: 400%; /* 拉大背景以实现流动效果 */
+        -webkit-background-clip: text; /* 文字裁剪背景 */
+        background-clip: text;
+        color: transparent; /* 文字本身透明，显示背景 */
+        animation: rainbow-flow 20s linear infinite; /* 流动动画 */
+    }
+
+    /* 简单的悬停效果：鼠标放上去会发光 */
+    .brand-logo:hover {
+        filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.5));
+    }
+
+    @keyframes rainbow-flow {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+
+    /* --- 背景网格装饰 --- */
+    .bg-grid {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background-image: 
+            linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        background-size: 30px 30px;
+        z-index: 0;
+    }
+
+    .container {
+        z-index: 1;
+        text-align: center;
+        max-width: 600px;
+        padding: 20px;
+    }
+
+    h1 {
+        font-size: 4rem;
+        margin: 0;
+        letter-spacing: 5px;
+        color: var(--text-color);
+        text-shadow: 2px 2px 0px var(--accent-color);
+    }
+
+    p {
+        font-size: 1.2rem;
+        color: var(--secondary-text);
+        margin: 10px 0 30px 0;
+    }
+
+    /* 按钮样式 */
+    .btn-home {
+        display: inline-block;
+        padding: 12px 30px;
+        font-size: 1rem;
+        font-weight: bold;
+        text-decoration: none;
+        color: var(--bg-color);
+        background-color: #fff;
+        border-radius: 50px;
+        transition: transform 0.2s, box-shadow 0.2s;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+
+    .btn-home:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(233, 69, 96, 0.4);
+        background-color: var(--accent-color);
+        color: #fff;
+    }
+
+    lottie-player {
+        margin: 0 auto;
+        width: 100%;
+        max-width: 500px; 
+    }
+
+    /* 移动端适配：手机上字体稍微小一点 */
+    @media (max-width: 480px) {
+        .brand-logo {
+            font-size: 1.2rem;
+            top: 20px;
+            left: 20px;
+        }
+        h1 { font-size: 3rem; }
+    }
+</style>
+</head>
+<body>
+
+    <div class="bg-grid"></div>
+
+    <a href="/" class="brand-logo">晓林技术支持</a>
+
+    <div class="container">
+        <lottie-player 
+            src="https://assets8.lottiefiles.com/packages/lf20_fp7svyno.json" 
+            background="transparent" 
+            speed="1" 
+            style="width: 300px; height: 300px;" 
+            loop 
+            autoplay>
+        </lottie-player>
+
+        <h1>404 ERROR</h1>
+        <p>哎呀！页面走丢了...<br>晓林工程师正在紧急拧螺丝中 🔧</p>
+        
+        <a href="/" class="btn-home">
+            返回安全地带
+        </a>
+    </div>
+
+</body>
+</html>

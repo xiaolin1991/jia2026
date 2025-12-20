@@ -48,25 +48,34 @@
             padding: 10px 20px; border-radius: 8px; border: none;
             background: linear-gradient(45deg, #ff00cc, #333399);
             color: white; font-weight: bold; cursor: pointer; margin-top: 15px;
+            transition: all 0.3s;
         }
+        button:hover { filter: brightness(1.1); transform: scale(1.02); }
+        button:active { transform: scale(0.98); }
 
         #main-app {
             display: none; width: 90%; max-width: 1200px; height: 90vh;
             background: var(--glass-bg); border-radius: 25px; border: var(--glass-border);
             padding: 20px; box-sizing: border-box;
-            grid-template-columns: 1fr 300px; gap: 20px;
+            grid-template-columns: 1fr 320px; gap: 20px;
         }
 
         .camera-section {
             position: relative; background: #000; border-radius: 15px;
             overflow: hidden; display: flex; justify-content: center; align-items: center;
         }
-        video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+        /* 视频和定格照片重叠 */
+        #video, #frozen-photo { 
+            width: 100%; height: 100%; object-fit: cover; 
+            transform: scaleX(-1); /* 镜像 */
+            position: absolute; top:0; left:0;
+        }
+        #frozen-photo { display: none; z-index: 2; } /* 默认隐藏定格照 */
         
         #hair-overlay {
             position: absolute; top: 20%; left: 50%; transform: translateX(-50%);
             width: 300px; cursor: move; transition: src 0.3s ease;
-            display: none; 
+            display: none; z-index: 3; pointer-events: none; /* 让鼠标事件穿透到滑块 */
         }
 
         .controls-panel {
@@ -85,13 +94,23 @@
         .hair-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .hair-option {
             background: rgba(255,255,255,0.1); padding: 10px; border-radius: 10px;
-            cursor: pointer; text-align: center;
+            cursor: pointer; text-align: center; border: 2px solid transparent;
         }
-        .hair-option img { width: 100%; height: 50px; object-fit: contain; }
+        .hair-option.active { border-color: #00ffff; background: rgba(0,255,255,0.2); }
+        .hair-option img { width: 100%; height: 60px; object-fit: contain; }
+        
+        .control-group label { display: block; margin-bottom: 5px; font-size: 0.9rem; color: #ccc; }
+        input[type=range] { width: 100%; cursor: pointer; }
+
+        /* 按钮组 */
+        .btn-group { display: flex; gap: 10px; margin-top: auto; }
+        .btn-take { background: #ff9900; flex: 1; color: black; }
+        .btn-upload { background: #00cc66; flex: 1; display: none; /* 默认隐藏上传按钮 */ }
+        .btn-reset { background: #ff3366; flex: 1; display: none; /* 默认隐藏重拍按钮 */ }
 
         @media (max-width: 768px) {
-            #main-app { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
-            .controls-panel { max-height: 250px; }
+            #main-app { grid-template-columns: 1fr; grid-template-rows: 1fr auto; height: 95vh;}
+            .controls-panel { max-height: 350px; }
         }
     </style>
 </head>
@@ -100,8 +119,8 @@
     <div id="login-screen">
         <h1 class="brand-title">晓林技术</h1>
         <div class="login-box">
-            <p>DESIGN STUDIO</p>
-            <input type="password" id="password-input" placeholder="请输入密码">
+            <p>智能发型设计室</p>
+            <input type="password" id="password-input" placeholder="请输入访问密码">
             <br>
             <button onclick="checkPassword()">进入系统</button>
             <p id="login-error" style="color:#ff3366; font-size:12px; margin-top:10px; display:none;">密码错误</p>
@@ -115,42 +134,68 @@
                 <div id="loading-text">正在连接...</div>
             </div>
             <video id="video" autoplay playsinline></video>
+            <canvas id="frozen-photo"></canvas>
             <img id="hair-overlay" crossorigin="anonymous" src="">
         </div>
 
         <div class="controls-panel">
-            <h2 style="margin:0; border-bottom:1px solid #555; padding-bottom:10px;">控制台-晓林技术</h2>
-            <button onclick="clearHair()" style="background:#555; margin-top:0;">❌ 清除发型</button>
+            <h2 style="margin:0; border-bottom:1px solid #555; padding-bottom:10px;">设计面板</h2>
             
-            <h3>选择发型</h3>
-            <div class="hair-grid">
-                <div class="hair-option" onclick="changeHair('https://cdn-icons-png.flaticon.com/512/9408/9408201.png')">
-                    <img src="https://cdn-icons-png.flaticon.com/512/9408/9408201.png"><br>短发
+            <div id="step-tip" style="background:rgba(0,255,255,0.1); padding:10px; border-radius:8px; font-size:0.9rem;">
+                第1步：请摆好姿势，点击下方“定格拍照”
+            </div>
+
+            <div id="design-controls" style="display:none; opacity: 0.5; pointer-events: none; transition: all 0.3s;">
+                <h3>1. 选择发型试戴</h3>
+                <div class="hair-grid">
+                    <div class="hair-option" onclick="selectHair(this, 'https://cdn-icons-png.flaticon.com/512/9408/9408201.png')">
+                        <img src="https://cdn-icons-png.flaticon.com/512/9408/9408201.png"><br>波波头
+                    </div>
+                    <div class="hair-option" onclick="changeHair('https://cdn-icons-png.flaticon.com/512/9408/9408197.png')">
+                        <img src="https://cdn-icons-png.flaticon.com/512/9408/9408197.png"><br>大波浪
+                    </div>
+                    <div class="hair-option" onclick="changeHair('https://cdn-icons-png.flaticon.com/512/9408/9408192.png')">
+                        <img src="https://cdn-icons-png.flaticon.com/512/9408/9408192.png"><br>潮酷狼尾
+                    </div>
+                    <div class="hair-option" onclick="changeHair('https://cdn-icons-png.flaticon.com/512/12349/12349764.png')">
+                        <img src="https://cdn-icons-png.flaticon.com/512/12349/12349764.png"><br>商务背头
+                    </div>
                 </div>
-                <div class="hair-option" onclick="changeHair('https://cdn-icons-png.flaticon.com/512/9408/9408197.png')">
-                    <img src="https://cdn-icons-png.flaticon.com/512/9408/9408197.png"><br>长卷
+
+                <h3>2. 微调位置</h3>
+                <div class="control-group">
+                    <label>大小缩放</label>
+                    <input type="range" min="150" max="600" value="300" oninput="updateHairStyle('width', this.value + 'px')">
                 </div>
-                <div class="hair-option" onclick="changeHair('https://cdn-icons-png.flaticon.com/512/9408/9408192.png')">
-                    <img src="https://cdn-icons-png.flaticon.com/512/9408/9408192.png"><br>狼尾
+                <div class="control-group">
+                    <label>上下移动</label>
+                    <input type="range" min="0" max="60" value="20" oninput="updateHairStyle('top', this.value + '%')">
                 </div>
-                <div class="hair-option" onclick="changeHair('https://cdn-icons-png.flaticon.com/512/4140/4140048.png')">
-                    <img src="https://cdn-icons-png.flaticon.com/512/4140/4140048.png"><br>卡通
+                <div class="control-group">
+                    <label>左右移动</label>
+                    <input type="range" min="-100" max="100" value="0" oninput="document.getElementById('hair-overlay').style.marginLeft = this.value + 'px'">
                 </div>
             </div>
 
-            <h3>微调</h3>
-            <input type="range" min="100" max="600" value="300" style="width:100%" oninput="document.getElementById('hair-overlay').style.width = this.value + 'px'">
-            <button onclick="snapshot()" style="background: #00cc66; font-size: 1.1rem; margin-top:auto;">📸 拍照并保存</button>
+            <div class="btn-group">
+                <button id="btnTake" class="btn-take" onclick="takePhoto()">📸 定格拍照</button>
+                <button id="btnReset" class="btn-reset" onclick="resetCamera()">🔄 重拍</button>
+                <button id="btnUpload" class="btn-upload" onclick="uploadResult()">☁️ 确认上传</button>
+            </div>
         </div>
     </div>
 
     <script>
         // ================= 配置区 =================
         const CONFIG = {
-            loginPassword: "123",       // 网站进入密码
+            loginPassword: "123",       // 网站密码
             uploadUrl: "https://image.hanglinkj.com/upload",
-            uploadToken: "188"          // 对应你截图里的 AUTH_CODE 值
+            uploadToken: "188"          // AUTH_CODE
         };
+
+        // ================= 状态变量 =================
+        let isPhotoTaken = false;
+        let currentStream = null;
 
         // ================= 逻辑区 =================
         function checkPassword() {
@@ -166,67 +211,147 @@
 
         async function startCamera() {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+                currentStream = stream;
                 document.getElementById('video').srcObject = stream;
             } catch (err) {
                 alert("无法启动摄像头，请确保使用HTTPS或允许权限。");
             }
         }
 
+        // --- 新流程：1. 定格拍照 ---
+        function takePhoto() {
+            const video = document.getElementById('video');
+            const frozenCanvas = document.getElementById('frozen-photo');
+            const ctx = frozenCanvas.getContext('2d');
+
+            // 设置画布尺寸与视频一致
+            frozenCanvas.width = video.videoWidth;
+            frozenCanvas.height = video.videoHeight;
+
+            // 绘制当前视频帧（定格）
+            ctx.translate(frozenCanvas.width, 0); ctx.scale(-1, 1); // 镜像
+            ctx.drawImage(video, 0, 0);
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+            // 显示定格照，暂停视频流（省电）
+            frozenCanvas.style.display = 'block';
+            video.pause();
+            
+            // 更新UI状态
+            isPhotoTaken = true;
+            document.getElementById('step-tip').innerText = "第2步：请点击上方发型进行试戴，并使用滑块调整";
+            document.getElementById('step-tip').style.background = "rgba(0,255,0,0.2)";
+            
+            // 激活设计区域和按钮
+            const designControls = document.getElementById('design-controls');
+            designControls.style.opacity = '1';
+            designControls.style.pointerEvents = 'auto';
+            
+            document.getElementById('btnTake').style.display = 'none';
+            document.getElementById('btnReset').style.display = 'block';
+            document.getElementById('btnUpload').style.display = 'block';
+        }
+
+        // --- 新流程：重拍 ---
+        function resetCamera() {
+            const video = document.getElementById('video');
+            document.getElementById('frozen-photo').style.display = 'none';
+            document.getElementById('hair-overlay').style.display = 'none';
+            video.play();
+
+            isPhotoTaken = false;
+            document.getElementById('step-tip').innerText = "第1步：请摆好姿势，点击下方“定格拍照”";
+            document.getElementById('step-tip').style.background = "rgba(0,255,255,0.1)";
+
+            const designControls = document.getElementById('design-controls');
+            designControls.style.opacity = '0.5';
+            designControls.style.pointerEvents = 'none';
+            
+            // 清除选中状态
+            document.querySelectorAll('.hair-option').forEach(el => el.classList.remove('active'));
+
+            document.getElementById('btnTake').style.display = 'block';
+            document.getElementById('btnReset').style.display = 'none';
+            document.getElementById('btnUpload').style.display = 'none';
+        }
+
+        // --- 发型交互 ---
+        function selectHair(element, src) {
+            // 移除其他高亮
+            document.querySelectorAll('.hair-option').forEach(el => el.classList.remove('active'));
+            // 高亮当前点击
+            element.classList.add('active');
+            changeHair(src);
+        }
+
         function changeHair(src) {
+            if (!isPhotoTaken) return; // 没拍照不能选
             const overlay = document.getElementById('hair-overlay');
             overlay.src = src;
             overlay.style.display = 'block';
         }
 
-        function clearHair() {
-            document.getElementById('hair-overlay').style.display = 'none';
+        function updateHairStyle(prop, value) {
+            document.getElementById('hair-overlay').style[prop] = value;
         }
 
-        async function snapshot() {
-            const video = document.getElementById('video');
+        // --- 核心：合成并上传 ---
+        async function uploadResult() {
+            if (!isPhotoTaken) return;
+            
             const overlay = document.getElementById('hair-overlay');
-            const loading = document.getElementById('loading-mask');
-            const logText = document.getElementById('loading-text');
-
-            loading.style.display = 'flex';
-            logText.innerText = "生成图片中...";
-
-            const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const ctx = canvas.getContext('2d');
-
-            // 1. 生成原图 Blob
-            ctx.translate(canvas.width, 0); ctx.scale(-1, 1);
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            ctx.setTransform(1, 0, 0, 1, 0, 0);
-            const originalBlob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.9));
-
-            // 2. 生成设计图 Blob
-            let designBlob = null;
-            if (overlay.style.display !== 'none') {
-                ctx.translate(canvas.width, 0); ctx.scale(-1, 1);
-                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                ctx.setTransform(1, 0, 0, 1, 0, 0);
-                const size = parseInt(overlay.style.width || 300);
-                const x = (canvas.width - size) / 2;
-                const y = (canvas.height * 0.2);
-                try { ctx.drawImage(overlay, x, y, size, size); } catch(e){}
-                designBlob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.9));
+            if (overlay.style.display === 'none') {
+                alert("请先选择一个发型！");
+                return;
             }
 
-            // 3. 上传流程
-            logText.innerHTML = "正在连接图床...<br>这可能需要几秒钟";
+            const loading = document.getElementById('loading-mask');
+            const logText = document.getElementById('loading-text');
+            loading.style.display = 'flex';
+            logText.innerText = "正在合成最终效果图...";
+
+            // 使用一个新的临时画布进行合成
+            const finalCanvas = document.createElement('canvas');
+            const frozenCanvas = document.getElementById('frozen-photo');
+            finalCanvas.width = frozenCanvas.width;
+            finalCanvas.height = frozenCanvas.height;
+            const ctx = finalCanvas.getContext('2d');
+
+            // 1. 绘制定格的底图
+            ctx.drawImage(frozenCanvas, 0, 0);
+
+            // 2. 绘制发型 (需要计算当前DOM元素相对于画布的位置)
+            const rect = overlay.getBoundingClientRect();
+            const containerRect = document.querySelector('.camera-section').getBoundingClientRect();
+            
+            // 计算比例因子（因为显示大小可能和实际画布大小不一样）
+            const scaleX = finalCanvas.width / containerRect.width;
+            const scaleY = finalCanvas.height / containerRect.height;
+
+            // 计算发型在画布上的实际位置和大小
+            const hairX = (rect.left - containerRect.left) * scaleX;
+            const hairY = (rect.top - containerRect.top) * scaleY;
+            const hairW = rect.width * scaleX;
+            const hairH = rect.height * scaleY;
+
+            try {
+                ctx.drawImage(overlay, hairX, hairY, hairW, hairH);
+            } catch(e){ console.log("跨域绘制失败"); }
+
+            // 3. 生成Blob并上传
+            const designBlob = await new Promise(r => finalCanvas.toBlob(r, 'image/jpeg', 0.95));
+
+            logText.innerHTML = "正在上传到图床...<br>请耐心等待";
             
             try {
-                const res1 = await uploadSimple(originalBlob, 'original');
-                let res2 = "未选择发型";
-                if (designBlob) {
-                    res2 = await uploadSimple(designBlob, 'design');
-                }
+                // 这里我们只上传最终的设计图，因为原图已经定格在画布上了，如果需要也可以分别上传
+                const resUrl = await uploadWithRetry(designBlob, 'design_final');
                 
-                alert(`✅ 成功！\n原图: ${res1}\n设计图: ${res2}`);
+                // 上传成功后，给个漂亮的提示，并询问是否重来
+                if (confirm(`✅ 上传成功！\n\n您的发型设计图已保存。\n是否重新设计？`)) {
+                    resetCamera();
+                }
             } catch (err) {
                 alert("❌ 上传失败: \n" + err.message);
             } finally {
@@ -234,34 +359,24 @@
             }
         }
 
-        // --- 核心修复：纯净版上传函数（防止 Failed to fetch） ---
-        async function uploadSimple(blob, type) {
+        // --- 上传函数 (保持之前的修复版) ---
+        async function uploadWithRetry(blob, type) {
             const formData = new FormData();
             formData.append('file', blob, `xiaolin_${type}_${Date.now()}.jpg`);
-            
-            // 为了兼容，formData里也放一份
             formData.append('authCode', CONFIG.uploadToken); 
-
-            // 【关键】只使用 URL 参数传递 authCode
-            // 这样不会触发 CORS 预检（Options请求），解决 Failed to fetch 问题
             const targetUrl = `${CONFIG.uploadUrl}?authCode=${CONFIG.uploadToken}`;
 
             const response = await fetch(targetUrl, {
                 method: 'POST',
                 body: formData
-                // 注意：这里不要加任何 headers，让浏览器自动处理
             });
 
             const text = await response.text();
-            
             let json;
-            try {
-                json = JSON.parse(text);
-            } catch (e) {
+            try { json = JSON.parse(text); } catch (e) {
                 throw new Error(`服务器返回错误: ${text.substring(0, 100)}`);
             }
 
-            // 解析不同的返回格式
             const imgUrl = json.src || json.url || (json.data && json.data.url) || (json[0] && json[0].src);
             
             if (imgUrl) {

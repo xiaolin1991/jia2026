@@ -119,7 +119,7 @@
         </div>
 
         <div class="controls-panel">
-            <h2 style="margin:0; border-bottom:1px solid #555; padding-bottom:10px;">晓林技术控制</h2>
+            <h2 style="margin:0; border-bottom:1px solid #555; padding-bottom:10px;">控制台-晓林技术</h2>
             <button onclick="clearHair()" style="background:#555; margin-top:0;">❌ 清除发型</button>
             
             <h3>选择发型</h3>
@@ -147,9 +147,9 @@
     <script>
         // ================= 配置区 =================
         const CONFIG = {
-            loginPassword: "123",       // 进入网站的密码
+            loginPassword: "123",       // 网站进入密码
             uploadUrl: "https://image.hanglinkj.com/upload",
-            uploadToken: "188"          // 你的图床密码 AUTH_CODE
+            uploadToken: "188"          // 对应你截图里的 AUTH_CODE 值
         };
 
         // ================= 逻辑区 =================
@@ -220,64 +220,54 @@
             logText.innerHTML = "正在连接图床...<br>这可能需要几秒钟";
             
             try {
-                const res1 = await uploadWithRetry(originalBlob, 'original');
+                const res1 = await uploadSimple(originalBlob, 'original');
                 let res2 = "未选择发型";
                 if (designBlob) {
-                    res2 = await uploadWithRetry(designBlob, 'design');
+                    res2 = await uploadSimple(designBlob, 'design');
                 }
                 
                 alert(`✅ 成功！\n原图: ${res1}\n设计图: ${res2}`);
             } catch (err) {
-                alert("❌ 最终报错: \n" + err.message);
+                alert("❌ 上传失败: \n" + err.message);
             } finally {
                 loading.style.display = 'none';
             }
         }
 
-        // --- 核心修复：针对 AUTH_CODE 的上传函数 ---
-        async function uploadWithRetry(blob, type) {
+        // --- 核心修复：纯净版上传函数（防止 Failed to fetch） ---
+        async function uploadSimple(blob, type) {
             const formData = new FormData();
             formData.append('file', blob, `xiaolin_${type}_${Date.now()}.jpg`);
             
-            // 【关键修改点】你的后台变量叫 AUTH_CODE，所以通常需要 'authCode' 参数
+            // 为了兼容，formData里也放一份
             formData.append('authCode', CONFIG.uploadToken); 
 
-            // 构建 URL 参数
-            const targetUrl = new URL(CONFIG.uploadUrl);
-            targetUrl.searchParams.append('authCode', CONFIG.uploadToken); 
+            // 【关键】只使用 URL 参数传递 authCode
+            // 这样不会触发 CORS 预检（Options请求），解决 Failed to fetch 问题
+            const targetUrl = `${CONFIG.uploadUrl}?authCode=${CONFIG.uploadToken}`;
 
-            // 纯数字的 Authorization Header (不要 Bearer)
-            const headers = {};
-            if (CONFIG.uploadToken) {
-                headers['Authorization'] = CONFIG.uploadToken;
-            }
-
-            // 发送请求
-            const response = await fetch(targetUrl.toString(), {
+            const response = await fetch(targetUrl, {
                 method: 'POST',
-                body: formData,
-                headers: headers
+                body: formData
+                // 注意：这里不要加任何 headers，让浏览器自动处理
             });
 
-            // 获取文本结果
             const text = await response.text();
-            console.log("服务器响应:", text); // 你可以在F12看到具体返回了什么
-
+            
             let json;
             try {
                 json = JSON.parse(text);
             } catch (e) {
-                // 如果还报错，直接把服务器返回的文字显示出来
-                throw new Error(`服务器拒绝: ${text.substring(0, 100)}`);
+                throw new Error(`服务器返回错误: ${text.substring(0, 100)}`);
             }
 
-            // MarSeventh 项目标准返回格式解析
+            // 解析不同的返回格式
             const imgUrl = json.src || json.url || (json.data && json.data.url) || (json[0] && json[0].src);
             
             if (imgUrl) {
                 return imgUrl.startsWith('http') ? imgUrl : 'https://image.hanglinkj.com' + imgUrl;
             } else {
-                throw new Error(json.msg || json.error || "上传成功但未返回链接");
+                throw new Error(json.msg || json.error || "未返回链接");
             }
         }
     </script>

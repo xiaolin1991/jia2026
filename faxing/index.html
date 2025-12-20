@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>晓林技术 - 智能发型设计室</title>
+    <style>
+        :root {
+            --primary-color: #ff00cc;
+            --glass-bg: rgba(255, 255, 255, 0.15);
+            --glass-border: 1px solid rgba(255, 255, 255, 0.3);
+            --blur: 15px;
+        }
+
+        body {
+            margin: 0; padding: 0;
+            font-family: 'PingFang SC', sans-serif;
+            background: linear-gradient(135deg, #1a0b2e 0%, #4a195b 50%, #16245a 100%);
+            color: white;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 炫彩标题 */
+        .brand-title {
+            font-size: 2.5rem; font-weight: 900; text-align: center;
+            background: linear-gradient(90deg, #ff00cc, #333399, #00ffff, #ff00cc);
+            background-size: 200% auto;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            animation: shine 3s linear infinite;
+            margin-bottom: 20px;
+        }
+        @keyframes shine { to { background-position: 200% center; } }
+
+        /* 登录框 */
+        #login-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.9); z-index: 1000;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            backdrop-filter: blur(20px);
+        }
+        .login-box {
+            background: var(--glass-bg); padding: 40px; border-radius: 20px;
+            border: var(--glass-border); text-align: center;
+        }
+        input { padding: 10px; border-radius: 8px; border: none; margin-top: 15px; width: 200px; text-align:center;}
+        button {
+            padding: 10px 20px; border-radius: 8px; border: none;
+            background: linear-gradient(45deg, #ff00cc, #333399);
+            color: white; font-weight: bold; cursor: pointer; margin-top: 15px;
+        }
+
+        /* 主界面 */
+        #main-app {
+            display: none; width: 90%; max-width: 1200px; height: 90vh;
+            background: var(--glass-bg); border-radius: 25px; border: var(--glass-border);
+            padding: 20px; box-sizing: border-box;
+            grid-template-columns: 1fr 300px; gap: 20px;
+        }
+
+        .camera-section {
+            position: relative; background: #000; border-radius: 15px;
+            overflow: hidden; display: flex; justify-content: center; align-items: center;
+        }
+        video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+        
+        #hair-overlay {
+            position: absolute; top: 20%; left: 50%; transform: translateX(-50%);
+            width: 300px; cursor: move; transition: src 0.3s ease;
+        }
+
+        .controls-panel {
+            background: rgba(255,255,255,0.05); border-radius: 15px; padding: 20px;
+            overflow-y: auto; display: flex; flex-direction: column; gap: 15px;
+        }
+
+        /* 加载遮罩 */
+        #loading-mask {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); display: none; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 50;
+            color: #00ffff; font-size: 1.2rem;
+        }
+
+        /* 发型选择 */
+        .hair-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .hair-option {
+            background: rgba(255,255,255,0.1); padding: 10px; border-radius: 10px;
+            cursor: pointer; text-align: center;
+        }
+        .hair-option img { width: 100%; height: 50px; object-fit: contain; }
+        .hair-option:hover { background: rgba(255,255,255,0.3); }
+
+        @media (max-width: 768px) {
+            #main-app { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
+            .controls-panel { max-height: 250px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="login-screen">
+        <h1 class="brand-title">晓林技术</h1>
+        <div class="login-box">
+            <p>DESIGN STUDIO</p>
+            <input type="password" id="password-input" placeholder="请输入密码">
+            <br>
+            <button onclick="checkPassword()">进入系统</button>
+            <p id="login-error" style="color:#ff3366; font-size:12px; margin-top:10px; display:none;">密码错误</p>
+        </div>
+    </div>
+
+    <div id="main-app">
+        <div class="camera-section">
+            <div id="loading-mask">
+                <div style="font-size:30px; margin-bottom:10px;">☁️</div>
+                <div id="loading-text">正在连接服务器...</div>
+            </div>
+            <video id="video" autoplay playsinline></video>
+            <img id="hair-overlay" crossorigin="anonymous" src="https://cdn-icons-png.flaticon.com/512/9408/9408201.png">
+        </div>
+
+        <div class="controls-panel">
+            <h2 style="margin:0; border-bottom:1px solid #555; padding-bottom:10px;">控制台</h2>
+            
+            <button onclick="autoMatch()" style="background:#333399;">🤖 AI 智能匹配</button>
+            
+            <h3>选择发型</h3>
+            <div class="hair-grid">
+                <div class="hair-option" onclick="changeHair('https://cdn-icons-png.flaticon.com/512/9408/9408201.png')">
+                    <img src="https://cdn-icons-png.flaticon.com/512/9408/9408201.png"><br>短发
+                </div>
+                <div class="hair-option" onclick="changeHair('https://cdn-icons-png.flaticon.com/512/9408/9408197.png')">
+                    <img src="https://cdn-icons-png.flaticon.com/512/9408/9408197.png"><br>长卷
+                </div>
+                <div class="hair-option" onclick="changeHair('https://cdn-icons-png.flaticon.com/512/9408/9408192.png')">
+                    <img src="https://cdn-icons-png.flaticon.com/512/9408/9408192.png"><br>狼尾
+                </div>
+                <div class="hair-option" onclick="changeHair('https://cdn-icons-png.flaticon.com/512/12349/12349764.png')">
+                    <img src="https://cdn-icons-png.flaticon.com/512/12349/12349764.png"><br>背头
+                </div>
+            </div>
+
+            <h3>微调</h3>
+            <label>大小</label>
+            <input type="range" min="100" max="600" value="300" style="width:100%" oninput="document.getElementById('hair-overlay').style.width = this.value + 'px'">
+            
+            <button onclick="snapshot()" style="background: #00cc66; font-size: 1.1rem; margin-top:auto;">📸 拍照并保存</button>
+        </div>
+    </div>
+
+    <script>
+        // ================= 配置区 =================
+        const CONFIG = {
+            loginPassword: "123",  // 网站进入密码 (你自己定)
+            
+            // 你的图床配置
+            uploadUrl: "https://image.hanglinkj.com/upload",
+            uploadToken: "188"     // 你提供的图床密码/Token
+        };
+
+        // ================= 功能逻辑 =================
+
+        // 1. 登录验证
+        function checkPassword() {
+            const input = document.getElementById('password-input').value;
+            // 开关网站密码（这里设为默认开启）
+            if (true) { 
+                if (input === CONFIG.loginPassword) {
+                    document.getElementById('login-screen').style.display = 'none';
+                    document.getElementById('main-app').style.display = 'grid';
+                    startCamera();
+                } else {
+                    document.getElementById('login-error').style.display = 'block';
+                }
+            }
+        }
+
+        // 2. 启动摄像头
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                document.getElementById('video').srcObject = stream;
+            } catch (err) {
+                alert("请允许摄像头权限，或者使用HTTPS访问。");
+            }
+        }
+
+        // 3. 切换发型
+        function changeHair(src) {
+            document.getElementById('hair-overlay').src = src;
+        }
+
+        // 4. 核心功能：双重拍照上传
+        async function snapshot() {
+            const video = document.getElementById('video');
+            const overlay = document.getElementById('hair-overlay');
+            const loading = document.getElementById('loading-mask');
+            const logText = document.getElementById('loading-text');
+
+            loading.style.display = 'flex';
+            logText.innerText = "正在处理图片...";
+
+            // 创建画布
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+
+            // --- A. 准备原图 (只画视频) ---
+            ctx.translate(canvas.width, 0);
+            ctx.scale(-1, 1);
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            ctx.setTransform(1, 0, 0, 1, 0, 0); // 重置
+            
+            // 获取原图Blob
+            const originalBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
+
+            // --- B. 准备设计图 (画视频 + 发型) ---
+            // 重新绘制底图（确保干净）
+            ctx.translate(canvas.width, 0);
+            ctx.scale(-1, 1);
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+            // 绘制发型
+            const size = parseInt(overlay.style.width || 300);
+            const x = (canvas.width - size) / 2;
+            const y = (canvas.height * 0.2); // 假设发型在上方20%位置
+            try {
+                ctx.drawImage(overlay, x, y, size, size);
+            } catch(e) { console.log("跨域问题，发型可能未绘制"); }
+
+            // 获取设计图Blob
+            const designBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
+
+            // --- C. 开始上传 ---
+            logText.innerText = "正在上传到 image.hanglinkj.com ...";
+
+            try {
+                // 并行上传两张图
+                const [res1, res2] = await Promise.all([
+                    uploadToCloudflare(originalBlob, 'original'),
+                    uploadToCloudflare(designBlob, 'design')
+                ]);
+
+                alert(`✅ 处理成功！\n\n1. 原图已保存: ${res1}\n2. 设计图已保存: ${res2}`);
+                console.log("原图:", res1);
+                console.log("设计图:", res2);
+
+            } catch (error) {
+                alert("❌ 上传失败: " + error.message);
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        // 通用上传函数
+        async function uploadToCloudflare(blob, type) {
+            const formData = new FormData();
+            // 文件名加上时间戳和类型
+            const filename = `xiaolin_${type}_${Date.now()}.jpg`;
+            formData.append('file', blob, filename);
+            
+            // 添加密码/Token (关键步骤)
+            if (CONFIG.uploadToken) {
+                formData.append('token', CONFIG.uploadToken);
+            }
+
+            const response = await fetch(CONFIG.uploadUrl, {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+            
+            // 解析返回的链接
+            const imgUrl = result.src || result.url || (result.data && result.data.url);
+            
+            if (imgUrl) {
+                // 如果返回的是相对路径，拼接完整域名
+                return imgUrl.startsWith('http') ? imgUrl : 'https://image.hanglinkj.com' + imgUrl;
+            } else {
+                throw new Error("图床未返回链接");
+            }
+        }
+
+        // 5. 模拟AI匹配
+        function autoMatch() {
+            alert("系统正在分析您的脸型... (演示：已为您推荐发型)");
+            changeHair('https://cdn-icons-png.flaticon.com/512/9408/9408197.png');
+        }
+    </script>
+</body>
+</html>

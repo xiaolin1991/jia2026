@@ -17,16 +17,30 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     
     <style>
-        :root { --sidebar-width: 240px; --header-height: 64px; }
+        /* ========== 关键修复：默认 CSS 变量 ========== */
+        :root {
+            --sidebar-width: 240px;
+            --header-height: 64px;
+            --bg-body: #121212;
+            --bg-sidebar: #1e1e1e;
+            --bg-card: #2c2c2c;
+            --text-main: #ffffff;
+            --text-sub: #aaaaaa;
+            --accent: #3ea6ff;
+            --border: rgba(255,255,255,0.1);
+            --hover: #333333;
+            --pwa-bg: rgba(30,30,30,0.9);
+            --live-bg: linear-gradient(135deg, rgba(62,166,255,0.9), rgba(8,132,227,0.85));
+        }
 
-        /* 主题定义 */
-        body.theme-dark { --bg-body: #121212; --bg-sidebar: #1e1e1e; --bg-card: #2c2c2c; --text-main: #fff; --text-sub: #aaa; --accent: #3ea6ff; --border: rgba(255,255,255,0.1); --hover: #333; --pwa-bg: rgba(30,30,30,0.9); }
-        body.theme-light { --bg-body: #f5f7fa; --bg-sidebar: #fff; --bg-card: #fff; --text-main: #333; --text-sub: #666; --accent: #0984e3; --border: #e0e0e0; --hover: #f0f0f0; --pwa-bg: rgba(255,255,255,0.95); }
-        body.theme-red { --bg-body: #000; --bg-sidebar: #141414; --bg-card: #1f1f1f; --text-main: #e5e5e5; --text-sub: #999; --accent: #e50914; --border: #333; --hover: #333; --pwa-bg: rgba(20,20,20,0.9); }
-        body.theme-blue { --bg-body: #0f172a; --bg-sidebar: #1e293b; --bg-card: #334155; --text-main: #e2e8f0; --text-sub: #94a3b8; --accent: #38bdf8; --border: #475569; --hover: #475569; --pwa-bg: rgba(20,20,30,0.9); }
-        body.theme-green { --bg-body: #f0fdf4; --bg-sidebar: #ffffff; --bg-card: #ffffff; --text-main: #14532d; --text-sub: #4ade80; --accent: #16a34a; --border: #bbf7d0; --hover: #dcfce7; --pwa-bg: rgba(255,255,255,0.95); }
-        body.theme-purple { --bg-body: #2e1065; --bg-sidebar: #4c1d95; --bg-card: #5b21b6; --text-main: #ddd6fe; --text-sub: #a78bfa; --accent: #c084fc; --border: #6d28d9; --hover: #7c3aed; --pwa-bg: rgba(40,20,80,0.9); }
-        body.theme-gold { --bg-body: #1c1c1c; --bg-sidebar: #2b2b2b; --bg-card: #383838; --text-main: #f1c40f; --text-sub: #bf953f; --accent: #f39c12; --border: #444; --hover: #4a4a4a; --pwa-bg: rgba(20,20,20,0.9); }
+        /* 主题定义（覆盖 :root） */
+        body.theme-dark { --bg-body: #121212; --bg-sidebar: #1e1e1e; --bg-card: #2c2c2c; --text-main: #fff; --text-sub: #aaa; --accent: #3ea6ff; --border: rgba(255,255,255,0.1); --hover: #333; --pwa-bg: rgba(30,30,30,0.9); --live-bg: linear-gradient(135deg, rgba(62,166,255,0.9), rgba(8,132,227,0.85)); }
+        body.theme-light { --bg-body: #f5f7fa; --bg-sidebar: #fff; --bg-card: #fff; --text-main: #333; --text-sub: #666; --accent: #0984e3; --border: #e0e0e0; --hover: #f0f0f0; --pwa-bg: rgba(255,255,255,0.95); --live-bg: linear-gradient(135deg, rgba(56,189,248,0.9), rgba(3,105,161,0.85)); }
+        body.theme-red { --bg-body: #000; --bg-sidebar: #141414; --bg-card: #1f1f1f; --text-main: #e5e5e5; --text-sub: #999; --accent: #e50914; --border: #333; --hover: #333; --pwa-bg: rgba(20,20,20,0.9); --live-bg: linear-gradient(135deg,#e50914,#c0392b); }
+        body.theme-blue { --bg-body: #0f172a; --bg-sidebar: #1e293b; --bg-card: #334155; --text-main: #e2e8f0; --text-sub: #94a3b8; --accent: #38bdf8; --border: #475569; --hover: #475569; --pwa-bg: rgba(20,20,30,0.9); --live-bg: linear-gradient(135deg,#38bdf8,#1e3a8a); }
+        body.theme-green { --bg-body: #f0fdf4; --bg-sidebar: #ffffff; --bg-card: #ffffff; --text-main: #14532d; --text-sub: #4ade80; --accent: #16a34a; --border: #bbf7d0; --hover: #dcfce7; --pwa-bg: rgba(255,255,255,0.95); --live-bg: linear-gradient(135deg,#34d399,#059669); }
+        body.theme-purple { --bg-body: #2e1065; --bg-sidebar: #4c1d95; --bg-card: #5b21b6; --text-main: #ddd6fe; --text-sub: #a78bfa; --accent: #c084fc; --border: #6d28d9; --hover: #7c3aed; --pwa-bg: rgba(40,20,80,0.9); --live-bg: linear-gradient(135deg,#c084fc,#7c3aed); }
+        body.theme-gold { --bg-body: #1c1c1c; --bg-sidebar: #2b2b2b; --bg-card: #383838; --text-main: #f1c40f; --text-sub: #bf953f; --accent: #f39c12; --border: #444; --hover: #4a4a4a; --pwa-bg: rgba(20,20,20,0.9); --live-bg: linear-gradient(135deg,#f39c12,#d4ac0d); }
 
         /* 基础样式 */
         html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: sans-serif; background: var(--bg-body); color: var(--text-main); transition: background 0.3s; }
@@ -75,12 +89,18 @@
         .badge { position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.8); color: #fbbf24; font-size: 10px; padding: 2px 5px; border-radius: 4px; }
         .title { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
 
-        /* Live Grid */
-        .live-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; }
-        .live-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; cursor: pointer; overflow: hidden; transition: 0.2s; text-align: center; }
-        .live-card:hover { transform: translateY(-5px); border-color: var(--accent); }
-        .live-cover { height: 90px; width: 100%; background: var(--live-bg); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 20px; font-weight: bold; text-shadow: 0 2px 6px rgba(0,0,0,0.6); }
-        .live-name { padding: 12px 5px; font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        /* Live Grid (美化) */
+        .live-panel { margin-bottom: 10px; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+        .live-header { display:flex; align-items:center; gap:12px; }
+        .live-title { font-size:18px; font-weight:700; color:var(--accent); display:flex; align-items:center; gap:8px; }
+        .live-sub { font-size:13px; color:var(--text-sub); }
+        .live-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; margin-top:10px; }
+        .live-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; cursor: pointer; overflow: hidden; transition: 0.2s; text-align: center; padding-bottom:8px; }
+        .live-card:hover { transform: translateY(-6px); box-shadow: 0 8px 24px rgba(0,0,0,0.35); border-color: var(--accent); }
+        .live-cover { height: 110px; width: 100%; display:flex; align-items:center; justify-content:center; color:#fff; font-size:18px; font-weight:700; position:relative; background: var(--live-bg); }
+        .live-cover .play-icon { position:absolute; left:10px; top:10px; font-size:14px; opacity:0.9; }
+        .live-name { padding: 12px 10px; font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .live-meta { font-size:12px; color:var(--text-sub); margin-top:4px; }
 
         .load-status { text-align: center; padding: 30px; color: var(--text-sub); font-size: 13px; width: 100%; clear: both; }
 
@@ -282,26 +302,37 @@
                 </div>
             </div>
 
+            <!-- 美化后的直播页面 -->
             <div v-if="!isPlayerMode && currentSourceKey === 'live'">
-                <div v-if="loading" style="text-align:center; padding:50px; color:var(--accent);">
+                <div v-if="loading" style="text-align:center; padding:40px; color:var(--accent);">
                     <i class="fa-solid fa-satellite-dish fa-spin fa-2x"></i>
                     <p>正在获取直播信号...</p>
                 </div>
                 
                 <div v-else-if="Object.keys(liveGroups).length > 0">
-                    <div class="cats">
-                        <div v-for="group in Object.keys(liveGroups)" :key="group" 
-                             class="cat-btn" :class="{active: currentLiveGroup === group}"
-                             @click="currentLiveGroup = group">
-                            {{ group }}
+                    <div class="live-panel">
+                        <div class="live-header">
+                            <div class="live-title"><i class="fa-solid fa-broadcast-tower"></i> 直播电视</div>
+                            <div class="live-sub">为您聚合多线路直播源，若有播放异常请尝试其它频道或使用 APP</div>
+                        </div>
+                        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                            <div v-for="group in Object.keys(liveGroups)" :key="group" 
+                                 class="cat-btn" :class="{active: currentLiveGroup === group}"
+                                 @click="currentLiveGroup = group">
+                                {{ group }} ({{ liveGroups[group].length }})
+                            </div>
                         </div>
                     </div>
 
                     <div class="live-grid">
                         <div v-for="channel in liveGroups[currentLiveGroup]" :key="channel.vod_name" 
                              class="live-card" @click="playLive(channel)">
-                            <div class="live-cover">{{ channel.vod_name.substring(0,4) }}</div>
+                            <div class="live-cover">
+                                <i class="play-icon fa-solid fa-circle-play"></i>
+                                {{ channel.vod_name.substring(0,10) }}
+                            </div>
                             <div class="live-name">{{ channel.vod_name }}</div>
+                            <div class="live-meta">{{ channel.vod_remarks || channel.type_name }}</div>
                         </div>
                     </div>
                 </div>
@@ -404,7 +435,8 @@
             // ⭐⭐⭐ 【用户配置区】 ⭐⭐⭐
             // ===============================================
             
-            // 1. 你的 API 转发地址
+            // 1. 你的 API 转发地址（请替换为你部署到 Cloudflare Worker 的 URL）
+            // 例如：const API_PROXY = 'https://your-worker.example.workers.dev/';
             const API_PROXY = 'https://api.hanglinkj.com/'; 
 
             // 2. 特殊/福利区开关
@@ -414,7 +446,6 @@
             const showWechat = ref(false);
 
             // 4. APP下载弹窗开关 (新增功能)
-            // true = 开启首次进入弹窗; false = 彻底关闭
             const enableAppModal = ref(true);
             
             // ===============================================
@@ -448,7 +479,7 @@
             const liveGroups = ref({});
             const currentLiveGroup = ref('');
 
-            // 源列表
+            // 源列表（完整保留）
             const generalSources = [
                 { key: 'guangsu', name: '光速资源', icon: 'fa-solid fa-bolt' },
                 { key: 'liangzi', name: '量子资源', icon: 'fa-solid fa-atom' },
@@ -512,8 +543,6 @@
             // --- 新增：APP下载弹窗逻辑 ---
             const initAppModal = () => {
                 if(!enableAppModal.value) return;
-                // 使用 sessionStorage，这样每次关闭浏览器重开都会弹，但在同一会话中不重复弹
-                // 如果想永久不弹，改成 localStorage
                 const hasShown = sessionStorage.getItem('app_modal_shown_v1');
                 if(!hasShown) {
                     setTimeout(() => { showAppModal.value = true; }, 800);
@@ -532,9 +561,7 @@
                 if(currentSourceKey.value === 'live') return; // 直播不记
                 try {
                     let history = JSON.parse(localStorage.getItem('cloudtv_history_v1') || '[]');
-                    // 删除旧的同ID记录
                     history = history.filter(h => h.vod_id !== item.vod_id);
-                    // 添加新的到头部
                     history.unshift({
                         ...item,
                         lastEpName: epName,
@@ -543,7 +570,6 @@
                         lastSourceName: currentSourceName.value,
                         timestamp: new Date().getTime()
                     });
-                    // 限制最大50条
                     if(history.length > 50) history.pop();
                     localStorage.setItem('cloudtv_history_v1', JSON.stringify(history));
                 } catch(e) { console.error('Save history failed', e); }
@@ -583,6 +609,15 @@
                 }
             };
 
+            // Utilities: 判断是否为可直接播放的 URL
+            const isDirectPlayable = (u) => {
+                if(!u) return false;
+                const s = String(u).trim();
+                if (s.startsWith('file://')) return false;
+                if (!/^https?:\/\//i.test(s)) return false;
+                return (s.includes('.m3u8') || s.includes('.mp4'));
+            };
+
             const enterLiveMode = async () => {
                 currentSourceKey.value = 'live';
                 currentSourceName.value = '电视直播';
@@ -607,63 +642,55 @@
                     liveGroups.value = groups;
                     if(groups['精选高清']) currentLiveGroup.value = '精选高清';
                     else currentLiveGroup.value = Object.keys(groups)[0] || '';
-                } catch (e) { console.error('直播加载失败', e); }
+                } catch (e) { console.error('直播加载失败', e); alert('直播数据获取失败，请检查你的 Cloudflare Worker API 是否已部署并正确填写到 API_PROXY'); }
                 loading.value = false;
             };
 
+            // 更稳健的 playLive：解析多种格式并做播放前校验 / 回退
             const playLive = (channel) => {
                 currentVod.value = channel;
                 currentEpName.value = '直播中';
                 currentSourceName.value = '电视直播';
                 isPlayerMode.value = true;
 
-                // 使用更健壮的解析逻辑，兼容多种 vod_play_url 格式（包含 $$$、#、$ 等）
                 const urlStr = channel.vod_play_url || '';
-                const eps = {};
-                let split = '$';
-                if (urlStr.includes('$$$')) split = '$$$';
-                else if (urlStr.includes('#')) split = '#';
-                else split = '$';
+                const split = urlStr.includes('$$$') ? '$$$' : (urlStr.includes('#') ? '#' : '$');
                 const arr = urlStr.split(split);
-                let first = null;
-                arr.forEach(seg => {
+                let candidate = '';
+                for (const seg of arr) {
                     const p = seg.split('$');
-                    if (p.length >= 2) {
-                        const n = p[0] || '播放';
-                        const u = p[p.length - 1] ? p[p.length - 1].trim() : '';
-                        if (u) {
-                            // 记录可能的播放地址
-                            eps[n] = u;
-                            if (!first && (u.includes('.m3u8') || u.includes('.mp4') || u.startsWith('http'))) {
-                                first = { n, u };
-                            } else if (!first) {
-                                // 暂存为候选
-                                first = { n, u };
-                            }
-                        }
+                    const possible = (p[p.length - 1] || '').trim();
+                    if (!possible) continue;
+                    if (/^https?:\/\//i.test(possible) && (possible.includes('.m3u8') || possible.includes('.mp4'))) {
+                        candidate = possible;
+                        break;
                     }
-                });
-
-                // 兜底处理：如果没有解析到，尝试取第一个分段的最后一个 $ 后内容，或直接使用整个字符串
-                if (!first && arr.length > 0) {
-                    const p = arr[0].split('$');
-                    const candidate = p[p.length - 1] || arr[0];
-                    first = { n: '播放', u: candidate };
-                    eps['播放'] = candidate;
+                    if (!candidate) candidate = possible;
                 }
-                if (!first && urlStr) {
-                    first = { n: '播放', u: urlStr };
-                    eps['播放'] = urlStr;
+                if (!candidate && urlStr) candidate = urlStr;
+
+                // 如果是直接可播放的 HLS/MP4，交给播放器
+                if (isDirectPlayable(candidate)) {
+                    episodes.value = { '直播': candidate };
+                    switchEp('直播', candidate);
+                    nextTick(() => { if (contentRef.value) contentRef.value.scrollTop = 0; });
+                    return;
                 }
 
-                if (first && first.u) {
-                    episodes.value = eps;
-                    switchEp(first.n, first.u);
-                } else {
-                    alert('未能解析到播放地址，请检查该频道的 vod_play_url 格式或控制台网络请求。');
+                // 如果是 http(s) 但不是 m3u8/mp4（例如 HTML 页面），在新标签打开
+                if (/^https?:\/\//i.test(candidate)) {
+                    if (location.protocol === 'https:' && candidate.startsWith('http:')) {
+                        alert('该频道为非 HTTPS 地址，浏览器将在 GitHub Pages（HTTPS）下阻止混合内容播放。建议使用 Cloudflare 代理将其转为 HTTPS 后播放。已在新标签中打开源页面。');
+                    } else {
+                        alert('该频道不是直接的媒体流，会在新标签中打开源页面以便手动播放或查看。');
+                    }
+                    window.open(candidate, '_blank');
+                    isPlayerMode.value = false;
+                    return;
                 }
 
-                nextTick(() => { if(contentRef.value) contentRef.value.scrollTop = 0; });
+                alert('未能解析到可播放的直播流，可能返回了不可识别的格式或本地路径。');
+                isPlayerMode.value = false;
             };
 
             const fetchData = async (isLoadMore = false) => {
@@ -698,7 +725,7 @@
                         else list.value = data.list;
                         page.value++;
                     } else hasMore.value = false;
-                } catch(e) { hasMore.value = false; }
+                } catch(e) { hasMore.value = false; console.error('fetchData error', e); }
                 loading.value = false;
             };
 
@@ -744,7 +771,7 @@
                     // 但为了解析正确，这里我们直接解析 vod_play_url 即可
                 }
 
-                const urlStr = item.vod_play_url;
+                const urlStr = item.vod_play_url || '';
                 const eps = {};
                 const split = urlStr.includes('$$$') ? '$$$' : '#';
                 const arr = urlStr.split(split);
@@ -772,6 +799,7 @@
                 nextTick(() => { if(contentRef.value) contentRef.value.scrollTop = 0; });
             };
 
+            // switchEp 增加播放前校验；对非 HLS/MP4 地址回退到新标签打开
             const switchEp = (name, url) => {
                 currentEpName.value = name;
                 currentPlayUrl.value = url;
@@ -779,6 +807,18 @@
                 // 记录历史
                 if(currentVod.value) {
                     saveHistory(currentVod.value, name, url);
+                }
+
+                if (!url) { alert('播放地址为空'); return; }
+                if (!isDirectPlayable(url)) {
+                    if (/^https?:\/\//i.test(url)) {
+                        alert('地址不是直接的 HLS/MP4 流，已在新标签打开以便查看源页面或尝试播放。');
+                        window.open(url, '_blank');
+                        return;
+                    } else {
+                        alert('无法播放此地址（可能为本地路径或不受支持的格式）');
+                        return;
+                    }
                 }
 
                 setTimeout(() => {

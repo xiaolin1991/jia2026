@@ -2,46 +2,40 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <meta name="referrer" content="no-referrer">
-    <title>晓林影视城</title>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="referrer" content="no-referrer"> 
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="CloudTV">
+    <link rel="apple-touch-icon" href="https://via.placeholder.com/192x192/3ea6ff/ffffff?text=TV"> 
+    
+    <title>晓林影视城,专门提供电影电影观看而生.</title>
+    
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-
+    
     <style>
-        /* ========== 关键修复：默认 CSS 变量 ========== */
-        :root {
-            --sidebar-width: 240px;
-            --header-height: 64px;
-            --bg-body: #121212;
-            --bg-sidebar: #1e1e1e;
-            --bg-card: #2c2c2c;
-            --text-main: #ffffff;
-            --text-sub: #aaaaaa;
-            --accent: #3ea6ff;
-            --border: rgba(255,255,255,0.1);
-            --hover: #333333;
-            --pwa-bg: rgba(30,30,30,0.9);
-            --live-bg: linear-gradient(135deg, rgba(62,166,255,0.9), rgba(8,132,227,0.85));
-        }
+        :root { --sidebar-width: 240px; --header-height: 64px; }
 
-        body.theme-dark { --bg-body: #121212; --bg-sidebar: #1e1e1e; --bg-card: #2c2c2c; --text-main: #fff; --text-sub: #aaa; --accent: #3ea6ff; --border: rgba(255,255,255,0.1); --hover: #333; --pwa-bg: rgba(30,30,30,0.9); --live-bg: linear-gradient(135deg, rgba(62,166,255,0.9), rgba(8,132,227,0.85)); }
-        body.theme-light { --bg-body: #f5f7fa; --bg-sidebar: #fff; --bg-card: #fff; --text-main: #333; --text-sub: #666; --accent: #0984e3; --border: #e0e0e0; --hover: #f0f0f0; --pwa-bg: rgba(255,255,255,0.95); --live-bg: linear-gradient(135deg, rgba(56,189,248,0.9), rgba(3,105,161,0.85)); }
-        body.theme-red { --bg-body: #000; --bg-sidebar: #141414; --bg-card: #1f1f1f; --text-main: #e5e5e5; --text-sub: #999; --accent: #e50914; --border: #333; --hover: #333; --pwa-bg: rgba(20,20,20,0.9); --live-bg: linear-gradient(135deg,#e50914,#c0392b); }
-        body.theme-blue { --bg-body: #0f172a; --bg-sidebar: #1e293b; --bg-card: #334155; --text-main: #e2e8f0; --text-sub: #94a3b8; --accent: #38bdf8; --border: #475569; --hover: #475569; --pwa-bg: rgba(20,20,30,0.9); --live-bg: linear-gradient(135deg,#38bdf8,#1e3a8a); }
-        body.theme-green { --bg-body: #f0fdf4; --bg-sidebar: #ffffff; --bg-card: #ffffff; --text-main: #14532d; --text-sub: #4ade80; --accent: #16a34a; --border: #bbf7d0; --hover: #dcfce7; --pwa-bg: rgba(255,255,255,0.95); --live-bg: linear-gradient(135deg,#34d399,#059669); }
-        body.theme-purple { --bg-body: #2e1065; --bg-sidebar: #4c1d95; --bg-card: #5b21b6; --text-main: #ddd6fe; --text-sub: #a78bfa; --accent: #c084fc; --border: #6d28d9; --hover: #7c3aed; --pwa-bg: rgba(40,20,80,0.9); --live-bg: linear-gradient(135deg,#c084fc,#7c3aed); }
-        body.theme-gold { --bg-body: #1c1c1c; --bg-sidebar: #2b2b2b; --bg-card: #383838; --text-main: #f1c40f; --text-sub: #bf953f; --accent: #f39c12; --border: #444; --hover: #4a4a4a; --pwa-bg: rgba(20,20,20,0.9); --live-bg: linear-gradient(135deg,#f39c12,#d4ac0d); }
+        /* 主题定义 */
+        body.theme-dark { --bg-body: #121212; --bg-sidebar: #1e1e1e; --bg-card: #2c2c2c; --text-main: #fff; --text-sub: #aaa; --accent: #3ea6ff; --border: rgba(255,255,255,0.1); --hover: #333; --pwa-bg: rgba(30,30,30,0.95); --live-bg: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); }
+        body.theme-light { --bg-body: #f5f7fa; --bg-sidebar: #fff; --bg-card: #fff; --text-main: #333; --text-sub: #666; --accent: #0984e3; --border: #e0e0e0; --hover: #f0f0f0; --pwa-bg: rgba(255,255,255,0.95); --live-bg: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%); }
+        body.theme-red { --bg-body: #000; --bg-sidebar: #141414; --bg-card: #1f1f1f; --text-main: #e5e5e5; --text-sub: #999; --accent: #e50914; --border: #333; --hover: #333; --pwa-bg: rgba(20,20,20,0.95); --live-bg: linear-gradient(135deg, #cb2d3e 0%, #ef473a 100%); }
+        body.theme-blue { --bg-body: #0f172a; --bg-sidebar: #1e293b; --bg-card: #334155; --text-main: #e2e8f0; --text-sub: #94a3b8; --accent: #38bdf8; --border: #475569; --hover: #475569; --pwa-bg: rgba(30,41,59,0.95); --live-bg: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%); }
+        body.theme-green { --bg-body: #f0fdf4; --bg-sidebar: #ffffff; --bg-card: #ffffff; --text-main: #14532d; --text-sub: #4ade80; --accent: #16a34a; --border: #bbf7d0; --hover: #dcfce7; --pwa-bg: rgba(255,255,255,0.95); --live-bg: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+        body.theme-purple { --bg-body: #2e1065; --bg-sidebar: #4c1d95; --bg-card: #5b21b6; --text-main: #ddd6fe; --text-sub: #a78bfa; --accent: #c084fc; --border: #6d28d9; --hover: #7c3aed; --pwa-bg: rgba(76,29,149,0.95); --live-bg: linear-gradient(135deg, #834d9b 0%, #d04ed6 100%); }
+        body.theme-gold { --bg-body: #1c1c1c; --bg-sidebar: #2b2b2b; --bg-card: #383838; --text-main: #f1c40f; --text-sub: #bf953f; --accent: #f39c12; --border: #444; --hover: #4a4a4a; --pwa-bg: rgba(43,43,43,0.95); --live-bg: linear-gradient(135deg, #F0C27B 0%, #4B1248 100%); }
 
         /* 基础样式 */
-        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial; background: var(--bg-body); color: var(--text-main); transition: background 0.3s; }
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: sans-serif; background: var(--bg-body); color: var(--text-main); transition: background 0.3s; }
         .app-layout { display: flex; flex-direction: column; height: 100%; width: 100%; overflow: hidden; }
         .main-container { display: flex; flex: 1; overflow: hidden; position: relative; width: 100%; }
 
         /* Header */
-        .header { height: var(--header-height); background: var(--bg-sidebar); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 20px; position: relative; z-index: 5000; }
+        .header { height: var(--header-height); background: var(--bg-sidebar); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 20px; position: relative; z-index: 5000; box-sizing: border-box; }
         .left-area { display: flex; align-items: center; gap: 15px; z-index: 5001; }
         .menu-toggle { font-size: 20px; cursor: pointer; padding: 5px; }
         .logo { font-size: 20px; font-weight: bold; display: flex; align-items: center; gap: 8px; cursor: pointer; white-space: nowrap; }
@@ -50,11 +44,11 @@
         .search-box input { width: 100%; background: var(--bg-body); border: 1px solid var(--border); color: var(--text-main); padding: 10px 40px 10px 20px; border-radius: 50px; outline: none; }
         .search-icon { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: var(--text-sub); }
         .header-right { position: absolute; right: 20px; top: 0; bottom: 0; display: flex; gap: 12px; align-items: center; z-index: 9999; }
-        .btn-icon { width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; background: var(--bg-card); color: var(--text-main); }
+        .btn-icon { width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; background: var(--bg-body); color: var(--text-main); transition: 0.2s; pointer-events: auto; }
         .btn-icon:hover { border-color: var(--accent); color: var(--accent); transform: scale(1.1); }
 
         /* Sidebar */
-        .sidebar { width: var(--sidebar-width); background: var(--bg-sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; transition: transform 0.3s ease; }
+        .sidebar { width: var(--sidebar-width); background: var(--bg-sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; transition: transform 0.3s; z-index: 4000; }
         .sidebar-scroll { flex: 1; overflow-y: auto; padding: 10px 0; }
         .group-name { font-size: 12px; color: var(--text-sub); padding: 15px 15px 5px; font-weight: bold; }
         .nav-item { padding: 12px 15px; margin: 2px 10px; border-radius: 6px; cursor: pointer; color: var(--text-sub); display: flex; align-items: center; gap: 10px; font-size: 14px; }
@@ -63,14 +57,14 @@
         .nav-item i { width: 18px; text-align: center; }
         .sidebar-footer { padding: 15px; border-top: 1px solid var(--border); background: var(--bg-sidebar); display: flex; flex-direction: column; gap: 10px; }
         .contact-title { font-size: 12px; color: var(--text-sub); font-weight: bold; margin-bottom: 5px; }
-        .contact-link { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--bg-card); border-radius: 8px; color: var(--text-main); text-decoration: none; font-size: 14px; }
+        .contact-link { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--bg-card); border-radius: 8px; color: var(--text-main); text-decoration: none; font-size: 13px; border: 1px solid var(--border); cursor: pointer; }
         .wechat-box { background: #fff; padding: 5px; border-radius: 8px; margin-top: 5px; }
         .wechat-box img { width: 100%; display: block; border-radius: 4px; }
 
         /* Content */
         .content { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 20px; position: relative; scroll-behavior: auto; width: 100%; box-sizing: border-box; }
         .cats { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-        .cat-btn { padding: 6px 18px; border-radius: 20px; border: 1px solid var(--border); background: var(--bg-card); font-size: 13px; cursor: pointer; color: var(--text-main); transition: 0.2s; }
+        .cat-btn { padding: 6px 18px; border-radius: 20px; border: 1px solid var(--border); background: var(--bg-card); font-size: 13px; cursor: pointer; color: var(--text-main); transition: 0.2s; white-space: nowrap;}
         .cat-btn.active { background: var(--text-main); color: var(--bg-body); border-color: var(--text-main); font-weight: bold; }
 
         /* Grid */
@@ -82,18 +76,12 @@
         .badge { position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.8); color: #fbbf24; font-size: 10px; padding: 2px 5px; border-radius: 4px; }
         .title { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
 
-        /* Live Grid (美化) */
-        .live-panel { margin-bottom: 10px; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
-        .live-header { display:flex; align-items:center; gap:12px; }
-        .live-title { font-size:18px; font-weight:700; color:var(--accent); display:flex; align-items:center; gap:8px; }
-        .live-sub { font-size:13px; color:var(--text-sub); }
-        .live-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; margin-top:10px; }
-        .live-card { background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0.05)); border: 1px solid var(--border); border-radius: 12px; cursor: pointer; overflow: hidden; transition: 0.2s; text-align: center; padding-bottom:8px; }
-        .live-card:hover { transform: translateY(-6px); box-shadow: 0 8px 24px rgba(0,0,0,0.35); border-color: var(--accent); }
-        .live-cover { height: 110px; width: 100%; display:flex; align-items:center; justify-content:center; color:#fff; font-size:18px; font-weight:700; position:relative; background: var(--live-bg); }
-        .live-cover .play-icon { position:absolute; left:10px; top:10px; font-size:14px; opacity:0.9; }
-        .live-name { padding: 12px 10px; font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .live-meta { font-size:12px; color:var(--text-sub); margin-top:4px; }
+        /* Live Grid */
+        .live-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; }
+        .live-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; cursor: pointer; overflow: hidden; transition: 0.2s; text-align: center; }
+        .live-card:hover { transform: translateY(-5px); border-color: var(--accent); }
+        .live-cover { height: 90px; width: 100%; background: var(--live-bg); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 20px; font-weight: bold; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+        .live-name { padding: 12px 5px; font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
         .load-status { text-align: center; padding: 30px; color: var(--text-sub); font-size: 13px; width: 100%; clear: both; }
 
@@ -101,16 +89,59 @@
         .player-page { max-width: 1000px; margin: 0 auto; animation: fade 0.3s; padding-bottom: 50px; width: 100%; box-sizing: border-box; }
         @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
         .video-box { width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 10px; overflow: hidden; margin-top: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
-        video { width: 100%; height: 100%; background: #000; }
+        video { width: 100%; height: 100%; }
         .controls { padding: 20px 0; }
-        .back-btn { display: inline-flex; align-items: center; gap: 5px; padding: 8px 16px; background: var(--bg-card); border-radius: 6px; cursor: pointer; font-size: 14px; margin-bottom: 15px; }
+        .back-btn { display: inline-flex; align-items: center; gap: 5px; padding: 8px 16px; background: var(--bg-card); border-radius: 6px; cursor: pointer; font-size: 14px; margin-bottom: 15px; border: 1px solid var(--border); }
+        .ep-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px; margin-top: 15px; max-height: 250px; overflow-y: auto; }
+        .ep-item { text-align: center; padding: 8px; background: var(--bg-card); border-radius: 4px; font-size: 13px; cursor: pointer; border: 1px solid transparent; }
+        .ep-item.active { background: var(--accent); color: white; }
 
-        /* Mobile adjustments */
+        /* PWA Toast */
+        .pwa-toast { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--pwa-bg); color: var(--text-main); padding: 20px; border-radius: 20px 20px 0 0; box-shadow: 0 -5px 40px rgba(0,0,0,0.5); z-index: 10000; display: flex; flex-direction: column; gap: 15px; backdrop-filter: blur(10px); border-top: 1px solid var(--border); animation: slideUp 0.4s ease-out; box-sizing: border-box; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .pwa-header { display: flex; justify-content: space-between; align-items: center; }
+        .pwa-title { font-weight: bold; font-size: 16px; display: flex; align-items: center; gap: 8px; }
+        .pwa-desc { font-size: 13px; color: var(--text-sub); line-height: 1.5; }
+        .pwa-btn { background: var(--accent); color: #fff; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; width: 100%; }
+        .pwa-arrow { position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); color: var(--text-main); animation: bounce 2s infinite; display: none; z-index: 10001; }
+        @keyframes bounce { 0%, 20%, 50%, 80%, 100% {transform:translateX(-50%) translateY(0);} 40% {transform:translateX(-50%) translateY(-10px);} 60% {transform:translateX(-50%) translateY(-5px);} }
+
+        /* Download App Modal */
+        .app-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 20000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); animation: fade 0.3s; }
+        .app-modal-box { background: var(--bg-sidebar); width: 90%; max-width: 500px; border-radius: 20px; padding: 25px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); border: 1px solid var(--border); position: relative; }
+        .app-modal-title { font-size: 20px; font-weight: bold; text-align: center; margin-bottom: 20px; color: var(--text-main); }
+        .app-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .app-item { background: var(--bg-card); border: 1px solid var(--border); padding: 20px 10px; border-radius: 12px; text-align: center; cursor: pointer; transition: 0.2s; text-decoration: none; color: var(--text-main); }
+        .app-item:hover { transform: translateY(-5px); border-color: var(--accent); background: var(--hover); }
+        .app-item i { font-size: 30px; margin-bottom: 10px; color: var(--accent); }
+        .app-item div { font-size: 14px; font-weight: 500; }
+        .app-close { position: absolute; top: 15px; right: 15px; cursor: pointer; color: var(--text-sub); font-size: 20px; }
+        .app-close:hover { color: var(--accent); }
+
+        /* Mobile Search Panel */
+        .mobile-search-trigger { display: none; }
+        .mobile-search-panel { background: var(--bg-sidebar); height: 0; overflow: hidden; transition: height 0.3s ease; display: flex; align-items: center; padding: 0 15px; border-bottom: 1px solid var(--border); position: relative; z-index: 4500; }
+        .mobile-search-panel.open { height: 60px; }
+        .mobile-input-group { width: 100%; display: flex; align-items: center; background: var(--bg-body); border-radius: 30px; padding: 5px 15px; border: 1px solid var(--border); }
+        .mobile-input-group input { flex: 1; background: transparent; border: none; color: var(--text-main); padding: 5px; outline: none; font-size: 14px; }
+        .mobile-input-group i { color: var(--accent); margin-left: 10px; cursor: pointer;}
+
+        /* Mobile */
         @media (max-width: 768px) {
+            .mobile-search-trigger { display: flex; }
+            .sidebar { position: fixed; left: 0; top: var(--header-height); bottom: 0; z-index: 6000; transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); box-shadow: 10px 0 20px rgba(0,0,0,0.5); }
+            .search-box { display: none; }
             .grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
             .live-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
-            .live-cover { height: 70px; font-size: 14px; }
+            .title { font-size: 11px; margin-top: 4px; }
+            .poster-wrap { margin-bottom: 4px; border-radius: 4px; }
+            .badge { font-size: 9px; padding: 1px 3px; top: 2px; right: 2px; }
+            .content { padding: 10px; }
             .video-box { border-radius: 0; margin: 0 -10px; width: calc(100% + 20px); }
+            .live-cover { height: 60px; font-size: 16px; }
+            .sidebar-footer { padding-bottom: 40px; }
+            .show-arrow .pwa-arrow { display: block; }
         }
     </style>
 </head>
@@ -143,6 +174,13 @@
             </div>
         </div>
     </header>
+
+    <div class="mobile-search-panel" :class="{ open: showMobileSearch }">
+        <div class="mobile-input-group">
+            <input v-model="keyword" @keyup.enter="doSearch" placeholder="输入片名搜索..." ref="mobileInputRef">
+            <i class="fa-solid fa-paper-plane" @click="doSearch"></i>
+        </div>
+    </div>
 
     <div class="main-container">
         <aside class="sidebar" :class="{ open: isSidebarOpen }">
@@ -245,37 +283,26 @@
                 </div>
             </div>
 
-            <!-- 美化后的直播页面 -->
             <div v-if="!isPlayerMode && currentSourceKey === 'live'">
-                <div v-if="loading" style="text-align:center; padding:40px; color:var(--accent);">
+                <div v-if="loading" style="text-align:center; padding:50px; color:var(--accent);">
                     <i class="fa-solid fa-satellite-dish fa-spin fa-2x"></i>
                     <p>正在获取直播信号...</p>
                 </div>
                 
                 <div v-else-if="Object.keys(liveGroups).length > 0">
-                    <div class="live-panel">
-                        <div class="live-header">
-                            <div class="live-title"><i class="fa-solid fa-broadcast-tower"></i> 直播电视</div>
-                            <div class="live-sub">为您聚合多线路直播源，若有播放异常请尝试其它频道或使用 APP</div>
-                        </div>
-                        <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                            <div v-for="group in Object.keys(liveGroups)" :key="group" 
-                                 class="cat-btn" :class="{active: currentLiveGroup === group}"
-                                 @click="currentLiveGroup = group">
-                                {{ group }} ({{ liveGroups[group].length }})
-                            </div>
+                    <div class="cats">
+                        <div v-for="group in Object.keys(liveGroups)" :key="group" 
+                             class="cat-btn" :class="{active: currentLiveGroup === group}"
+                             @click="currentLiveGroup = group">
+                            {{ group }}
                         </div>
                     </div>
 
                     <div class="live-grid">
                         <div v-for="channel in liveGroups[currentLiveGroup]" :key="channel.vod_name" 
                              class="live-card" @click="playLive(channel)">
-                            <div class="live-cover">
-                                <i class="play-icon fa-solid fa-circle-play"></i>
-                                {{ channel.vod_name.substring(0,10) }}
-                            </div>
+                            <div class="live-cover">{{ channel.vod_name.substring(0,4) }}</div>
                             <div class="live-name">{{ channel.vod_name }}</div>
-                            <div class="live-meta">{{ channel.vod_remarks || channel.type_name }}</div>
                         </div>
                     </div>
                 </div>
@@ -378,9 +405,7 @@
             // ⭐⭐⭐ 【用户配置区】 ⭐⭐⭐
             // ===============================================
             
-            // 1. 你的 API 转发地址（请替换为你部署到 Cloudflare Worker 的 URL）
-            // 示例: const API_PROXY = 'https://your-worker.example.workers.dev/';
-            // 把下面的值替换成你部署的 Worker URL（务必是 HTTPS，末尾带斜杠）
+            // 1. 你的 API 转发地址
             const API_PROXY = 'https://api.hanglinkj.com/'; 
 
             // 2. 特殊/福利区开关
@@ -390,6 +415,7 @@
             const showWechat = ref(false);
 
             // 4. APP下载弹窗开关 (新增功能)
+            // true = 开启首次进入弹窗; false = 彻底关闭
             const enableAppModal = ref(true);
             
             // ===============================================
@@ -423,7 +449,7 @@
             const liveGroups = ref({});
             const currentLiveGroup = ref('');
 
-            // 源列表（完整保留）
+            // 源列表
             const generalSources = [
                 { key: 'guangsu', name: '光速资源', icon: 'fa-solid fa-bolt' },
                 { key: 'liangzi', name: '量子资源', icon: 'fa-solid fa-atom' },
@@ -487,6 +513,8 @@
             // --- 新增：APP下载弹窗逻辑 ---
             const initAppModal = () => {
                 if(!enableAppModal.value) return;
+                // 使用 sessionStorage，这样每次关闭浏览器重开都会弹，但在同一会话中不重复弹
+                // 如果想永久不弹，改成 localStorage
                 const hasShown = sessionStorage.getItem('app_modal_shown_v1');
                 if(!hasShown) {
                     setTimeout(() => { showAppModal.value = true; }, 800);
@@ -505,7 +533,9 @@
                 if(currentSourceKey.value === 'live') return; // 直播不记
                 try {
                     let history = JSON.parse(localStorage.getItem('cloudtv_history_v1') || '[]');
+                    // 删除旧的同ID记录
                     history = history.filter(h => h.vod_id !== item.vod_id);
+                    // 添加新的到头部
                     history.unshift({
                         ...item,
                         lastEpName: epName,
@@ -514,6 +544,7 @@
                         lastSourceName: currentSourceName.value,
                         timestamp: new Date().getTime()
                     });
+                    // 限制最大50条
                     if(history.length > 50) history.pop();
                     localStorage.setItem('cloudtv_history_v1', JSON.stringify(history));
                 } catch(e) { console.error('Save history failed', e); }
@@ -537,7 +568,7 @@
 
             // PWA
             const initPWA = () => { window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installPrompt.value = e; checkShow(); }); checkShow(); };
-            const checkShow = () => { if (localStorage.getItem('pwa_prompt_v13')) return; isIOS.value = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream; const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent); if(isMobile) showPwaModal.value = true; };
+            const checkShow = () => { if (localStorage.getItem('pwa_prompt_v13')) return; isIOS.value = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream; const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent); if (isMobile) setTimeout(() => showPwaModal.value = true, 2000); };
             const installPwa = () => { if (installPrompt.value) { installPrompt.value.prompt(); installPrompt.value.userChoice.then((choice) => { if (choice.outcome === 'accepted') closePwaModal(); }); } };
             const closePwaModal = () => { showPwaModal.value = false; localStorage.setItem('pwa_prompt_v13', 'true'); };
 
@@ -550,25 +581,6 @@
                 showMobileSearch.value = !showMobileSearch.value;
                 if(showMobileSearch.value) {
                     nextTick(() => mobileInputRef.value && mobileInputRef.value.focus());
-                }
-            };
-
-            // Utilities: 判断是否为可直接播放的 URL
-            const isDirectPlayable = (u) => {
-                if(!u) return false;
-                const s = String(u).trim();
-                if (s.startsWith('file://')) return false;
-                if (!/^https?:\/\//i.test(s)) return false;
-                return (s.includes('.m3u8') || s.includes('.mp4'));
-            };
-
-            // proxify helper: 将原始 URL 转为代理 URL（API_PROXY 必须配置）
-            const proxify = (orig) => {
-                if(!API_PROXY) return orig;
-                try {
-                    return API_PROXY + 'proxy?url=' + encodeURIComponent(orig);
-                } catch(e) {
-                    return orig;
                 }
             };
 
@@ -596,71 +608,36 @@
                     liveGroups.value = groups;
                     if(groups['精选高清']) currentLiveGroup.value = '精选高清';
                     else currentLiveGroup.value = Object.keys(groups)[0] || '';
-                } catch (e) { console.error('直播加载失败', e); alert('直播数据获取失败，请检查你的 Cloudflare Worker API 是否已部署并正确填写到 API_PROXY'); }
+                } catch (e) { console.error('直播加载失败', e); }
                 loading.value = false;
             };
 
-            // 更稳健的 playLive：解析多种格式并做播放前校验 / 回退
+            // ⭐⭐⭐ 核心逻辑：自动将 HTTP 流量转为 HTTPS 代理 ⭐⭐⭐
             const playLive = (channel) => {
                 currentVod.value = channel;
                 currentEpName.value = '直播中';
                 currentSourceName.value = '电视直播';
                 isPlayerMode.value = true;
+                
+                let url = channel.vod_play_url.split('$')[1];
 
-                const urlStr = channel.vod_play_url || '';
-                const split = urlStr.includes('$$$') ? '$$$' : (urlStr.includes('#') ? '#' : '$');
-                const arr = urlStr.split(split);
-                let candidate = '';
-                for (const seg of arr) {
-                    const p = seg.split('$');
-                    const possible = (p[p.length - 1] || '').trim();
-                    if (!possible) continue;
-                    if (/^https?:\/\//i.test(possible) && (possible.includes('.m3u8') || possible.includes('.mp4'))) {
-                        candidate = possible;
-                        break;
-                    }
-                    if (!candidate) candidate = possible;
-                }
-                if (!candidate && urlStr) candidate = urlStr;
-
-                // 如果是直接可播放的 HLS/MP4，交给播放器
-                if (isDirectPlayable(candidate)) {
-                    // 如果是 http 在 https 页面下，使用 proxy
-                    if (/^http:\/\//i.test(candidate) && location.protocol === 'https:') {
-                        if (API_PROXY) candidate = proxify(candidate);
-                        else {
-                            alert('该频道为 HTTP 地址，浏览器会阻止混合内容。请部署代理并配置 API_PROXY。已在新标签打开源页面。');
-                            window.open(candidate, '_blank');
-                            isPlayerMode.value = false;
-                            return;
-                        }
-                    }
-                    episodes.value = { '直播': candidate };
-                    switchEp('直播', candidate);
-                    nextTick(() => { if (contentRef.value) contentRef.value.scrollTop = 0; });
-                    return;
+                // 检测：如果地址是 http:// 且不是本地测试环境
+                if (url.startsWith('http://') && !url.includes('localhost')) {
+                    // 使用你的 Worker 代理模式: ?ac=proxy&url=...
+                    // 这里利用了你配置的 API_PROXY 变量
+                    url = `${API_PROXY}?ac=proxy&url=${encodeURIComponent(url)}`;
+                    console.log('正在使用代理播放 HTTP 流:', url);
                 }
 
-                // 如果是 http(s) 但不是 m3u8/mp4（例如 HTML 页面），在新标签打开
-                if (/^https?:\/\//i.test(candidate)) {
-                    if (location.protocol === 'https:' && candidate.startsWith('http:')) {
-                        alert('该频道为非 HTTPS 地址，浏览器将在 GitHub Pages（HTTPS）下阻止混合内容播放。建议使用 Cloudflare 代理将其转为 HTTPS 后播放。已在新标签中打开源页面。');
-                    } else {
-                        alert('该频道不是直接的媒体流，会在新标签中打开源页面以便手动播放或查看。');
-                    }
-                    window.open(candidate, '_blank');
-                    isPlayerMode.value = false;
-                    return;
-                }
-
-                alert('未能解析到可播放的直播流，可能返回了不可识别的格式或本地路径。');
-                isPlayerMode.value = false;
+                switchEp('Live', url);
+                nextTick(() => { if(contentRef.value) contentRef.value.scrollTop = 0; });
             };
 
             const fetchData = async (isLoadMore = false) => {
                 if(loading.value) return; 
                 if(!hasMore.value && isLoadMore) return; 
                 
+                // 历史记录模式特殊处理
                 if(currentSourceKey.value === 'history') {
                     loading.value = true;
                     const history = JSON.parse(localStorage.getItem('cloudtv_history_v1') || '[]');
@@ -688,7 +665,7 @@
                         else list.value = data.list;
                         page.value++;
                     } else hasMore.value = false;
-                } catch(e) { hasMore.value = false; console.error('fetchData error', e); }
+                } catch(e) { hasMore.value = false; }
                 loading.value = false;
             };
 
@@ -728,7 +705,13 @@
 
             const openPlayer = (item) => {
                 currentVod.value = item;
-                const urlStr = item.vod_play_url || '';
+                // 如果是从历史记录点进来的，需要恢复源
+                if(currentSourceKey.value === 'history' && item.lastSourceKey) {
+                    // 仅显示用，不真正切换全局源，以免返回列表乱了
+                    // 但为了解析正确，这里我们直接解析 vod_play_url 即可
+                }
+
+                const urlStr = item.vod_play_url;
                 const eps = {};
                 const split = urlStr.includes('$$$') ? '$$$' : '#';
                 const arr = urlStr.split(split);
@@ -736,26 +719,12 @@
                 arr.forEach(seg => {
                     const p = seg.split('$');
                     if(p.length >= 2) {
-                        const n = p[0] || '播放';
-                        const u = p[p.length-1] ? p[p.length-1].trim() : '';
-                        if(u) {
-                            // 对 http 在 https 页面做 proxify
-                            let finalUrl = u;
-                            if (/^http:\/\//i.test(u) && location.protocol === 'https:' && API_PROXY) finalUrl = proxify(u);
-                            eps[n] = finalUrl;
-                            if(!first && (finalUrl.includes('.m3u8') || finalUrl.includes('.mp4'))) first = {n, u: finalUrl};
-                            else if(!first) first = {n, u: finalUrl};
-                        }
+                        const n = p[0];
+                        const u = p[p.length-1];
+                        if(u.includes('.m3u8') || u.includes('.mp4')) { eps[n] = u; if(!first) first = {n, u}; }
                     }
                 });
-                if(!first && arr.length > 0) {
-                    const p = arr[0].split('$');
-                    const u = p[p.length-1] || arr[0];
-                    let finalUrl = u;
-                    if (/^http:\/\//i.test(u) && location.protocol === 'https:' && API_PROXY) finalUrl = proxify(u);
-                    first = { n:'播放', u: finalUrl };
-                    eps['播放'] = finalUrl;
-                }
+                if(!first && arr.length > 0) { const p = arr[0].split('$'); first = { n:'播放', u: p[p.length-1] }; eps['播放'] = first.u; }
                 episodes.value = eps;
                 
                 // 优先播放历史记录的集数
@@ -770,25 +739,13 @@
                 nextTick(() => { if(contentRef.value) contentRef.value.scrollTop = 0; });
             };
 
-            // switchEp 增加播放前校验；对非 HLS/MP4 地址回退到新标签打开
             const switchEp = (name, url) => {
                 currentEpName.value = name;
                 currentPlayUrl.value = url;
                 
+                // 记录历史
                 if(currentVod.value) {
                     saveHistory(currentVod.value, name, url);
-                }
-
-                if (!url) { alert('播放地址为空'); return; }
-                if (!isDirectPlayable(url)) {
-                    if (/^https?:\/\//i.test(url)) {
-                        alert('地址不是直接的 HLS/MP4 流，已在新标签打开以便查看源页面或尝试播放。');
-                        window.open(url, '_blank');
-                        return;
-                    } else {
-                        alert('无法播放此地址（可能为本地路径或不受支持的格式）');
-                        return;
-                    }
                 }
 
                 setTimeout(() => {

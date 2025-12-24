@@ -1,2 +1,840 @@
 <!DOCTYPE html>
-<html lang="zh-CN">...
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="referrer" content="no-referrer">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="CloudTV">
+    <link rel="apple-touch-icon" href="https://via.placeholder.com/192x192/3ea6ff/ffffff?text=TV"> 
+    
+    <title>晓林影视城,专门提供电影电影观看而生.</title>
+    
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        :root { --sidebar-width: 240px; --header-height: 64px; }
+
+        /* 主题定义 */
+        body.theme-dark { --bg-body: #121212; --bg-sidebar: #1e1e1e; --bg-card: #2c2c2c; --text-main: #fff; --text-sub: #aaa; --accent: #3ea6ff; --border: rgba(255,255,255,0.1); --hover: #333; --pwa-bg: rgba(30,30,30,0.9); }
+        body.theme-light { --bg-body: #f5f7fa; --bg-sidebar: #fff; --bg-card: #fff; --text-main: #333; --text-sub: #666; --accent: #0984e3; --border: #e0e0e0; --hover: #f0f0f0; --pwa-bg: rgba(255,255,255,0.95); }
+        body.theme-red { --bg-body: #000; --bg-sidebar: #141414; --bg-card: #1f1f1f; --text-main: #e5e5e5; --text-sub: #999; --accent: #e50914; --border: #333; --hover: #333; --pwa-bg: rgba(20,20,20,0.9); }
+        body.theme-blue { --bg-body: #0f172a; --bg-sidebar: #1e293b; --bg-card: #334155; --text-main: #e2e8f0; --text-sub: #94a3b8; --accent: #38bdf8; --border: #475569; --hover: #475569; --pwa-bg: rgba(20,20,30,0.9); }
+        body.theme-green { --bg-body: #f0fdf4; --bg-sidebar: #ffffff; --bg-card: #ffffff; --text-main: #14532d; --text-sub: #4ade80; --accent: #16a34a; --border: #bbf7d0; --hover: #dcfce7; --pwa-bg: rgba(255,255,255,0.95); }
+        body.theme-purple { --bg-body: #2e1065; --bg-sidebar: #4c1d95; --bg-card: #5b21b6; --text-main: #ddd6fe; --text-sub: #a78bfa; --accent: #c084fc; --border: #6d28d9; --hover: #7c3aed; --pwa-bg: rgba(40,20,80,0.9); }
+        body.theme-gold { --bg-body: #1c1c1c; --bg-sidebar: #2b2b2b; --bg-card: #383838; --text-main: #f1c40f; --text-sub: #bf953f; --accent: #f39c12; --border: #444; --hover: #4a4a4a; --pwa-bg: rgba(20,20,20,0.9); }
+
+        /* 基础样式 */
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: sans-serif; background: var(--bg-body); color: var(--text-main); transition: background 0.3s; }
+        .app-layout { display: flex; flex-direction: column; height: 100%; width: 100%; overflow: hidden; }
+        .main-container { display: flex; flex: 1; overflow: hidden; position: relative; width: 100%; }
+
+        /* Header */
+        .header { height: var(--header-height); background: var(--bg-sidebar); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 20px; position: relative; z-index: 5000; }
+        .left-area { display: flex; align-items: center; gap: 15px; z-index: 5001; }
+        .menu-toggle { font-size: 20px; cursor: pointer; padding: 5px; }
+        .logo { font-size: 20px; font-weight: bold; display: flex; align-items: center; gap: 8px; cursor: pointer; white-space: nowrap; }
+        .logo i { color: var(--accent); }
+        .search-box { position: absolute; left: 50%; transform: translateX(-50%); width: 40%; max-width: 500px; display: flex; z-index: 5001; }
+        .search-box input { width: 100%; background: var(--bg-body); border: 1px solid var(--border); color: var(--text-main); padding: 10px 40px 10px 20px; border-radius: 50px; outline: none; }
+        .search-icon { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: var(--text-sub); }
+        .header-right { position: absolute; right: 20px; top: 0; bottom: 0; display: flex; gap: 12px; align-items: center; z-index: 9999; }
+        .btn-icon { width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; background: var(--bg-card); color: var(--text-main); }
+        .btn-icon:hover { border-color: var(--accent); color: var(--accent); transform: scale(1.1); }
+
+        /* Sidebar */
+        .sidebar { width: var(--sidebar-width); background: var(--bg-sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; transition: transform 0.3s ease; }
+        .sidebar-scroll { flex: 1; overflow-y: auto; padding: 10px 0; }
+        .group-name { font-size: 12px; color: var(--text-sub); padding: 15px 15px 5px; font-weight: bold; }
+        .nav-item { padding: 12px 15px; margin: 2px 10px; border-radius: 6px; cursor: pointer; color: var(--text-sub); display: flex; align-items: center; gap: 10px; font-size: 14px; }
+        .nav-item:hover { background: var(--hover); color: var(--text-main); }
+        .nav-item.active { background: var(--accent); color: white; }
+        .nav-item i { width: 18px; text-align: center; }
+        .sidebar-footer { padding: 15px; border-top: 1px solid var(--border); background: var(--bg-sidebar); display: flex; flex-direction: column; gap: 10px; }
+        .contact-title { font-size: 12px; color: var(--text-sub); font-weight: bold; margin-bottom: 5px; }
+        .contact-link { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--bg-card); border-radius: 8px; color: var(--text-main); text-decoration: none; font-size: 14px; }
+        .wechat-box { background: #fff; padding: 5px; border-radius: 8px; margin-top: 5px; }
+        .wechat-box img { width: 100%; display: block; border-radius: 4px; }
+
+        /* Content */
+        .content { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 20px; position: relative; scroll-behavior: auto; width: 100%; box-sizing: border-box; }
+        .cats { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .cat-btn { padding: 6px 18px; border-radius: 20px; border: 1px solid var(--border); background: var(--bg-card); font-size: 13px; cursor: pointer; color: var(--text-main); transition: 0.2s; }
+        .cat-btn.active { background: var(--text-main); color: var(--bg-body); border-color: var(--text-main); font-weight: bold; }
+
+        /* Grid */
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; }
+        .card { cursor: pointer; position: relative; width: 100%; overflow: hidden; }
+        .poster-wrap { width: 100%; aspect-ratio: 2/3; border-radius: 8px; overflow: hidden; background: #000; position: relative; margin-bottom: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .poster { width: 100%; height: 100%; object-fit: cover; transition: 0.3s; }
+        .card:hover .poster { transform: scale(1.05); }
+        .badge { position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.8); color: #fbbf24; font-size: 10px; padding: 2px 5px; border-radius: 4px; }
+        .title { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
+
+        /* Live Grid */
+        .live-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; }
+        .live-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; cursor: pointer; overflow: hidden; transition: 0.2s; text-align: center; }
+        .live-card:hover { transform: translateY(-5px); border-color: var(--accent); }
+        .live-cover { height: 90px; width: 100%; background: var(--live-bg); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 20px; font-weight: bold; text-shadow: 0 2px 6px rgba(0,0,0,0.6); }
+        .live-name { padding: 12px 5px; font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .load-status { text-align: center; padding: 30px; color: var(--text-sub); font-size: 13px; width: 100%; clear: both; }
+
+        /* Player */
+        .player-page { max-width: 1000px; margin: 0 auto; animation: fade 0.3s; padding-bottom: 50px; width: 100%; box-sizing: border-box; }
+        @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+        .video-box { width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 10px; overflow: hidden; margin-top: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        video { width: 100%; height: 100%; }
+        .controls { padding: 20px 0; }
+        .back-btn { display: inline-flex; align-items: center; gap: 5px; padding: 8px 16px; background: var(--bg-card); border-radius: 6px; cursor: pointer; font-size: 14px; margin-bottom: 15px; }
+        .ep-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px; margin-top: 15px; max-height: 250px; overflow-y: auto; }
+        .ep-item { text-align: center; padding: 8px; background: var(--bg-card); border-radius: 4px; font-size: 13px; cursor: pointer; border: 1px solid transparent; }
+        .ep-item.active { background: var(--accent); color: white; }
+
+        /* PWA Toast */
+        .pwa-toast { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--pwa-bg); color: var(--text-main); padding: 20px; border-radius: 20px 20px 0 0; box-shadow: 0 -5px 40px rgba(0,0,0,0.3); z-index: 10000; animation: slideUp 0.4s ease; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .pwa-header { display: flex; justify-content: space-between; align-items: center; }
+        .pwa-title { font-weight: bold; font-size: 16px; display: flex; align-items: center; gap: 8px; }
+        .pwa-desc { font-size: 13px; color: var(--text-sub); line-height: 1.5; }
+        .pwa-btn { background: var(--accent); color: #fff; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; width: 100%; }
+        .pwa-arrow { position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); color: var(--text-main); animation: bounce 2s infinite; display: none; z-index: 10001; }
+        @keyframes bounce { 0%, 20%, 50%, 80%, 100% {transform:translateX(-50%) translateY(0);} 40% {transform:translateX(-50%) translateY(-10px);} 60% {transform:translateX(-50%) translateY(-5px);} }
+
+        /* Download App Modal */
+        .app-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 20000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); animation: fade 0.2s ease; }
+        .app-modal-box { background: var(--bg-sidebar); width: 90%; max-width: 500px; border-radius: 20px; padding: 25px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); border: 1px solid var(--border); position: relative; }
+        .app-modal-title { font-size: 20px; font-weight: bold; text-align: center; margin-bottom: 20px; color: var(--text-main); }
+        .app-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .app-item { background: var(--bg-card); border: 1px solid var(--border); padding: 20px 10px; border-radius: 12px; text-align: center; cursor: pointer; transition: 0.2s; text-decoration: none; color: var(--text-main); }
+        .app-item:hover { transform: translateY(-5px); border-color: var(--accent); background: var(--hover); }
+        .app-item i { font-size: 30px; margin-bottom: 10px; color: var(--accent); }
+        .app-item div { font-size: 14px; font-weight: 500; }
+        .app-close { position: absolute; top: 15px; right: 15px; cursor: pointer; color: var(--text-sub); font-size: 20px; }
+        .app-close:hover { color: var(--accent); }
+
+        /* Mobile Search Panel */
+        .mobile-search-trigger { display: none; }
+        .mobile-search-panel { background: var(--bg-sidebar); height: 0; overflow: hidden; transition: height 0.3s ease; display: flex; align-items: center; padding: 0 15px; border-bottom: 1px solid var(--border); }
+        .mobile-search-panel.open { height: 60px; }
+        .mobile-input-group { width: 100%; display: flex; align-items: center; background: var(--bg-body); border-radius: 30px; padding: 5px 15px; border: 1px solid var(--border); }
+        .mobile-input-group input { flex: 1; background: transparent; border: none; color: var(--text-main); padding: 5px; outline: none; font-size: 14px; }
+        .mobile-input-group i { color: var(--accent); margin-left: 10px; cursor: pointer;}
+
+        /* Mobile */
+        @media (max-width: 768px) {
+            .mobile-search-trigger { display: flex; }
+            .sidebar { position: fixed; left: 0; top: var(--header-height); bottom: 0; z-index: 6000; transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); box-shadow: 10px 0 20px rgba(0,0,0,0.5); }
+            .search-box { display: none; }
+            .grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+            .live-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+            .title { font-size: 11px; margin-top: 4px; }
+            .poster-wrap { margin-bottom: 4px; border-radius: 4px; }
+            .badge { font-size: 9px; padding: 1px 3px; top: 2px; right: 2px; }
+            .content { padding: 10px; }
+            .video-box { border-radius: 0; margin: 0 -10px; width: calc(100% + 20px); }
+            .live-cover { height: 60px; font-size: 16px; }
+            .sidebar-footer { padding-bottom: 40px; }
+            .show-arrow .pwa-arrow { display: block; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="app" class="app-layout">
+    
+    <header class="header">
+        <div class="left-area">
+            <i class="fa-solid fa-bars menu-toggle" @click="toggleSidebar"></i>
+            <div class="logo" @click="goHome">
+                <i class="fa-solid fa-cloud"></i> 晓林影视城
+            </div>
+        </div>
+
+        <div class="search-box">
+            <input v-model="keyword" @keyup.enter="doSearch" placeholder="搜索全网资源...">
+            <i class="fa-solid fa-magnifying-glass search-icon" @click="doSearch"></i>
+        </div>
+
+        <div class="header-right">
+            <div class="btn-icon mobile-search-trigger" @click="toggleMobileSearch">
+                <i class="fa-solid fa-magnifying-glass"></i>
+            </div>
+            <div class="btn-icon" @click="openAppModal" title="APP下载">
+                <i class="fa-solid fa-download"></i>
+            </div>
+            <div class="btn-icon" @click.stop="switchTheme" title="切换颜色">
+                <i class="fa-solid fa-palette"></i>
+            </div>
+        </div>
+    </header>
+
+    <div class="mobile-search-panel" :class="{ open: showMobileSearch }">
+        <div class="mobile-input-group">
+            <input v-model="keyword" @keyup.enter="doSearch" placeholder="输入片名搜索..." ref="mobileInputRef">
+            <i class="fa-solid fa-paper-plane" @click="doSearch"></i>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <aside class="sidebar" :class="{ open: isSidebarOpen }">
+            <div class="sidebar-scroll">
+                
+                <div class="group-name">功能模式</div>
+                <div class="nav-item" :class="{active: currentSourceKey !== 'live' && currentSourceKey !== 'history'}" @click="changeSource(generalSources[0])">
+                    <i class="fa-solid fa-film"></i> 首页
+                </div>
+                <div class="nav-item" :class="{active: currentSourceKey === 'live'}" @click="enterLiveMode">
+                    <i class="fa-solid fa-tv"></i> 直播电视
+                </div>
+                <div class="nav-item" :class="{active: currentSourceKey === 'history'}" @click="enterHistoryMode">
+                    <i class="fa-solid fa-clock-rotate-left"></i> 播放记录
+                </div>
+
+                <div v-if="currentSourceKey !== 'live' && currentSourceKey !== 'history'">
+                    <div class="group-name">当前线路</div>
+                    <div class="nav-item active">
+                        <i class="fa-solid fa-tower-broadcast"></i> {{ currentSourceName }}
+                    </div>
+
+                    <div class="group-name">综合资源</div>
+                    <div v-for="s in generalSources" :key="s.key" 
+                         class="nav-item" :class="{active: currentSourceKey === s.key}"
+                         @click="changeSource(s)">
+                        <i :class="s.icon"></i> {{ s.name }}
+                    </div>
+
+                    <div v-if="showSpecialSection">
+                        <div class="group-name" style="color:#e74c3c; margin-top:20px;">特殊 / 福利</div>
+                        <div v-for="s in specialSources" :key="s.key" 
+                             class="nav-item" :class="{active: currentSourceKey === s.key}"
+                             @click="changeSource(s)">
+                            <i :class="s.icon"></i> {{ s.name }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-footer">
+                <div class="contact-title">有问题找到我</div>
+                <a href="https://github.com/xiaolin1991" target="_blank" class="contact-link">
+                    <i class="fa-brands fa-github"></i> GitHub
+                </a>
+                <div class="contact-link" @click="toggleWechat">
+                    <i class="fa-brands fa-weixin"></i> 微信咨询
+                </div>
+                <div v-if="showWechat" class="wechat-box">
+                    <img src="./wechat.png" alt="请上传 wechat.png">
+                </div>
+            </div>
+        </aside>
+
+        <div v-if="isSidebarOpen" @click="toggleSidebar" 
+             style="position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:5500;"></div>
+
+        <main class="content" ref="contentRef" @scroll="handleScroll">
+            
+            <div v-if="!isPlayerMode && currentSourceKey !== 'live'">
+                <div class="cats" v-if="currentSourceKey !== 'history'">
+                    <div class="cat-btn" :class="{active: currentCat==='latest'}" @click="changeCat('latest')">最新</div>
+                    <div class="cat-btn" :class="{active: currentCat==='movie'}" @click="changeCat('movie')">电影</div>
+                    <div class="cat-btn" :class="{active: currentCat==='tv'}" @click="changeCat('tv')">剧集</div>
+                    <div class="cat-btn" :class="{active: currentCat==='anime'}" @click="changeCat('anime')">动漫</div>
+                    <div class="cat-btn" :class="{active: currentCat==='variety'}" @click="changeCat('variety')">综艺</div>
+                </div>
+
+                <div v-if="currentSourceKey === 'history'" style="margin-bottom:20px; display:flex; justify-content:space-between; align-items:center;">
+                    <div style="font-weight:bold;">我的观看历史</div>
+                    <button class="pwa-btn" style="width:auto; padding:5px 15px; font-size:12px; background:#e74c3c;" @click="clearHistory">
+                        <i class="fa-solid fa-trash"></i> 清空记录
+                    </button>
+                </div>
+
+                <div class="grid">
+                    <div class="card" v-for="item in list" :key="item.vod_id" @click="openPlayer(item)">
+                        <div class="poster-wrap">
+                            <img :src="item.vod_pic" class="poster" @error="imgError" loading="lazy">
+                            <div class="badge">{{ item.vod_remarks || item.vod_year }}</div>
+                        </div>
+                        <div class="title">{{ item.vod_name }}</div>
+                        <div v-if="currentSourceKey === 'history' && item.lastEpName" 
+                             style="font-size:11px; color:var(--text-sub); margin-top:2px;">
+                             看到: {{ item.lastEpName }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="load-status">
+                    <span v-if="loading && page===1">初始化中...</span>
+                    <span v-else-if="loading"><i class="fa-solid fa-spinner fa-spin"></i> 加载中...</span>
+                    <span v-else-if="currentSourceKey === 'history' && list.length===0">暂无观看记录</span>
+                    <span v-else-if="!hasMore && list.length>0">🎉 已加载全部</span>
+                    <span v-else-if="list.length===0 && !loading" style="display:flex; flex-direction:column; align-items:center; gap:10px;">
+                        <div>暂无数据或加载失败</div>
+                        <button class="pwa-btn" style="width:auto; padding:8px 20px;" @click="fetchData(false)">重试连接</button>
+                    </span>
+                    <span v-else-if="currentSourceKey !== 'history'">向上滑动加载更多</span>
+                </div>
+            </div>
+
+            <div v-if="!isPlayerMode && currentSourceKey === 'live'">
+                <div v-if="loading" style="text-align:center; padding:50px; color:var(--accent);">
+                    <i class="fa-solid fa-satellite-dish fa-spin fa-2x"></i>
+                    <p>正在获取直播信号...</p>
+                </div>
+                
+                <div v-else-if="Object.keys(liveGroups).length > 0">
+                    <div class="cats">
+                        <div v-for="group in Object.keys(liveGroups)" :key="group" 
+                             class="cat-btn" :class="{active: currentLiveGroup === group}"
+                             @click="currentLiveGroup = group">
+                            {{ group }}
+                        </div>
+                    </div>
+
+                    <div class="live-grid">
+                        <div v-for="channel in liveGroups[currentLiveGroup]" :key="channel.vod_name" 
+                             class="live-card" @click="playLive(channel)">
+                            <div class="live-cover">{{ channel.vod_name.substring(0,4) }}</div>
+                            <div class="live-name">{{ channel.vod_name }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div v-else style="text-align:center; margin-top:50px;">
+                    <i class="fa-solid fa-triangle-exclamation fa-3x" style="color:var(--text-sub); margin-bottom:20px;"></i>
+                    <p style="color:var(--text-sub)">暂未获取到数据</p>
+                    <button class="pwa-btn" style="width:auto; padding:10px 30px;" @click="enterLiveMode">强制刷新重试</button>
+                </div>
+            </div>
+
+            <div v-else-if="isPlayerMode" class="player-page">
+                <div class="back-btn" @click="closePlayer">
+                    <i class="fa-solid fa-arrow-left"></i> 返回列表
+                </div>
+
+                <div class="video-box">
+                    <video id="player" controls autoplay playsinline></video>
+                </div>
+
+                <div class="controls">
+                    <h2 style="margin:0;">{{ currentVod.vod_name }}</h2>
+                    <div style="font-size:13px; color:var(--text-sub); margin-top:5px;">
+                        正在播放: {{ currentEpName }} <span style="margin-left:10px; color:var(--accent)">({{ currentSourceName }})</span>
+                    </div>
+
+                    <div v-if="currentSourceKey !== 'live'" class="ep-list">
+                        <div v-for="(url, name) in episodes" :key="name" 
+                             class="ep-item" :class="{active: currentPlayUrl === url}"
+                             @click="switchEp(name, url)">
+                            {{ name }}
+                        </div>
+                    </div>
+                </div>
+
+                <h3 style="margin-top:30px;">猜你喜欢</h3>
+                <div class="grid">
+                    <div class="card" v-for="item in recommendList" :key="item.vod_id" @click="openPlayer(item)">
+                        <div class="poster-wrap">
+                            <img :src="item.vod_pic" class="poster" @error="imgError">
+                            <div class="badge">{{ item.vod_remarks }}</div>
+                        </div>
+                        <div class="title">{{ item.vod_name }}</div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <div v-if="showPwaModal" class="pwa-toast" :class="{ 'show-arrow': isIOS }">
+        <div class="pwa-header">
+            <div class="pwa-title"><i class="fa-solid fa-download"></i> 安装应用到桌面</div>
+            <div class="pwa-close" @click="closePwaModal"><i class="fa-solid fa-xmark"></i></div>
+        </div>
+        <div class="pwa-desc">
+            <div v-if="isIOS">点击下方工具栏 <i class="fa-solid fa-arrow-up-from-bracket"></i> 分享按钮，<br>选择 <strong>“添加到主屏幕”</strong>。</div>
+            <div v-else>点击下方按钮即可安装到桌面，体验更佳。</div>
+        </div>
+        <button v-if="!isIOS && installPrompt" class="pwa-btn" @click="installPwa">立即安装</button>
+        <button v-else class="pwa-btn" @click="closePwaModal">知道了</button>
+        <div v-if="isIOS" class="pwa-arrow"><i class="fa-solid fa-arrow-down fa-2x"></i></div>
+    </div>
+
+    <div v-if="showAppModal && enableAppModal" class="app-modal-overlay">
+        <div class="app-modal-box">
+            <div class="app-close" @click="closeAppModal"><i class="fa-solid fa-xmark"></i></div>
+            <div class="app-modal-title">下载客户端，体验更流畅</div>
+            <div class="app-grid">
+                <a href="#" class="app-item">
+                    <i class="fa-brands fa-windows"></i>
+                    <div>等待电脑版</div>
+                </a>
+                <a href="https://git.hanglinkj.com/APP/%E6%99%93%E6%9E%97%E7%94%B5%E8%A7%86.apk" class="app-item">
+                    <i class="fa-brands fa-android"></i>
+                    <div>安卓端下载</div>
+                </a>
+                <a href="#" class="app-item">
+                    <i class="fa-brands fa-apple"></i>
+                    <div>等待苹果版</div>
+                </a>
+                <a href="#" class="app-item">
+                    <i class="fa-solid fa-tv"></i>
+                    <div>等待TV版</div>
+                </a>
+            </div>
+            <div style="text-align:center; margin-top:20px; font-size:12px; color:var(--text-sub);">
+                推荐使用 APP 观看，无广告、更稳定
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const { createApp, ref, nextTick, onMounted } = Vue;
+
+    createApp({
+        setup() {
+            // ===============================================
+            // ⭐⭐⭐ 【用户配置区】 ⭐⭐⭐
+            // ===============================================
+            
+            // 1. 你的 API 转发地址
+            const API_PROXY = 'https://api.hanglinkj.com/'; 
+
+            // 2. 特殊/福利区开关
+            const showSpecialSection = ref(false); 
+
+            // 3. 微信图片开关
+            const showWechat = ref(false);
+
+            // 4. APP下载弹窗开关 (新增功能)
+            // true = 开启首次进入弹窗; false = 彻底关闭
+            const enableAppModal = ref(true);
+            
+            // ===============================================
+            // ⭐⭐⭐ 【配置结束】 ⭐⭐⭐
+            // ===============================================
+
+            // PWA & APP Modal
+            const showPwaModal = ref(false);
+            const showAppModal = ref(false);
+            const isIOS = ref(false);
+            const installPrompt = ref(null);
+
+            const isSidebarOpen = ref(false);
+            const showMobileSearch = ref(false);
+            const mobileInputRef = ref(null);
+
+            const themes = ['theme-dark', 'theme-light', 'theme-red', 'theme-blue', 'theme-green', 'theme-purple', 'theme-gold'];
+            const currentTheme = ref('theme-dark');
+            const isPlayerMode = ref(false);
+            const loading = ref(false);
+            const contentRef = ref(null);
+
+            const list = ref([]);
+            const recommendList = ref([]);
+            const keyword = ref('');
+            const currentCat = ref('latest');
+            const page = ref(1);
+            const hasMore = ref(true);
+
+            // 直播数据
+            const liveGroups = ref({});
+            const currentLiveGroup = ref('');
+
+            // 源列表
+            const generalSources = [
+                { key: 'guangsu', name: '光速资源', icon: 'fa-solid fa-bolt' },
+                { key: 'liangzi', name: '量子资源', icon: 'fa-solid fa-atom' },
+                { key: 'hongniu', name: '红牛资源', icon: 'fa-solid fa-bullhorn' },
+                { key: 'ikun', name: 'iKun资源', icon: 'fa-solid fa-basketball' },
+                { key: 'tianya', name: '天涯影视', icon: 'fa-solid fa-mountain-sun' },
+                { key: 'kuaiche', name: '快车资源', icon: 'fa-solid fa-truck-fast' },
+                { key: 'wujin', name: '无尽资源', icon: 'fa-solid fa-infinity' },
+                { key: 'zuidazy', name: '最大资源', icon: 'fa-solid fa-maximize' },
+                { key: 'yinghua', name: '樱花资源', icon: 'fa-solid fa-fan' },
+                { key: 'douban', name: '豆瓣资源', icon: 'fa-brands fa-douban' },
+                { key: 'subo', name: '速播资源', icon: 'fa-solid fa-forward' },
+                { key: 'uku', name: 'U酷资源', icon: 'fa-solid fa-u' },
+                { key: 'shanhai', name: '山海资源', icon: 'fa-solid fa-water' },
+                { key: 'xinlang', name: '新浪资源', icon: 'fa-brands fa-weibo' },
+                { key: 'wangwang', name: '旺旺资源', icon: 'fa-solid fa-dog' },
+                { key: 'baofeng', name: '暴风资源', icon: 'fa-solid fa-wind' },
+                { key: 'jisu', name: '极速资源', icon: 'fa-solid fa-gauge-high' },
+                { key: 'maoyan', name: '猫眼资源', icon: 'fa-solid fa-cat' },
+                { key: 'suoni', name: '索尼资源', icon: 'fa-solid fa-gamepad' },
+                { key: 'maotai', name: '茅台资源', icon: 'fa-solid fa-wine-bottle' },
+                { key: 'huya', name: '虎牙资源', icon: 'fa-solid fa-paw' },
+                { key: 'jinying', name: '金鹰资源', icon: 'fa-solid fa-feather' },
+                { key: 'shandian', name: '闪电资源', icon: 'fa-solid fa-bolt-lightning' },
+                { key: 'feifan', name: '非凡资源', icon: 'fa-solid fa-plane' },
+                { key: 'piaoling', name: '飘零资源', icon: 'fa-solid fa-snowflake' },
+                { key: 'modu', name: '魔都资源', icon: 'fa-solid fa-city' },
+                { key: 'yaya', name: '鸭鸭资源', icon: 'fa-solid fa-kiwi-bird' },
+                { key: 'ckzy', name: 'CK资源', icon: 'fa-solid fa-cube' }
+            ];
+
+            const specialSources = [
+                { key: '91madou', name: '91麻豆', icon: 'fa-solid fa-fire' },
+                { key: 'jkun', name: 'JKUN资源', icon: 'fa-solid fa-music' },
+                { key: 'siwa', name: '丝袜资源', icon: 'fa-solid fa-socks' },
+                { key: 'cl', name: '百万资源', icon: 'fa-solid fa-leaf' },
+                { key: '155zy', name: '155资源', icon: 'fa-solid fa-1' },
+                { key: 'souav', name: 'SouAV', icon: 'fa-solid fa-video' },
+                { key: 'youyou', name: '优优资源', icon: 'fa-solid fa-y' },
+                { key: 'zuise', name: '最色资源', icon: 'fa-solid fa-heart' },
+                { key: 'aosika', name: '奥斯卡', icon: 'fa-solid fa-trophy' },
+                { key: 'xiaoji', name: '小鸡资源', icon: 'fa-solid fa-egg' },
+                { key: 'xing', name: '幸资源', icon: 'fa-solid fa-star' },
+                { key: 'xingba', name: '杏吧资源', icon: 'fa-solid fa-lemon' },
+                { key: 'didi', name: '滴滴资源', icon: 'fa-solid fa-car' },
+                { key: 'yutu', name: '玉兔资源', icon: 'fa-solid fa-rabbit' },
+                { key: 'baipiao', name: '白嫖资源', icon: 'fa-solid fa-gift' },
+                { key: 'meishaonv', name: '美少女', icon: 'fa-solid fa-person-dress' },
+                { key: 'lebo', name: '乐播资源', icon: 'fa-solid fa-play' },
+                { key: 'taohua', name: '桃花资源', icon: 'fa-solid fa-spa' }
+            ];
+
+            const currentSourceKey = ref('guangsu');
+            const currentSourceName = ref('光速资源');
+            const currentVod = ref(null);
+            const episodes = ref({});
+            const currentPlayUrl = ref('');
+            const currentEpName = ref('');
+            let hls = null;
+
+            // --- 新增：APP下载弹窗逻辑 ---
+            const initAppModal = () => {
+                if(!enableAppModal.value) return;
+                // 使用 sessionStorage，这样每次关闭浏览器重开都会弹，但在同一会话中不重复弹
+                // 如果想永久不弹，改成 localStorage
+                const hasShown = sessionStorage.getItem('app_modal_shown_v1');
+                if(!hasShown) {
+                    setTimeout(() => { showAppModal.value = true; }, 800);
+                }
+            };
+            const closeAppModal = () => {
+                showAppModal.value = false;
+                sessionStorage.setItem('app_modal_shown_v1', 'true');
+            };
+            const openAppModal = () => {
+                showAppModal.value = true;
+            };
+
+            // --- 新增：历史记录逻辑 ---
+            const saveHistory = (item, epName, playUrl) => {
+                if(currentSourceKey.value === 'live') return; // 直播不记
+                try {
+                    let history = JSON.parse(localStorage.getItem('cloudtv_history_v1') || '[]');
+                    // 删除旧的同ID记录
+                    history = history.filter(h => h.vod_id !== item.vod_id);
+                    // 添加新的到头部
+                    history.unshift({
+                        ...item,
+                        lastEpName: epName,
+                        lastPlayUrl: playUrl,
+                        lastSourceKey: currentSourceKey.value,
+                        lastSourceName: currentSourceName.value,
+                        timestamp: new Date().getTime()
+                    });
+                    // 限制最大50条
+                    if(history.length > 50) history.pop();
+                    localStorage.setItem('cloudtv_history_v1', JSON.stringify(history));
+                } catch(e) { console.error('Save history failed', e); }
+            };
+
+            const enterHistoryMode = () => {
+                currentSourceKey.value = 'history';
+                currentSourceName.value = '播放记录';
+                keyword.value = '';
+                isPlayerMode.value = false;
+                if(window.innerWidth < 768) isSidebarOpen.value = false;
+                fetchData(false);
+            };
+
+            const clearHistory = () => {
+                if(confirm('确定要清空所有观看记录吗？')) {
+                    localStorage.removeItem('cloudtv_history_v1');
+                    list.value = [];
+                }
+            };
+
+            // PWA
+            const initPWA = () => { window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installPrompt.value = e; checkShow(); }); checkShow(); };
+            const checkShow = () => { if (localStorage.getItem('pwa_prompt_v13')) return; isIOS.value = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream; const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent); if(isMobile) showPwaModal.value = true; };
+            const installPwa = () => { if (installPrompt.value) { installPrompt.value.prompt(); installPrompt.value.userChoice.then((choice) => { if (choice.outcome === 'accepted') closePwaModal(); }); } };
+            const closePwaModal = () => { showPwaModal.value = false; localStorage.setItem('pwa_prompt_v13', 'true'); };
+
+            const applyTheme = (theme) => { currentTheme.value = theme; document.body.className = theme; localStorage.setItem('cloudtv_theme_v10', theme); };
+            const switchTheme = () => { let idx = themes.indexOf(currentTheme.value); if(idx === -1) idx = 0; idx = (idx + 1) % themes.length; applyTheme(themes[idx]); };
+            const toggleSidebar = () => isSidebarOpen.value = !isSidebarOpen.value;
+            const toggleWechat = () => showWechat.value = !showWechat.value;
+            
+            const toggleMobileSearch = () => {
+                showMobileSearch.value = !showMobileSearch.value;
+                if(showMobileSearch.value) {
+                    nextTick(() => mobileInputRef.value && mobileInputRef.value.focus());
+                }
+            };
+
+            const enterLiveMode = async () => {
+                currentSourceKey.value = 'live';
+                currentSourceName.value = '电视直播';
+                isPlayerMode.value = false;
+                if(window.innerWidth < 768) isSidebarOpen.value = false;
+                
+                loading.value = true;
+                liveGroups.value = {}; 
+                
+                try {
+                    const res = await fetch(`${API_PROXY}?from=live&t=${new Date().getTime()}`);
+                    const data = await res.json();
+                    
+                    const groups = {};
+                    if(data.list) {
+                        data.list.forEach(item => {
+                            const gName = item.type_name || '其他';
+                            if(!groups[gName]) groups[gName] = [];
+                            groups[gName].push(item);
+                        });
+                    }
+                    liveGroups.value = groups;
+                    if(groups['精选高清']) currentLiveGroup.value = '精选高清';
+                    else currentLiveGroup.value = Object.keys(groups)[0] || '';
+                } catch (e) { console.error('直播加载失败', e); }
+                loading.value = false;
+            };
+
+            const playLive = (channel) => {
+                currentVod.value = channel;
+                currentEpName.value = '直播中';
+                currentSourceName.value = '电视直播';
+                isPlayerMode.value = true;
+
+                // 使用更健壮的解析逻辑，兼容多种 vod_play_url 格式（包含 $$$、#、$ 等）
+                const urlStr = channel.vod_play_url || '';
+                const eps = {};
+                let split = '$';
+                if (urlStr.includes('$$$')) split = '$$$';
+                else if (urlStr.includes('#')) split = '#';
+                else split = '$';
+                const arr = urlStr.split(split);
+                let first = null;
+                arr.forEach(seg => {
+                    const p = seg.split('$');
+                    if (p.length >= 2) {
+                        const n = p[0] || '播放';
+                        const u = p[p.length - 1] ? p[p.length - 1].trim() : '';
+                        if (u) {
+                            // 记录可能的播放地址
+                            eps[n] = u;
+                            if (!first && (u.includes('.m3u8') || u.includes('.mp4') || u.startsWith('http'))) {
+                                first = { n, u };
+                            } else if (!first) {
+                                // 暂存为候选
+                                first = { n, u };
+                            }
+                        }
+                    }
+                });
+
+                // 兜底处理：如果没有解析到，尝试取第一个分段的最后一个 $ 后内容，或直接使用整个字符串
+                if (!first && arr.length > 0) {
+                    const p = arr[0].split('$');
+                    const candidate = p[p.length - 1] || arr[0];
+                    first = { n: '播放', u: candidate };
+                    eps['播放'] = candidate;
+                }
+                if (!first && urlStr) {
+                    first = { n: '播放', u: urlStr };
+                    eps['播放'] = urlStr;
+                }
+
+                if (first && first.u) {
+                    episodes.value = eps;
+                    switchEp(first.n, first.u);
+                } else {
+                    alert('未能解析到播放地址，请检查该频道的 vod_play_url 格式或控制台网络请求。');
+                }
+
+                nextTick(() => { if(contentRef.value) contentRef.value.scrollTop = 0; });
+            };
+
+            const fetchData = async (isLoadMore = false) => {
+                if(loading.value) return; 
+                if(!hasMore.value && isLoadMore) return; 
+                
+                // 历史记录模式特殊处理
+                if(currentSourceKey.value === 'history') {
+                    loading.value = true;
+                    const history = JSON.parse(localStorage.getItem('cloudtv_history_v1') || '[]');
+                    list.value = history;
+                    hasMore.value = false; 
+                    loading.value = false;
+                    return;
+                }
+
+                loading.value = true;
+                if (!isLoadMore) { page.value = 1; list.value = []; hasMore.value = true; if(contentRef.value) contentRef.value.scrollTop = 0; }
+                try {
+                    const target = currentSourceKey.value;
+                    let url = `${API_PROXY}?from=${target}&ac=detail&pg=${page.value}`;
+                    
+                    if(keyword.value) url += `&wd=${encodeURIComponent(keyword.value)}`;
+                    else if (currentCat.value !== 'latest') {
+                        const map = { movie:'电影', tv:'电视剧', anime:'动漫', variety:'综艺' };
+                        url += `&wd=${encodeURIComponent(map[currentCat.value])}`;
+                    }
+                    const res = await fetch(url);
+                    const data = await res.json();
+                    if(data.list && data.list.length > 0) {
+                        if (isLoadMore) list.value = [...list.value, ...data.list];
+                        else list.value = data.list;
+                        page.value++;
+                    } else hasMore.value = false;
+                } catch(e) { hasMore.value = false; }
+                loading.value = false;
+            };
+
+            const handleScroll = (e) => {
+                if (currentSourceKey.value === 'live' || currentSourceKey.value === 'history') return;
+                const { scrollTop, scrollHeight, clientHeight } = e.target;
+                if (scrollTop + clientHeight >= scrollHeight - 100) {
+                    if (!loading.value && hasMore.value) fetchData(true);
+                }
+            };
+
+            const changeSource = (s) => {
+                currentSourceKey.value = s.key;
+                currentSourceName.value = s.name;
+                keyword.value = '';
+                isPlayerMode.value = false;
+                fetchData(false);
+                if(window.innerWidth < 768) isSidebarOpen.value = false;
+            };
+
+            const changeCat = (cat) => {
+                currentCat.value = cat;
+                keyword.value = '';
+                fetchData(false);
+            };
+
+            const doSearch = () => {
+                if(!keyword.value) return;
+                showMobileSearch.value = false;
+                if(currentSourceKey.value === 'live' || currentSourceKey.value === 'history') { 
+                    currentSourceKey.value = 'guangsu'; 
+                    currentSourceName.value = '光速资源'; 
+                }
+                currentCat.value = 'search';
+                fetchData(false);
+            };
+
+            const openPlayer = (item) => {
+                currentVod.value = item;
+                // 如果是从历史记录点进来的，需要恢复源
+                if(currentSourceKey.value === 'history' && item.lastSourceKey) {
+                    // 仅显示用，不真正切换全局源，以免返回列表乱了
+                    // 但为了解析正确，这里我们直接解析 vod_play_url 即可
+                }
+
+                const urlStr = item.vod_play_url;
+                const eps = {};
+                const split = urlStr.includes('$$$') ? '$$$' : '#';
+                const arr = urlStr.split(split);
+                let first = null;
+                arr.forEach(seg => {
+                    const p = seg.split('$');
+                    if(p.length >= 2) {
+                        const n = p[0];
+                        const u = p[p.length-1];
+                        if(u.includes('.m3u8') || u.includes('.mp4')) { eps[n] = u; if(!first) first = {n, u}; }
+                    }
+                });
+                if(!first && arr.length > 0) { const p = arr[0].split('$'); first = { n:'播放', u: p[p.length-1] }; eps['播放'] = first.u; }
+                episodes.value = eps;
+                
+                // 优先播放历史记录的集数
+                if(currentSourceKey.value === 'history' && item.lastEpName && eps[item.lastEpName]) {
+                    switchEp(item.lastEpName, eps[item.lastEpName]);
+                } else if(first) {
+                    switchEp(first.n, first.u);
+                }
+                
+                recommendList.value = list.value.filter(v=>v.vod_id!==item.vod_id).slice(0, 12);
+                isPlayerMode.value = true;
+                nextTick(() => { if(contentRef.value) contentRef.value.scrollTop = 0; });
+            };
+
+            const switchEp = (name, url) => {
+                currentEpName.value = name;
+                currentPlayUrl.value = url;
+                
+                // 记录历史
+                if(currentVod.value) {
+                    saveHistory(currentVod.value, name, url);
+                }
+
+                setTimeout(() => {
+                    const video = document.getElementById('player');
+                    if(!video) return;
+                    if (Hls.isSupported()) {
+                        if(hls) hls.destroy();
+                        hls = new Hls({ xhrSetup: function (xhr, url) { xhr.withCredentials = false; } });
+                        hls.loadSource(url);
+                        hls.attachMedia(video);
+                        hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
+                    } else if (video.canPlayType('application/vnd.apple.mpegurl')) { video.src = url; video.play(); }
+                }, 100);
+            };
+
+            const closePlayer = () => { isPlayerMode.value = false; if(hls) hls.destroy(); };
+            const goHome = () => { 
+                keyword.value = ''; 
+                isPlayerMode.value = false; 
+                currentCat.value = 'latest'; 
+                if(currentSourceKey.value === 'live' || currentSourceKey.value === 'history') { 
+                    currentSourceKey.value = 'guangsu'; 
+                    currentSourceName.value = '光速资源'; 
+                } 
+                fetchData(false); 
+            };
+            const imgError = (e) => e.target.src = 'https://via.placeholder.com/300x450?text=No+Cover';
+
+            onMounted(() => {
+                const saved = localStorage.getItem('cloudtv_theme_v10');
+                if(saved && themes.includes(saved)) applyTheme(saved); else applyTheme('theme-dark');
+                fetchData(false);
+                initPWA();
+                initAppModal(); // 初始化 APP 弹窗
+            });
+
+            return {
+                contentRef, showSpecialSection, showWechat, enableAppModal,
+                isSidebarOpen, toggleSidebar, toggleWechat,
+                currentTheme, switchTheme,
+                generalSources, specialSources, currentSourceKey, currentSourceName, changeSource,
+                currentCat, changeCat, keyword, doSearch,
+                list, loading, isPlayerMode,
+                openPlayer, closePlayer, goHome,
+                currentVod, episodes, currentPlayUrl, currentEpName, switchEp,
+                recommendList, imgError,
+                handleScroll, page, hasMore,
+                showPwaModal, closePwaModal, isIOS, installPwa, installPrompt,
+                enterLiveMode, liveGroups, currentLiveGroup, playLive, fetchData,
+                showMobileSearch, toggleMobileSearch, mobileInputRef,
+                // App Modal & History
+                showAppModal, closeAppModal, openAppModal,
+                enterHistoryMode, clearHistory
+            };
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>
